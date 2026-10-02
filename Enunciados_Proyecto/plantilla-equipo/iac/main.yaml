@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Plantilla inicial — GTN 2026-2. Reemplaza/amplía: este ejemplo crea red básica
+  y un bucket con los tags obligatorios. Organiza el proyecto en capas si crece.
+Parameters:
+  Ambiente:
+    Type: String
+    Default: lab
+    AllowedValues: [lab, prod]
+  NombreEquipo:
+    Type: String
+    Description: nombre corto del equipo (aparece en los nombres de recursos)
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+  SubnetPublica:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+  BucketDatos:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "gtn-2026-2-${NombreEquipo}-datos"
+      VersioningConfiguration: {Status: Enabled}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: proyecto-nn}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+Outputs:
+  VPCId: {Value: !Ref VPC}
+  BucketDatos: {Value: !Ref BucketDatos}

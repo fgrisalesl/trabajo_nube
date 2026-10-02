@@ -1,0 +1,5 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Demo — CloudFormation funciona en local
+Resources:
+  BucketDemo:
+    Type: AWS::S3::Bucket
