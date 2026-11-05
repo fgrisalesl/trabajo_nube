@@ -1,0 +1,78 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: gtn-redis-cache
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  # Microservicio 1 (CQRS Read): Portal Público para los 1,000+ Aficionados
+  app:
+    build: .
+    image: gtn-app:latest
+    container_name: gtn-fan-portal
+    environment:
+      - SERVICE_ROLE=fan
+      - PORT=8000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JOURNALIST_TOKEN=unal-periodista-2026
+      - AWS_REGION=us-east-1
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Microservicio 2 (CQRS Write): App Independiente para la Cabina del Periodista
+  journalist-studio:
+    build: .
+    image: gtn-app:latest
+    container_name: gtn-journalist-studio
+    command: ["gunicorn", "--worker-class", "gevent", "--workers", "1", "--worker-connections", "200", "--bind", "0.0.0.0:8001", "--timeout", "0", "app:app"]
+    environment:
+      - SERVICE_ROLE=journalist
+      - PORT=8001
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JOURNALIST_TOKEN=unal-periodista-2026
+      - AWS_REGION=us-east-1
+    ports:
+      - "8001:8001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  sqs-worker:
+    build: .
+    image: gtn-app:latest
+    container_name: gtn-sqs-worker
+    command: ["python", "sqs_worker.py"]
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - AWS_REGION=us-east-1
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: gtn-nginx-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+      - journalist-studio
+    restart: unless-stopped

@@ -1,0 +1,428 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Proyecto 06 - Minuto a minuto de torneos deportivos (GTN 2026-2).
+  Arquitectura Cloud Unificada en 1 sola cuenta de AWS Academy:
+  VPC + Patrón Fan-Out (SNS Topic -> 2 Colas SQS con prioridad diferenciada Vivo/Resumen) +
+  ElastiCache Redis (opcional) + Bucket S3 encriptado + Instancia EC2 todo-en-uno con
+  Docker, Docker Compose/Swarm y Servidor Jenkins CI/CD integrado.
+
+Parameters:
+  Ambiente:
+    Type: String
+    Default: lab
+    AllowedValues: [lab, prod]
+    Description: Ambiente de ejecucion del proyecto
+
+  NombreEquipo:
+    Type: String
+    Default: unal-sports
+    AllowedPattern: "^[a-z0-9-]+$"
+    Description: Nombre corto del equipo en minusculas (aparece en recursos y tags)
+
+  ProyectoId:
+    Type: String
+    Default: proyecto-06
+    Description: Identificador del proyecto asignado
+
+  InstanceType:
+    Type: String
+    Default: t3.small
+    AllowedValues: [t2.micro, t3.micro, t3.small]
+    Description: Tipo de instancia EC2 (t3.small recomendada para correr Docker + Jenkins fluido; <= 15 USD/mes)
+
+  LatestAmiId:
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+    Description: AMI oficial Amazon Linux 2023 obtenida dinamicamente via SSM Parameter Store
+
+  AllowedSshCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: CIDR autorizado para administracion SSH (restringir a IP propia en produccion)
+
+  JournalistToken:
+    Type: String
+    NoEcho: true
+    Default: unal-periodista-2026
+    Description: Token secreto para autenticar publicaciones del periodista (HU-01)
+
+  DeployElastiCache:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: >
+      Permite activar cache.t3.micro de ElastiCache Redis o usar Redis contenedorizado en Docker
+      dentro de la misma EC2 para mantener el costo mensual por debajo de 15 USD/mes.
+
+Conditions:
+  CreateElastiCacheCluster: !Equals [!Ref DeployElastiCache, "true"]
+
+Resources:
+  # ============================================================================
+  # 1. CAPA DE RED (VPC, Subnets Publicas, Internet Gateway, Route Table)
+  # ============================================================================
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - {Key: Name, Value: !Sub "gtn-${NombreEquipo}-vpc"}
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - {Key: Name, Value: !Sub "gtn-${NombreEquipo}-igw"}
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  SubnetPublicaA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - {Key: Name, Value: !Sub "gtn-${NombreEquipo}-subnet-a"}
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  SubnetPublicaB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      Tags:
+        - {Key: Name, Value: !Sub "gtn-${NombreEquipo}-subnet-b"}
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  RouteTablePublica:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - {Key: Name, Value: !Sub "gtn-${NombreEquipo}-rt-public"}
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  RutaInternet:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTablePublica
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssocA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPublicaA
+      RouteTableId: !Ref RouteTablePublica
+
+  SubnetRouteTableAssocB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPublicaB
+      RouteTableId: !Ref RouteTablePublica
+
+  # ============================================================================
+  # 2. CAPA DE EVENTOS Y PATRON FAN-OUT (SNS Topic + 2 Colas SQS por Prioridad)
+  # ============================================================================
+  TopicEventosPartido:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "gtn-${NombreEquipo}-eventos-partido"
+      DisplayName: "UNAL Sports Live FanOut Topic"
+      Tags:
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  # Cola 1: Canal "VIVO" (Prioridad Alta - Entrega inmediata sub-segundo)
+  ColaCanalVivo:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "gtn-${NombreEquipo}-canal-vivo-high"
+      ReceiveMessageWaitTimeSeconds: 20
+      VisibilityTimeout: 30
+      MessageRetentionPeriod: 86400
+      SqsManagedSseEnabled: true
+      Tags:
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  # Cola 2: Canal "RESUMEN" (Prioridad Diferenciada / Highlights para los que entran tarde)
+  ColaCanalResumen:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "gtn-${NombreEquipo}-canal-resumen-low"
+      ReceiveMessageWaitTimeSeconds: 10
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 86400
+      SqsManagedSseEnabled: true
+      Tags:
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  PoliticaColasSnsFanOut:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref ColaCanalVivo
+        - !Ref ColaCanalResumen
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowSNSFanOutPublish
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: sqs:SendMessage
+            Resource:
+              - !GetAtt ColaCanalVivo.Arn
+              - !GetAtt ColaCanalResumen.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref TopicEventosPartido
+
+  # Suscripcion 1: Canal VIVO recibe TODOS los eventos en tiempo real
+  SuscripcionVivo:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref TopicEventosPartido
+      Protocol: sqs
+      Endpoint: !GetAtt ColaCanalVivo.Arn
+
+  # Suscripcion 2 (Reto Extra): Canal RESUMEN con FilterPolicy por prioridad ALTA / Highlights
+  SuscripcionResumen:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref TopicEventosPartido
+      Protocol: sqs
+      Endpoint: !GetAtt ColaCanalResumen.Arn
+      FilterPolicy:
+        priority:
+          - HIGH
+
+  # ============================================================================
+  # 3. CAPA DE CACHE (ElastiCache Redis Opcional + S3 Bucket de Datos/Backups)
+  # ============================================================================
+  SecurityGroupRedis:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateElastiCacheCluster
+    Properties:
+      GroupDescription: Acceso interno al puerto 6379 de ElastiCache Redis desde EC2
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref SecurityGroupApp
+      Tags:
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  SubnetGroupRedis:
+    Type: AWS::ElastiCache::SubnetGroup
+    Condition: CreateElastiCacheCluster
+    Properties:
+      Description: Subnet group para ElastiCache Redis del minuto a minuto
+      SubnetIds:
+        - !Ref SubnetPublicaA
+        - !Ref SubnetPublicaB
+      Tags:
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  ClusterRedisElastiCache:
+    Type: AWS::ElastiCache::CacheCluster
+    Condition: CreateElastiCacheCluster
+    Properties:
+      Engine: redis
+      CacheNodeType: cache.t3.micro
+      NumCacheNodes: 1
+      CacheSubnetGroupName: !Ref SubnetGroupRedis
+      VpcSecurityGroupIds:
+        - !Ref SecurityGroupRedis
+      Tags:
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  BucketDatos:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "gtn-2026-2-${NombreEquipo}-${AWS::AccountId}-datos"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  # ============================================================================
+  # 4. CAPA DE COMPUTO UNIFICADA (EC2 con Docker + Compose/Swarm + Jenkins CI/CD)
+  # ============================================================================
+  SecurityGroupApp:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group del servidor unificado (Portal 80/8000 + Cabina 8001 + Jenkins 8080 + SSH 22)
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Acceso HTTP publico al Portal de Aficionados y Gateway Nginx SSE
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+          Description: Microservicio 1 - Portal de Aficionados (CQRS Read)
+        - IpProtocol: tcp
+          FromPort: 8001
+          ToPort: 8001
+          CidrIp: 0.0.0.0/0
+          Description: Microservicio 2 - Cabina Independiente del Periodista (CQRS Write)
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+          Description: Servidor Jenkins CI/CD integrado en la instancia del proyecto (Lab 04)
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AllowedSshCidr
+          Description: Acceso SSH de administracion
+      Tags:
+        - {Key: Name, Value: !Sub "gtn-${NombreEquipo}-sg-app"}
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+  InstanciaAppPrincipal:
+    Type: AWS::EC2::Instance
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestAmiId
+      SubnetId: !Ref SubnetPublicaA
+      SecurityGroupIds:
+        - !Ref SecurityGroupApp
+      IamInstanceProfile: LabInstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          dnf update -y
+          dnf install -y java-17-amazon-corretto docker git python3-pip
+          systemctl enable --now docker
+          usermod -aG docker ec2-user
+
+          # Instalar plugin Docker Compose v2
+          mkdir -p /usr/local/lib/docker/cli-plugins
+          curl -SL "https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-linux-x86_64" \
+            -o /usr/local/lib/docker/cli-plugins/docker-compose
+          chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+          ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/bin/docker-compose
+
+          # Instalar cfn-lint para validacion IaC en Jenkins
+          pip3 install cfn-lint || true
+
+          # Instalar y arrancar Jenkins sobre la misma instancia EC2 (Lab 04)
+          wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+          rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+          dnf install -y jenkins
+          usermod -aG docker jenkins
+          systemctl enable --now jenkins
+
+          # Guardar variables de entorno del stack (SNS y SQS) sin hardcodear credenciales (Lab 06)
+          cat <<EOF > /etc/gtn-app.env
+          AWS_REGION=${AWS::Region}
+          SNS_TOPIC_ARN=${TopicEventosPartido}
+          SQS_LIVE_URL=${ColaCanalVivo}
+          SQS_SUMMARY_URL=${ColaCanalResumen}
+          JOURNALIST_TOKEN=${JournalistToken}
+          EOF
+          chmod 640 /etc/gtn-app.env
+          chown root:docker /etc/gtn-app.env
+      Tags:
+        - {Key: Name, Value: !Sub "gtn-${NombreEquipo}-ec2-server"}
+        - {Key: Curso, Value: GTN-2026-2}
+        - {Key: Equipo, Value: !Ref NombreEquipo}
+        - {Key: Proyecto, Value: !Ref ProyectoId}
+        - {Key: Ambiente, Value: !Ref Ambiente}
+
+Outputs:
+  VPCId:
+    Description: ID de la VPC creada
+    Value: !Ref VPC
+  BucketDatos:
+    Description: Nombre del bucket S3 con encriptacion AES-256
+    Value: !Ref BucketDatos
+  SNSTopicArn:
+    Description: ARN del Topico SNS para el patron Fan-Out de eventos deportivos
+    Value: !Ref TopicEventosPartido
+  SQSLiveQueueUrl:
+    Description: URL de la cola SQS de Alta Prioridad (Canal Vivo)
+    Value: !Ref ColaCanalVivo
+  SQSSummaryQueueUrl:
+    Description: URL de la cola SQS de Prioridad Diferenciada (Canal Resumen)
+    Value: !Ref ColaCanalResumen
+  EC2PublicIP:
+    Description: IP publica del servidor EC2
+    Value: !GetAtt InstanciaAppPrincipal.PublicIp
+  DemoURL:
+    Description: URL publica del Portal de Aficionados (Puerto 80)
+    Value: !Sub "http://${InstanciaAppPrincipal.PublicDnsName}"
+  JournalistStudioURL:
+    Description: URL de la App Independiente de la Cabina del Periodista (Puerto 8001 o /periodista)
+    Value: !Sub "http://${InstanciaAppPrincipal.PublicDnsName}:8001"
+  JenkinsURL:
+    Description: URL del servidor Jenkins CI/CD (Puerto 8080)
+    Value: !Sub "http://${InstanciaAppPrincipal.PublicDnsName}:8080"

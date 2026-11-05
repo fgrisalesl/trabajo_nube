@@ -1,0 +1,60 @@
+pipeline {
+  agent any
+  tools { } // Jenkins sobre EC2: Docker, Docker Compose/Swarm y python3 disponibles
+  environment {
+    IMAGEN = "gtn-app:latest"
+  }
+  stages {
+    stage('1. Validar IaC (CloudFormation)') {
+      steps {
+        sh 'pip install cfn-lint 2>/dev/null || pip3 install cfn-lint --break-system-packages || true'
+        sh 'cfn-lint iac/*.yaml'
+      }
+    }
+    stage('2. Auditoria Seguridad y Sintaxis') {
+      steps {
+        sh 'python3 -m py_compile app/src/app.py app/src/sqs_worker.py app/simulator/load_simulator.py'
+      }
+    }
+    stage('3. Construir Imagen Docker') {
+      steps {
+        sh 'docker build -t $IMAGEN app/'
+      }
+    }
+    stage('4. Desplegar Stack (Docker Compose / Swarm)') {
+      steps {
+        sh '''
+          cd app
+          ENV_ARG=""
+          if [ -f /etc/gtn-app.env ]; then
+            ENV_ARG="--env-file /etc/gtn-app.env"
+          fi
+          if docker info 2>/dev/null | grep -q "Swarm: active"; then
+            echo "Desplegando en Cluster Docker Swarm..."
+            docker stack deploy -c docker-stack.swarm.yml gtn_sports
+          else
+            echo "Desplegando con Docker Compose..."
+            docker compose $ENV_ARG up -d --build
+          fi
+        '''
+      }
+    }
+    stage('5. Smoke Test y Prueba de Pico (HU-04)') {
+      steps {
+        sh '''
+          sleep 5
+          curl -fsS http://localhost:8000/health
+          python3 app/simulator/load_simulator.py --url http://localhost:8000 --readers 200 --events 3
+        '''
+      }
+    }
+  }
+  post {
+    success {
+      echo 'Despliegue OK — Verificar puerto 80 (Nginx Gateway SSE) y puerto 8000 (API)'
+    }
+    failure {
+      echo 'Pipeline fallo — Revisar logs de cfn-lint o contenedores Docker'
+    }
+  }
+}

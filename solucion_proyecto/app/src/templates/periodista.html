@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UNAL Sports Studio · Cabina del Periodista (HU-01)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+      background-color: #050507;
+      color: #f5f5f7;
+      -webkit-font-smoothing: antialiased;
+    }
+    .studio-glass {
+      background: rgba(24, 24, 28, 0.78);
+      backdrop-filter: saturate(180%) blur(24px);
+      -webkit-backdrop-filter: saturate(180%) blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+    }
+    .apple-input {
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .apple-input:focus {
+      border-color: #34d399;
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
+      outline: none;
+    }
+    .type-btn-active {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.45);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-14">
+
+  <!-- Barra Superior de Cabina de Transmisión -->
+  <header class="sticky top-0 z-50 studio-glass border-b border-white/10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-xs tracking-wide">
+          🎙️ STUDIO PRO
+        </span>
+        <div>
+          <h1 class="font-semibold text-sm sm:text-base text-white">Cabina Móvil del Periodista</h1>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-xs">
+        <span class="hidden sm:inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 font-mono text-zinc-400">
+          Contenedor: <strong class="text-sky-400">{{ hostname }}</strong> ({{ service_role }})
+        </span>
+        <a href="/" target="_blank"
+          class="px-3.5 py-1.5 rounded-full bg-white text-black font-semibold hover:bg-zinc-200 transition">
+          👁️ Ver Portal Aficionados ↗
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+    <!-- MINI MARCADOR SINCRONIZADO EN TIEMPO REAL -->
+    <section class="studio-glass rounded-3xl p-5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <div>
+          <div class="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Marcador Público Sincronizado</div>
+          <div class="text-sm text-zinc-300 mt-0.5">
+            Ingeniería FC <strong id="studio-home" class="text-white font-black text-lg mx-1">2</strong>
+            —
+            <strong id="studio-away" class="text-white font-black text-lg mx-1">1</strong> Ciencias Atlético
+            <span class="ml-2 px-2 py-0.5 rounded bg-white/10 text-xs font-mono text-emerald-300"><span id="studio-min">78</span>'</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 text-xs">
+        <div class="px-3.5 py-2 rounded-2xl bg-black/50 border border-white/10">
+          <span class="text-zinc-400 block text-[10px]">Lectores SSE Activos</span>
+          <strong id="studio-readers" class="text-white font-mono text-sm">0</strong>
+        </div>
+        <div class="px-3.5 py-2 rounded-2xl bg-black/50 border border-white/10">
+          <span class="text-zinc-400 block text-[10px]">Latencia Fan-Out p95</span>
+          <strong id="studio-p95" class="text-emerald-400 font-mono text-sm">-- ms</strong>
+        </div>
+        <div class="px-3.5 py-2 rounded-2xl bg-black/50 border border-white/10">
+          <span class="text-zinc-400 block text-[10px]">Entregas Fan-Out</span>
+          <strong id="studio-deliveries" class="text-sky-400 font-mono text-sm">0</strong>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- COLUMNA IZQUIERDA (7/12): CONSOLA DE EMISIÓN RÁPIDA DEL PERIODISTA (HU-01) -->
+      <section class="lg:col-span-7 studio-glass rounded-3xl p-6 sm:p-8 space-y-6">
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Historia de Usuario HU-01</span>
+            <h2 class="text-xl font-bold text-white mt-0.5">Transmitir Jugada desde Cancha</h2>
+          </div>
+          <span class="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-300">
+            1 Emisor → Miles de Lectores
+          </span>
+        </div>
+
+        <form id="journalist-form" onsubmit="submitEvent(event)" class="space-y-5">
+
+          <!-- Botones Rápidos de Tipo de Evento (Touch-Friendly para Celular) -->
+          <div>
+            <label class="block text-xs font-medium text-zinc-400 mb-2">
+              1. Selecciona el Tipo de Jugada (Define Prioridad en AWS SNS/SQS)
+            </label>
+            <input type="hidden" id="ev-type" value="GOAL" />
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs font-semibold">
+              <button type="button" onclick="selectType('GOAL', this)"
+                class="type-btn type-btn-active flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border border-white/15 bg-white/5 text-white transition">
+                ⚽ GOL <span class="text-[10px] text-emerald-400">(Alta)</span>
+              </button>
+              <button type="button" onclick="selectType('PENALTY', this)"
+                class="type-btn flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/10 transition">
+                🎯 PENAL <span class="text-[10px] text-emerald-400">(Alta)</span>
+              </button>
+              <button type="button" onclick="selectType('RED_CARD', this)"
+                class="type-btn flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/10 transition">
+                🟥 ROJA <span class="text-[10px] text-emerald-400">(Alta)</span>
+              </button>
+              <button type="button" onclick="selectType('YELLOW_CARD', this)"
+                class="type-btn flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/10 transition">
+                🟨 AMARILLA <span class="text-[10px] text-amber-400">(Resumen)</span>
+              </button>
+              <button type="button" onclick="selectType('SUBSTITUTION', this)"
+                class="type-btn flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/10 transition">
+                🔄 CAMBIO <span class="text-[10px] text-sky-400">(Resumen)</span>
+              </button>
+              <button type="button" onclick="selectType('COMMENT', this)"
+                class="type-btn flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/10 transition">
+                💬 COMENTARIO <span class="text-[10px] text-zinc-500">(Solo Vivo)</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-zinc-400 mb-1.5">2. Minuto</label>
+              <input type="number" id="ev-minute" value="80" min="1" max="125" required
+                class="apple-input w-full rounded-2xl px-4 py-3 text-white font-mono text-sm" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-zinc-400 mb-1.5">3. Equipo Protagonista</label>
+              <select id="ev-team" class="apple-input w-full rounded-2xl px-4 py-3 text-white text-sm">
+                <option value="HOME">🛡️ Ingeniería FC (Local)</option>
+                <option value="AWAY">⚛️ Ciencias Atlético (Visitante)</option>
+                <option value="NEUTRAL">⚖️ Árbitro Central / Voz del Estadio</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-zinc-400 mb-1.5">4. Jugador / Protagonista</label>
+            <input type="text" id="ev-player" placeholder="Ej: Mateo Gómez (#10)" required
+              class="apple-input w-full rounded-2xl px-4 py-3 text-white text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-zinc-400 mb-1.5">5. Narración para el Minuto a Minuto</label>
+            <textarea id="ev-desc" rows="3" placeholder="Escribe la jugada... se enviará al instante a todos los aficionados." required
+              class="apple-input w-full rounded-2xl px-4 py-3 text-white text-sm"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-zinc-400 mb-1.5">🔐 Credencial de Periodista Acreditado (`X-Journalist-Token`)</label>
+            <input type="password" id="ev-token" value="unal-periodista-2026"
+              class="apple-input w-full rounded-2xl px-4 py-2.5 text-zinc-300 font-mono text-xs" />
+          </div>
+
+          <button type="submit"
+            class="w-full py-4 px-6 rounded-2xl font-bold text-sm bg-white text-black hover:bg-zinc-200 shadow-xl transition active:scale-[0.99]">
+            🚀 Publicar en Vivo Ahora (Disparar Fan-Out)
+          </button>
+
+          <div id="publish-feedback" class="hidden rounded-2xl p-3.5 text-xs font-medium text-center"></div>
+        </form>
+      </section>
+
+      <!-- COLUMNA DERECHA (5/12): SIMULADOR DE PICO DE 1,000 LECTORES (HU-04) + TELEMETRÍA -->
+      <section class="lg:col-span-5 space-y-6">
+
+        <div class="studio-glass rounded-3xl p-6 space-y-4">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-widest text-amber-400">Historia de Usuario HU-04</span>
+            <h3 class="text-lg font-bold text-white mt-0.5">Simulador del Pico de la Final</h3>
+            <p class="text-xs text-zinc-400 mt-1 leading-relaxed">
+              Ejecuta desde esta cabina una ráfaga de los últimos 10 minutos del partido con <strong>1,000 lectores simultáneos</strong>. Verás cómo la página pública de los aficionados se actualiza sola en tiempo real.
+            </p>
+          </div>
+
+          <button onclick="triggerPeakSimulation()" id="btn-sim-peak"
+            class="w-full py-3.5 px-5 rounded-2xl font-semibold text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-95 shadow-lg transition">
+            ⚡ Disparar Ráfaga de Final (1,000 Lectores + 5 Jugadas Clave)
+          </button>
+
+          <div id="sim-result" class="hidden rounded-2xl bg-black/60 border border-white/10 p-4 text-xs font-mono space-y-1.5 text-zinc-300">
+          </div>
+        </div>
+
+        <!-- Telemetría de Arquitectura en Tiempo Real -->
+        <div class="studio-glass rounded-3xl p-6 space-y-3 text-xs">
+          <h4 class="font-bold text-white text-sm">📊 Estado de los Servicios Cloud</h4>
+          <div class="space-y-2.5 pt-2 border-t border-white/10 text-zinc-400">
+            <div class="flex justify-between">
+              <span>Latencia Mediana (p50):</span>
+              <strong id="metric-p50" class="text-emerald-400 font-mono">-- ms</strong>
+            </div>
+            <div class="flex justify-between">
+              <span>Latencia Pico (p95 / p99):</span>
+              <strong id="metric-p99" class="text-amber-400 font-mono">-- ms</strong>
+            </div>
+            <div class="flex justify-between">
+              <span>Motor de Caché O(1):</span>
+              <strong id="metric-cache" class="text-sky-400">Redis (ElastiCache / Docker)</strong>
+            </div>
+            <div class="flex justify-between">
+              <span>Broker Fan-Out:</span>
+              <strong id="metric-broker" class="text-zinc-200">SNS → 2 Colas SQS → SSE</strong>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    function selectType(typeVal, btnEl) {
+      document.getElementById('ev-type').value = typeVal;
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('type-btn-active'));
+      btnEl.classList.add('type-btn-active');
+    }
+
+    async function syncStudioStatus() {
+      try {
+        const [sumRes, metRes] = await Promise.all([
+          fetch('/api/summary'),
+          fetch('/api/metrics')
+        ]);
+        const sumData = await sumRes.json();
+        const metData = await metRes.json();
+
+        document.getElementById('studio-home').textContent = sumData.match.home_score;
+        document.getElementById('studio-away').textContent = sumData.match.away_score;
+        document.getElementById('studio-min').textContent = sumData.match.minute;
+
+        document.getElementById('studio-readers').textContent = metData.total_active_readers;
+        document.getElementById('studio-p95').textContent = `${metData.latency_ms.p95} ms`;
+        document.getElementById('studio-deliveries').textContent = metData.total_fanout_deliveries.toLocaleString();
+        document.getElementById('metric-p50').textContent = `${metData.latency_ms.p50} ms`;
+        document.getElementById('metric-p99').textContent = `${metData.latency_ms.p95} / ${metData.latency_ms.p99} ms`;
+        document.getElementById('metric-cache').textContent = metData.architecture.cache_engine;
+      } catch (e) {}
+    }
+
+    async function submitEvent(e) {
+      e.preventDefault();
+      const body = {
+        minute: parseInt(document.getElementById('ev-minute').value, 10),
+        team: document.getElementById('ev-team').value,
+        type: document.getElementById('ev-type').value,
+        player: document.getElementById('ev-player').value,
+        description: document.getElementById('ev-desc').value
+      };
+      const token = document.getElementById('ev-token').value;
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Journalist-Token': token },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      const fb = document.getElementById('publish-feedback');
+      fb.classList.remove('hidden');
+
+      if (res.ok) {
+        fb.className = 'rounded-2xl p-3.5 text-xs font-medium text-center bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+        fb.textContent = `✅ Transmitido en ${data.latency_ms} ms hacia el Portal de Aficionados (Nodo: ${data.node})`;
+        document.getElementById('ev-desc').value = '';
+        document.getElementById('ev-minute').value = Math.min(120, body.minute + 1);
+        syncStudioStatus();
+      } else {
+        fb.className = 'rounded-2xl p-3.5 text-xs font-medium text-center bg-rose-500/15 text-rose-300 border border-rose-500/30';
+        fb.textContent = `❌ Error: ${data.error}`;
+      }
+    }
+
+    async function triggerPeakSimulation() {
+      const btn = document.getElementById('btn-sim-peak');
+      btn.disabled = true;
+      btn.textContent = '⏳ Transmitiendo ráfaga a 1,000 lectores...';
+      const res = await fetch('/api/simulate-peak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ readers: 1000 })
+      });
+      const data = await res.json();
+      const box = document.getElementById('sim-result');
+      box.classList.remove('hidden');
+      box.innerHTML = `
+        <div class="text-emerald-400 font-bold">✅ Ráfaga Fan-Out Completada</div>
+        <div>• Lectores simultáneos: <strong>${data.simulated_concurrent_readers}</strong></div>
+        <div>• Jugadas emitidas: <strong>${data.events_emitted}</strong></div>
+        <div>• Mensajes Fan-Out entregados: <strong>${data.total_fanout_messages_delivered.toLocaleString()}</strong></div>
+        <div>• Latencia promedio por evento: <strong>${data.avg_event_latency_ms} ms</strong></div>
+      `;
+      btn.disabled = false;
+      btn.textContent = '⚡ Disparar Ráfaga de Final (1,000 Lectores + 5 Jugadas Clave)';
+      syncStudioStatus();
+    }
+
+    syncStudioStatus();
+    setInterval(syncStudioStatus, 3000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+version: "3.8"
+
+# ==============================================================================
+# STACK DOCKER SWARM EN LA INSTANCIA EC2 DEL PROYECTO (1 SOLA CUENTA AWS ACADEMY)
+# Desacopla CQRS:
+#   - app (fan-portal): 4 réplicas para los 1,000+ Aficionados (Puerto 8000)
+#   - journalist-studio: App dedicada para la Cabina del Periodista (Puerto 8001)
+#   - sqs-worker + redis + nginx gateway (Puerto 80)
+# ==============================================================================
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    networks:
+      - unal_overlay
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
+  app:
+    image: gtn-app:latest
+    environment:
+      - SERVICE_ROLE=fan
+      - PORT=8000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JOURNALIST_TOKEN=unal-periodista-2026
+      - AWS_REGION=us-east-1
+    ports:
+      - target: 8000
+        published: 8000
+        protocol: tcp
+        mode: ingress
+    networks:
+      - unal_overlay
+    deploy:
+      replicas: 4
+      update_config:
+        parallelism: 2
+        delay: 5s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  journalist-studio:
+    image: gtn-app:latest
+    command: ["gunicorn", "--worker-class", "gevent", "--workers", "1", "--worker-connections", "200", "--bind", "0.0.0.0:8001", "--timeout", "0", "app:app"]
+    environment:
+      - SERVICE_ROLE=journalist
+      - PORT=8001
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JOURNALIST_TOKEN=unal-periodista-2026
+      - AWS_REGION=us-east-1
+    ports:
+      - target: 8001
+        published: 8001
+        protocol: tcp
+        mode: ingress
+    networks:
+      - unal_overlay
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  sqs-worker:
+    image: gtn-app:latest
+    command: ["python", "sqs_worker.py"]
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - AWS_REGION=us-east-1
+    networks:
+      - unal_overlay
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: ingress
+    configs:
+      - source: nginx_conf
+        target: /etc/nginx/nginx.conf
+    networks:
+      - unal_overlay
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+
+configs:
+  nginx_conf:
+    file: ./nginx/nginx.conf
+
+networks:
+  unal_overlay:
+    driver: overlay
+    attachable: true
