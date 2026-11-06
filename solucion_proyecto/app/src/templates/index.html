@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UNAL Sports · Gran Final En Vivo</title>
+  <title>UNAL Sports · Transmisión En Vivo</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -61,7 +61,7 @@
         </div>
         <div>
           <span class="font-semibold tracking-tight text-white text-sm sm:text-base">UNAL Sports</span>
-          <span class="hidden sm:inline-block text-xs text-zinc-400 ml-2 font-normal">Torneo Interfacultades · Gran Final</span>
+          <span id="header-tournament" class="hidden sm:inline-block text-xs text-zinc-400 ml-2 font-normal">Transmisión Oficial En Vivo</span>
         </div>
       </div>
 
@@ -82,20 +82,20 @@
 
   <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
-    <!-- HERO SCOREBOARD (ESTILO APPLE SPORTS / DYNAMIC ISLAND) -->
+    <!-- HERO SCOREBOARD (ESTILO APPLE SPORTS / TABLERO EN BLANCO 0-0 INICIAL) -->
     <section class="hero-glow rounded-[32px] border border-white/10 p-6 sm:p-10 shadow-2xl relative overflow-hidden">
       <div class="flex flex-col items-center text-center mb-6">
-        <span class="text-[11px] uppercase tracking-[0.2em] text-zinc-400 font-semibold">
-          Estadio Alfonso López Pumarejo · Ciudad Universitaria
+        <span id="match-tournament-subtitle" class="text-[11px] uppercase tracking-[0.2em] text-zinc-400 font-semibold">
+          Transmisión Oficial En Vivo
         </span>
         <div class="mt-2 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.06] border border-white/10 text-xs font-medium text-zinc-200">
-          <span class="text-emerald-400 font-semibold" id="match-status-label">2° Tiempo</span>
+          <span class="text-emerald-400 font-semibold" id="match-status-label">EN ESPERA DE INICIO</span>
           <span class="text-zinc-600">•</span>
-          <span class="font-mono font-bold text-white"><span id="match-minute">78</span>'</span>
+          <span class="font-mono font-bold text-white"><span id="match-minute">0</span>'</span>
         </div>
       </div>
 
-      <!-- Marcador Principal -->
+      <!-- Marcador Principal (Arranca 0 - 0 limpio) -->
       <div class="grid grid-cols-3 items-center max-w-2xl mx-auto gap-2 sm:gap-6">
         <!-- Equipo Local -->
         <div class="flex flex-col items-center sm:items-end text-center sm:text-right">
@@ -103,27 +103,27 @@
             🛡️
           </div>
           <h2 id="home-team" class="text-lg sm:text-2xl font-bold tracking-tight text-white leading-tight">
-            Ingeniería FC
+            Equipo Local
           </h2>
-          <span class="text-xs text-zinc-400 mt-0.5">Facultad de Ingeniería</span>
+          <span class="text-xs text-zinc-400 mt-0.5">Local</span>
         </div>
 
         <!-- Puntuación Central -->
         <div class="flex items-center justify-center gap-3 sm:gap-5 py-3 px-5 sm:px-8 rounded-3xl bg-black/50 border border-white/10 backdrop-blur-xl shadow-2xl">
-          <span id="home-score" class="score-pop text-5xl sm:text-7xl font-black tracking-tighter text-white">2</span>
+          <span id="home-score" class="score-pop text-5xl sm:text-7xl font-black tracking-tighter text-white">0</span>
           <span class="text-2xl sm:text-3xl font-light text-zinc-600">-</span>
-          <span id="away-score" class="score-pop text-5xl sm:text-7xl font-black tracking-tighter text-white">1</span>
+          <span id="away-score" class="score-pop text-5xl sm:text-7xl font-black tracking-tighter text-white">0</span>
         </div>
 
         <!-- Equipo Visitante -->
         <div class="flex flex-col items-center sm:items-start text-center sm:text-left">
           <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-2xl sm:text-3xl mb-3 shadow-inner">
-            ⚛️
+            ⚽
           </div>
           <h2 id="away-team" class="text-lg sm:text-2xl font-bold tracking-tight text-white leading-tight">
-            Ciencias Atlético
+            Equipo Visitante
           </h2>
-          <span class="text-xs text-zinc-400 mt-0.5">Facultad de Ciencias</span>
+          <span class="text-xs text-zinc-400 mt-0.5">Visitante</span>
         </div>
       </div>
 
@@ -131,11 +131,11 @@
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 pt-6 border-t border-white/[0.08]">
         <div class="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 flex items-center justify-between">
           <span class="text-xs text-zinc-400">Jugadas</span>
-          <strong id="stat-events" class="text-base font-bold text-white font-mono">4</strong>
+          <strong id="stat-events" class="text-base font-bold text-white font-mono">0</strong>
         </div>
         <div class="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 flex items-center justify-between">
           <span class="text-xs text-zinc-400">🟨 Amarillas</span>
-          <strong id="stat-yellow" class="text-base font-bold text-amber-400 font-mono">1</strong>
+          <strong id="stat-yellow" class="text-base font-bold text-amber-400 font-mono">0</strong>
         </div>
         <div class="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 flex items-center justify-between">
           <span class="text-xs text-zinc-400">🟥 Rojas</span>
@@ -177,9 +177,17 @@
         Estás viendo únicamente los momentos determinantes del partido (Goles, Penales y Tarjetas) filtrados por prioridad alta en <code>AWS SNS/SQS</code> y servidos desde <code>Redis Cache</code> en menos de 5 ms.
       </div>
 
+      <!-- Estado vacío cuando el tablero está en blanco (0 jugadas aún) -->
+      <div id="empty-board-placeholder" class="apple-card rounded-3xl p-10 text-center space-y-2">
+        <div class="text-3xl mb-2">📡</div>
+        <h4 class="text-base font-semibold text-white">Esperando el inicio de la transmisión en vivo</h4>
+        <p class="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+          El tablero está listo en 0 - 0. En cuanto el periodista o el Auto-Narrador con IA transmitan desde la cabina, las jugadas aparecerán aquí automáticamente sin recargar.
+        </p>
+      </div>
+
       <!-- Feed de Eventos en Tiempo Real -->
       <div id="events-container" class="space-y-3">
-        <!-- Las tarjetas se inyectan dinámicamente vía SSE y /api/summary -->
       </div>
     </section>
 
@@ -204,6 +212,8 @@
     let currentChannel = 'vivo';
     let evtSource = null;
     let knownEventIds = new Set();
+    let currentHomeTeam = 'Equipo Local';
+    let currentAwayTeam = 'Equipo Visitante';
 
     function styleForEvent(type) {
       const styles = {
@@ -232,6 +242,11 @@
           pill: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
           accent: 'border-l-4 border-l-sky-400'
         },
+        'MATCH_START': {
+          badge: '🏁 INICIO',
+          pill: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+          accent: 'border-l-4 border-l-emerald-500'
+        },
         'COMMENT': {
           badge: '💬 MINUTO A MINUTO',
           pill: 'bg-white/10 text-zinc-300 border-white/10',
@@ -241,13 +256,26 @@
       return styles[type] || styles['COMMENT'];
     }
 
+    function updateEmptyPlaceholder() {
+      const ph = document.getElementById('empty-board-placeholder');
+      const container = document.getElementById('events-container');
+      if (container.children.length > 0) {
+        ph.classList.add('hidden');
+      } else {
+        ph.classList.remove('hidden');
+      }
+    }
+
     function renderEventCard(ev, prepend = false) {
       const container = document.getElementById('events-container');
       if (document.getElementById(`card-${ev.id}`)) return;
       knownEventIds.add(ev.id);
 
       const st = styleForEvent(ev.type);
-      const teamLabel = ev.team === 'HOME' ? 'Ingeniería FC' : (ev.team === 'AWAY' ? 'Ciencias Atlético' : 'Comisario UNAL');
+      const teamLabel = ev.team_name || (ev.team === 'HOME' ? currentHomeTeam : (ev.team === 'AWAY' ? currentAwayTeam : 'Transmisión Oficial'));
+      const aiBadge = ev.ai_generated
+        ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30">🤖 IA Live</span>`
+        : '';
       const priorityTag = ev.priority === 'HIGH'
         ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Prioridad Alta</span>`
         : `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-zinc-400">Estándar</span>`;
@@ -264,6 +292,7 @@
             <span class="text-xs text-zinc-400">· ${teamLabel}</span>
           </div>
           <div class="flex items-center gap-2">
+            ${aiBadge}
             ${priorityTag}
           </div>
         </div>
@@ -275,6 +304,7 @@
       } else {
         container.appendChild(card);
       }
+      updateEmptyPlaceholder();
     }
 
     function animateScoreUpdate(elId, newValue) {
@@ -288,6 +318,21 @@
 
     function updateMatchHeader(match) {
       if (!match) return;
+      if (match.home_team) {
+        currentHomeTeam = match.home_team;
+        document.getElementById('home-team').textContent = match.home_team;
+      }
+      if (match.away_team) {
+        currentAwayTeam = match.away_team;
+        document.getElementById('away-team').textContent = match.away_team;
+      }
+      if (match.tournament) {
+        document.getElementById('match-tournament-subtitle').textContent = match.tournament;
+        document.getElementById('header-tournament').textContent = match.tournament;
+      }
+      if (match.status) {
+        document.getElementById('match-status-label').textContent = match.status;
+      }
       animateScoreUpdate('home-score', match.home_score);
       animateScoreUpdate('away-score', match.away_score);
       document.getElementById('match-minute').textContent = match.minute;
@@ -304,15 +349,16 @@
       document.getElementById('stat-subs').textContent = data.stats.substitutions;
 
       const list = currentChannel === 'resumen' ? data.highlights : data.events;
-      if (fullRebuild) {
+      if (fullRebuild || (data.stats.total_events === 0 && knownEventIds.size > 0)) {
         const container = document.getElementById('events-container');
         container.innerHTML = '';
         knownEventIds.clear();
         list.forEach(ev => renderEventCard(ev, false));
+        updateEmptyPlaceholder();
       } else {
-        // Inyectar con animación suave cualquier nuevo evento que aún no esté en pantalla
         const newEvents = list.filter(ev => !knownEventIds.has(ev.id)).reverse();
         newEvents.forEach(ev => renderEventCard(ev, true));
+        updateEmptyPlaceholder();
       }
     }
 
@@ -325,6 +371,10 @@
       });
       evtSource.addEventListener('match_event', (e) => {
         const payload = JSON.parse(e.data);
+        if (payload.reset) {
+          loadSummary(true);
+          return;
+        }
         if (payload.match) updateMatchHeader(payload.match);
         if (payload.event) {
           if (currentChannel === 'vivo' || payload.event.priority === 'HIGH' || ['YELLOW_CARD', 'SUBSTITUTION'].includes(payload.event.type)) {
@@ -351,7 +401,7 @@
         btnVivo.className = 'px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-zinc-400 hover:text-white';
         banner.classList.remove('hidden');
       }
-      loadSummary();
+      loadSummary(true);
       connectSSE(channel);
     }
 
@@ -367,7 +417,6 @@
     loadSummary(true);
     connectSSE('vivo');
     refreshMetrics();
-    // Respaldo reactivo cada 1.5s + métricas cada 4s (garantiza actualización instantánea incluso sin Redis)
     setInterval(() => loadSummary(false), 1500);
     setInterval(refreshMetrics, 4000);
   </script>

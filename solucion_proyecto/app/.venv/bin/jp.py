@@ -1,4 +1,4 @@
-#!/home/felipe/Documentos/Proyecto predeterminado/trabajo_nube/solucion_proyecto/app/.venv/bin/python3
+#!/home/felipe/Documentos/PROYECTOS/trabajo_nube/solucion_proyecto/app/.venv/bin/python3
 
 import sys
 import json

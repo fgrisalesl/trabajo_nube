@@ -1,0 +1,12 @@
+# Ignorar secretos, llaves de API y entornos virtuales (Lab 06: Seguridad)
+.env
+*.env
+!*.env.example
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+solucion_proyecto/app/media/*.mp4
+solucion_proyecto/app/media/*.mp3
+solucion_proyecto/app/media/*.wav
+!solucion_proyecto/app/media/README.md

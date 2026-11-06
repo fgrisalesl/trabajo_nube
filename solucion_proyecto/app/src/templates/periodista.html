@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UNAL Sports Studio · Cabina del Periodista (HU-01)</title>
+  <title>UNAL Sports Studio · Cabina del Periodista & Auto-Narrador IA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,26 +36,37 @@
       border-color: rgba(255, 255, 255, 0.45);
       transform: translateY(-1px);
     }
+    @keyframes wave {
+      0%, 100% { height: 6px; }
+      50% { height: 22px; }
+    }
+    .voice-bar {
+      width: 4px;
+      background: #a855f7;
+      border-radius: 999px;
+      animation: wave 0.8s infinite ease-in-out;
+    }
   </style>
 </head>
 <body class="min-h-screen pb-14">
 
   <!-- Barra Superior de Cabina de Transmisión -->
   <header class="sticky top-0 z-50 studio-glass border-b border-white/10">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-xs tracking-wide">
-          🎙️ STUDIO PRO
+        <span class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold text-xs tracking-wide">
+          🤖 AI STUDIO PRO
         </span>
         <div>
-          <h1 class="font-semibold text-sm sm:text-base text-white">Cabina Móvil del Periodista</h1>
+          <h1 class="font-semibold text-sm sm:text-base text-white">Cabina del Periodista & Auto-Narrador IA (OpenRouter)</h1>
         </div>
       </div>
 
-      <div class="flex items-center gap-3 text-xs">
-        <span class="hidden sm:inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 font-mono text-zinc-400">
-          Contenedor: <strong class="text-sky-400">{{ hostname }}</strong> ({{ service_role }})
-        </span>
+      <div class="flex items-center gap-2.5 text-xs">
+        <button type="button" onclick="resetBlankBoard()"
+          class="px-3 py-1.5 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold transition">
+          🔄 Reiniciar Tablero en Blanco (0-0)
+        </button>
         <a href="/" target="_blank"
           class="px-3.5 py-1.5 rounded-full bg-white text-black font-semibold hover:bg-zinc-200 transition">
           👁️ Ver Portal Aficionados ↗
@@ -64,47 +75,158 @@
     </div>
   </header>
 
-  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-    <!-- MINI MARCADOR SINCRONIZADO EN TIEMPO REAL -->
+    <!-- MINI MARCADOR SINCRONIZADO Y CONFIGURACIÓN DE EQUIPOS EN VIVO -->
     <section class="studio-glass rounded-3xl p-5 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
         <div>
-          <div class="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Marcador Público Sincronizado</div>
+          <div class="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Marcador Público en Pantalla de Espectadores</div>
           <div class="text-sm text-zinc-300 mt-0.5">
-            Ingeniería FC <strong id="studio-home" class="text-white font-black text-lg mx-1">2</strong>
+            <span id="studio-home-name" class="font-semibold text-white">Equipo Local</span>
+            <strong id="studio-home" class="text-emerald-400 font-black text-xl mx-1.5">0</strong>
             —
-            <strong id="studio-away" class="text-white font-black text-lg mx-1">1</strong> Ciencias Atlético
-            <span class="ml-2 px-2 py-0.5 rounded bg-white/10 text-xs font-mono text-emerald-300"><span id="studio-min">78</span>'</span>
+            <strong id="studio-away" class="text-sky-400 font-black text-xl mx-1.5">0</strong>
+            <span id="studio-away-name" class="font-semibold text-white">Equipo Visitante</span>
+            <span class="ml-2 px-2 py-0.5 rounded bg-white/10 text-xs font-mono text-emerald-300"><span id="studio-min">0</span>'</span>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-3 text-xs">
-        <div class="px-3.5 py-2 rounded-2xl bg-black/50 border border-white/10">
-          <span class="text-zinc-400 block text-[10px]">Lectores SSE Activos</span>
-          <strong id="studio-readers" class="text-white font-mono text-sm">0</strong>
-        </div>
-        <div class="px-3.5 py-2 rounded-2xl bg-black/50 border border-white/10">
-          <span class="text-zinc-400 block text-[10px]">Latencia Fan-Out p95</span>
-          <strong id="studio-p95" class="text-emerald-400 font-mono text-sm">-- ms</strong>
-        </div>
-        <div class="px-3.5 py-2 rounded-2xl bg-black/50 border border-white/10">
-          <span class="text-zinc-400 block text-[10px]">Entregas Fan-Out</span>
-          <strong id="studio-deliveries" class="text-sky-400 font-mono text-sm">0</strong>
-        </div>
+      <!-- Definir o Cambiar Nombres de Equipos Rápidamente -->
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <input type="text" id="setup-home" placeholder="Local (ej: Bayern M.)"
+          class="apple-input rounded-xl px-3 py-1.5 text-white w-36" />
+        <span class="text-zinc-500 font-bold">vs</span>
+        <input type="text" id="setup-away" placeholder="Visita (ej: Real Madrid)"
+          class="apple-input rounded-xl px-3 py-1.5 text-white w-36" />
+        <button type="button" onclick="applyMatchTeams()"
+          class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-semibold transition">
+          ✓ Fijar Equipos
+        </button>
       </div>
     </section>
 
+    <!-- SELECTOR DE MODO ESTILO APPLE: AUTO-NARRADOR IA (VIDEO/VOZ) vs. CABINA MANUAL -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="inline-flex p-1.5 rounded-2xl bg-zinc-900 border border-white/10">
+        <button id="tab-ai" onclick="switchStudioTab('ai')"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all bg-white text-black shadow">
+          🤖 Modo 1: Video / Voz del Narrador con IA (OpenRouter)
+        </button>
+        <button id="tab-manual" onclick="switchStudioTab('manual')"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all text-zinc-400 hover:text-white">
+          ✍️ Modo 2: Cabina Manual del Periodista (HU-01)
+        </button>
+      </div>
+      <div class="text-xs text-zinc-400">
+        📂 Carpeta de videos/audios: <code class="text-purple-300 bg-purple-500/10 px-2 py-1 rounded border border-purple-500/20">solucion_proyecto/app/media/</code>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      <!-- COLUMNA IZQUIERDA (7/12): CONSOLA DE EMISIÓN RÁPIDA DEL PERIODISTA (HU-01) -->
-      <section class="lg:col-span-7 studio-glass rounded-3xl p-6 sm:p-8 space-y-6">
+      <!-- ====================================================================== -->
+      <!-- PANEL MODO 1 (7/12): REPRODUCTOR DE VIDEO/AUDIO + IA EN TIEMPO REAL   -->
+      <!-- ====================================================================== -->
+      <section id="panel-ai" class="lg:col-span-7 studio-glass rounded-3xl p-6 sm:p-8 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-widest text-purple-400">OpenRouter AI Live Interpreter</span>
+            <h2 class="text-xl font-bold text-white mt-0.5">Video / Voz Real del Comentarista → Fan-Out</h2>
+          </div>
+          <span class="text-xs px-3 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300">
+            FFmpeg Audio Extract + STT + OpenRouter LLM
+          </span>
+        </div>
+
+        <!-- 1. Subir o elegir archivo de Video/Audio real de la carpeta app/media/ -->
+        <div class="rounded-2xl bg-black/40 border border-white/10 p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <label class="text-xs font-semibold text-zinc-200">
+              🎬 1. Selecciona o sube el Video/Audio del Partido (extrae la voz real del comentarista)
+            </label>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white transition">
+              📤 Subir Archivo a `app/media/`
+              <input type="file" id="media-upload-input" accept="video/*,audio/*" class="hidden" onchange="uploadMediaFile(event)" />
+            </label>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="media-select" onchange="selectExistingMedia()" class="apple-input flex-1 rounded-xl px-3 py-2.5 text-xs text-zinc-200">
+              <option value="">-- Selecciona un video/audio de solucion_proyecto/app/media/ --</option>
+            </select>
+          </div>
+
+          <!-- Reproductor HTML5 de Video / Audio Real -->
+          <div id="player-wrapper" class="hidden pt-2 space-y-2">
+            <video id="match-media-player" controls class="w-full rounded-2xl border border-white/10 max-h-64 bg-black"></video>
+            <div class="flex items-center justify-between text-[11px] text-zinc-400">
+              <span>💡 Al darle <strong>Play ▶️</strong>, cada 12 segundos extrae el audio real del video, lo transcribe y lo envía a <strong>OpenRouter</strong>.</span>
+              <button type="button" onclick="analyzeCurrentVideoMomentNow()"
+                class="px-3 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-200 font-semibold shrink-0">
+                ⚡ Analizar este instante ahora
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Micrófono en Vivo o Frase Directa del Narrador (La opción favorita) -->
+        <div class="rounded-2xl bg-black/40 border border-white/10 p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-zinc-200">
+              🎙️ 2. Narrar por Micrófono en Vivo o Enviar Relato del Comentarista a la IA
+            </span>
+            <button type="button" id="btn-mic" onclick="toggleMicrophoneNarration()"
+              class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 transition">
+              🎙️ Activar Micrófono en Vivo
+            </button>
+          </div>
+
+          <div id="mic-listening-indicator" class="hidden flex items-center gap-3 px-4 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs text-purple-200">
+            <div class="flex items-center gap-1 h-5">
+              <div class="voice-bar" style="animation-delay: 0s"></div>
+              <div class="voice-bar" style="animation-delay: 0.2s"></div>
+              <div class="voice-bar" style="animation-delay: 0.4s"></div>
+            </div>
+            <span id="mic-interim-text">Escuchando la voz del comentarista en vivo...</span>
+          </div>
+
+          <div class="flex gap-2">
+            <input type="text" id="ai-transcript-input"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();sendTranscriptToAI();}"
+              placeholder='Ej: "¡Minuto 53, golazo de Leroy Sané para el Bayern Múnich!" o "¡Amarilla para Kroos en el Real Madrid!"'
+              class="apple-input flex-1 rounded-xl px-4 py-3 text-xs text-white" />
+            <button type="button" onclick="sendTranscriptToAI()" id="btn-send-ai"
+              class="px-5 py-3 rounded-xl font-bold text-xs bg-white text-black hover:bg-zinc-200 transition shrink-0">
+              🤖 Interpretar con IA
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Bitácora en Tiempo Real del Agente IA (OpenRouter) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-zinc-300">🧠 Bitácora en Tiempo Real del Agente IA (OpenRouter → SNS/SQS/Redis)</span>
+            <span id="ai-status-text" class="text-zinc-500 font-mono text-[11px]">Tablero listo en 0-0</span>
+          </div>
+          <div id="ai-log-container" class="rounded-2xl bg-black/70 border border-white/10 p-4 h-56 overflow-y-auto space-y-2.5 font-mono text-xs">
+            <div class="text-zinc-500">
+              • Tablero iniciado en blanco (0 - 0). Selecciona un video de <code>app/media/</code> y dale Play ▶️, o usa el micrófono / barra de relato para que <strong>OpenRouter</strong> actualice el portal de espectadores en tiempo real.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================== -->
+      <!-- PANEL MODO 2 (7/12 - OCULTO POR DEFECTO): CABINA MANUAL (HU-01)        -->
+      <!-- ====================================================================== -->
+      <section id="panel-manual" class="hidden lg:col-span-7 studio-glass rounded-3xl p-6 sm:p-8 space-y-6">
         <div class="flex items-center justify-between border-b border-white/10 pb-4">
           <div>
             <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Historia de Usuario HU-01</span>
-            <h2 class="text-xl font-bold text-white mt-0.5">Transmitir Jugada desde Cancha</h2>
+            <h2 class="text-xl font-bold text-white mt-0.5">Transmitir Jugada Manualmente</h2>
           </div>
           <span class="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-300">
             1 Emisor → Miles de Lectores
@@ -112,8 +234,6 @@
         </div>
 
         <form id="journalist-form" onsubmit="submitEvent(event)" class="space-y-5">
-
-          <!-- Botones Rápidos de Tipo de Evento (Touch-Friendly para Celular) -->
           <div>
             <label class="block text-xs font-medium text-zinc-400 mb-2">
               1. Selecciona el Tipo de Jugada (Define Prioridad en AWS SNS/SQS)
@@ -150,14 +270,14 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label class="block text-xs font-medium text-zinc-400 mb-1.5">2. Minuto</label>
-              <input type="number" id="ev-minute" value="80" min="1" max="125" required
+              <input type="number" id="ev-minute" value="1" min="1" max="125" required
                 class="apple-input w-full rounded-2xl px-4 py-3 text-white font-mono text-sm" />
             </div>
             <div class="sm:col-span-2">
               <label class="block text-xs font-medium text-zinc-400 mb-1.5">3. Equipo Protagonista</label>
               <select id="ev-team" class="apple-input w-full rounded-2xl px-4 py-3 text-white text-sm">
-                <option value="HOME">🛡️ Ingeniería FC (Local)</option>
-                <option value="AWAY">⚛️ Ciencias Atlético (Visitante)</option>
+                <option value="HOME" id="opt-home-team">🛡️ Equipo Local</option>
+                <option value="AWAY" id="opt-away-team">⚽ Equipo Visitante</option>
                 <option value="NEUTRAL">⚖️ Árbitro Central / Voz del Estadio</option>
               </select>
             </div>
@@ -165,13 +285,13 @@
 
           <div>
             <label class="block text-xs font-medium text-zinc-400 mb-1.5">4. Jugador / Protagonista</label>
-            <input type="text" id="ev-player" placeholder="Ej: Mateo Gómez (#10)" required
+            <input type="text" id="ev-player" placeholder="Ej: Vinícius Jr. (#7) / Jamal Musiala (#42)" required
               class="apple-input w-full rounded-2xl px-4 py-3 text-white text-sm" />
           </div>
 
           <div>
             <label class="block text-xs font-medium text-zinc-400 mb-1.5">5. Narración para el Minuto a Minuto</label>
-            <textarea id="ev-desc" rows="3" placeholder="Escribe la jugada... se enviará al instante a todos los aficionados." required
+            <textarea id="ev-desc" rows="2" placeholder="Escribe la jugada... se enviará al instante a todos los aficionados." required
               class="apple-input w-full rounded-2xl px-4 py-3 text-white text-sm"></textarea>
           </div>
 
@@ -190,7 +310,9 @@
         </form>
       </section>
 
-      <!-- COLUMNA DERECHA (5/12): SIMULADOR DE PICO DE 1,000 LECTORES (HU-04) + TELEMETRÍA -->
+      <!-- ====================================================================== -->
+      <!-- COLUMNA DERECHA (5/12): SIMULADOR DE PICO (HU-04) + TELEMETRÍA CLOUD  -->
+      <!-- ====================================================================== -->
       <section class="lg:col-span-5 space-y-6">
 
         <div class="studio-glass rounded-3xl p-6 space-y-4">
@@ -198,7 +320,7 @@
             <span class="text-[11px] font-bold uppercase tracking-widest text-amber-400">Historia de Usuario HU-04</span>
             <h3 class="text-lg font-bold text-white mt-0.5">Simulador del Pico de la Final</h3>
             <p class="text-xs text-zinc-400 mt-1 leading-relaxed">
-              Ejecuta desde esta cabina una ráfaga de los últimos 10 minutos del partido con <strong>1,000 lectores simultáneos</strong>. Verás cómo la página pública de los aficionados se actualiza sola en tiempo real.
+              Ejecuta desde esta cabina una ráfaga de los últimos minutos del partido con <strong>1,000 lectores simultáneos</strong>. Verás cómo la página pública de los aficionados se actualiza sola en tiempo real.
             </p>
           </div>
 
@@ -213,8 +335,16 @@
 
         <!-- Telemetría de Arquitectura en Tiempo Real -->
         <div class="studio-glass rounded-3xl p-6 space-y-3 text-xs">
-          <h4 class="font-bold text-white text-sm">📊 Estado de los Servicios Cloud</h4>
+          <h4 class="font-bold text-white text-sm">📊 Estado de los Servicios Cloud & IA</h4>
           <div class="space-y-2.5 pt-2 border-t border-white/10 text-zinc-400">
+            <div class="flex justify-between">
+              <span>Lectores SSE Conectados:</span>
+              <strong id="studio-readers" class="text-white font-mono">0</strong>
+            </div>
+            <div class="flex justify-between">
+              <span>Entregas Fan-Out Totales:</span>
+              <strong id="studio-deliveries" class="text-sky-400 font-mono">0</strong>
+            </div>
             <div class="flex justify-between">
               <span>Latencia Mediana (p50):</span>
               <strong id="metric-p50" class="text-emerald-400 font-mono">-- ms</strong>
@@ -224,12 +354,12 @@
               <strong id="metric-p99" class="text-amber-400 font-mono">-- ms</strong>
             </div>
             <div class="flex justify-between">
-              <span>Motor de Caché O(1):</span>
-              <strong id="metric-cache" class="text-sky-400">Redis (ElastiCache / Docker)</strong>
+              <span>Motor IA Activo:</span>
+              <strong id="metric-ai" class="text-purple-300 font-mono">OpenRouter LLM</strong>
             </div>
             <div class="flex justify-between">
-              <span>Broker Fan-Out:</span>
-              <strong id="metric-broker" class="text-zinc-200">SNS → 2 Colas SQS → SSE</strong>
+              <span>Motor de Caché O(1):</span>
+              <strong id="metric-cache" class="text-sky-400">Redis (ElastiCache / Docker)</strong>
             </div>
           </div>
         </div>
@@ -240,6 +370,281 @@
   </main>
 
   <script>
+    let mediaFilesMap = {};
+    let currentSelectedFilename = '';
+    let processedChunkBuckets = new Set();
+    let isProcessingVideoChunk = false;
+    let recognition = null;
+    let isListeningMic = false;
+
+    function switchStudioTab(tab) {
+      const pAi = document.getElementById('panel-ai');
+      const pMan = document.getElementById('panel-manual');
+      const tAi = document.getElementById('tab-ai');
+      const tMan = document.getElementById('tab-manual');
+
+      if (tab === 'ai') {
+        pAi.classList.remove('hidden');
+        pMan.classList.add('hidden');
+        tAi.className = 'px-5 py-2.5 rounded-xl text-xs font-bold transition-all bg-white text-black shadow';
+        tMan.className = 'px-5 py-2.5 rounded-xl text-xs font-bold transition-all text-zinc-400 hover:text-white';
+      } else {
+        pMan.classList.remove('hidden');
+        pAi.classList.add('hidden');
+        tMan.className = 'px-5 py-2.5 rounded-xl text-xs font-bold transition-all bg-white text-black shadow';
+        tAi.className = 'px-5 py-2.5 rounded-xl text-xs font-bold transition-all text-zinc-400 hover:text-white';
+      }
+    }
+
+    function appendAiLog(htmlContent) {
+      const box = document.getElementById('ai-log-container');
+      const item = document.createElement('div');
+      item.className = 'p-2.5 rounded-xl bg-white/[0.04] border border-white/10 space-y-1';
+      item.innerHTML = htmlContent;
+      box.prepend(item);
+    }
+
+    async function resetBlankBoard() {
+      const token = document.getElementById('ev-token').value || 'unal-periodista-2026';
+      await fetch('/api/match/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Journalist-Token': token },
+        body: JSON.stringify({ blank_reset: true })
+      });
+      processedChunkBuckets.clear();
+      document.getElementById('setup-home').value = '';
+      document.getElementById('setup-away').value = '';
+      appendAiLog(`<div class="text-emerald-400 font-bold">🔄 Tablero reiniciado en blanco (0 - 0, 0 jugadas).</div>`);
+      syncStudioStatus();
+    }
+
+    async function applyMatchTeams(homeOverride, awayOverride, resetScore = false) {
+      const h = (homeOverride || document.getElementById('setup-home').value).trim();
+      const a = (awayOverride || document.getElementById('setup-away').value).trim();
+      if (!h && !a) return;
+      const token = document.getElementById('ev-token').value || 'unal-periodista-2026';
+      await fetch('/api/match/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Journalist-Token': token },
+        body: JSON.stringify({
+          home_team: h || undefined,
+          away_team: a || undefined,
+          reset_score: resetScore
+        })
+      });
+      appendAiLog(`<div class="text-sky-300">🏟️ Equipos actualizados en vivo: <strong>${h || 'Local'} vs ${a || 'Visitante'}</strong></div>`);
+      syncStudioStatus();
+    }
+
+    async function loadMediaCatalog() {
+      try {
+        const res = await fetch('/api/media/list');
+        const data = await res.json();
+        mediaFilesMap = {};
+
+        const sel = document.getElementById('media-select');
+        sel.innerHTML = '<option value="">-- Selecciona un video/audio de solucion_proyecto/app/media/ --</option>';
+        (data.files || []).forEach(f => {
+          mediaFilesMap[f.url] = f;
+          const opt = document.createElement('option');
+          opt.value = f.url;
+          opt.textContent = `🎬 ${f.filename} (${f.size_mb} MB)`;
+          sel.appendChild(opt);
+        });
+      } catch (e) {}
+    }
+
+    async function uploadMediaFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      document.getElementById('ai-status-text').textContent = 'Subiendo video/audio...';
+
+      const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        await loadMediaCatalog();
+        document.getElementById('media-select').value = data.url;
+        await selectExistingMedia();
+        appendAiLog(`<div class="text-emerald-400">✅ Archivo <code>${data.filename}</code> cargado. Dale Play ▶️ para que la IA escuche al comentarista real del video.</div>`);
+      } else {
+        appendAiLog(`<div class="text-rose-400">❌ Error subiendo archivo: ${data.error}</div>`);
+      }
+    }
+
+    async function selectExistingMedia() {
+      const url = document.getElementById('media-select').value;
+      const wrap = document.getElementById('player-wrapper');
+      const player = document.getElementById('match-media-player');
+      if (!url) {
+        wrap.classList.add('hidden');
+        currentSelectedFilename = '';
+        return;
+      }
+
+      const meta = mediaFilesMap[url] || {};
+      currentSelectedFilename = meta.filename || decodeURIComponent(url.replace('/media/', ''));
+      processedChunkBuckets.clear();
+      isProcessingVideoChunk = false;
+
+      // Si el nombre del archivo contiene los equipos (ej. "Bayern M. 4-3 Real Madrid.mp4"), fijarlos automáticamente en el tablero 0-0
+      if (meta.inferred_home && meta.inferred_away) {
+        document.getElementById('setup-home').value = meta.inferred_home;
+        document.getElementById('setup-away').value = meta.inferred_away;
+        await applyMatchTeams(meta.inferred_home, meta.inferred_away, true);
+      }
+
+      wrap.classList.remove('hidden');
+      player.src = url;
+
+      // Cuando el video está en Play, cada 12 segundos extrae el audio real de ese tramo y lo envía a OpenRouter
+      player.ontimeupdate = () => {
+        if (player.paused || player.ended || !currentSelectedFilename) return;
+        const sec = Math.floor(player.currentTime);
+        const bucket = Math.floor(sec / 12);
+        if (!processedChunkBuckets.has(bucket) && !isProcessingVideoChunk) {
+          processedChunkBuckets.add(bucket);
+          extractAndAnalyzeVideoAudio(bucket * 12, 12, player.duration || 0);
+        }
+      };
+
+      // Si el usuario adelanta o atrasa el video, limpiar buckets futuros para que analice el nuevo punto
+      player.onseeked = () => {
+        const sec = Math.floor(player.currentTime);
+        const bucket = Math.floor(sec / 12);
+        processedChunkBuckets.delete(bucket);
+      };
+    }
+
+    async function analyzeCurrentVideoMomentNow() {
+      const player = document.getElementById('match-media-player');
+      if (!currentSelectedFilename) return;
+      const startSec = Math.max(0, Math.floor(player.currentTime) - 2);
+      await extractAndAnalyzeVideoAudio(startSec, 12, player.duration || 0);
+    }
+
+    async function extractAndAnalyzeVideoAudio(startSec, durationSec, totalDuration) {
+      if (!currentSelectedFilename || isProcessingVideoChunk) return;
+      isProcessingVideoChunk = true;
+      document.getElementById('ai-status-text').textContent = `Extrayendo voz del video (${startSec}s - ${startSec + durationSec}s)...`;
+
+      try {
+        const token = document.getElementById('ev-token').value || 'unal-periodista-2026';
+        const res = await fetch('/api/ai/process-video-chunk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Journalist-Token': token },
+          body: JSON.stringify({
+            filename: currentSelectedFilename,
+            start_sec: startSec,
+            duration_sec: durationSec,
+            video_duration: totalDuration
+          })
+        });
+        const data = await res.json();
+        if (res.status === 201 && data.event) {
+          const ev = data.event;
+          document.getElementById('ai-status-text').textContent = `Publicado en ${data.latency_ms} ms`;
+          appendAiLog(`
+            <div class="text-zinc-400">🎬 <strong>Audio extraído del video [${startSec}s-${startSec + durationSec}s]:</strong> "${data.transcript_received}"</div>
+            <div class="text-purple-300">🤖 <strong>${ev.ai_model || 'OpenRouter IA'}:</strong> Tipo=<code>${ev.type}</code> | Min=<code>${ev.minute}'</code> | Protagonista=<code>${ev.player}</code></div>
+            <div class="text-emerald-400">🚀 <strong>Enviado a Espectadores:</strong> "${ev.description}" (${data.latency_ms} ms)</div>
+          `);
+          syncStudioStatus();
+        } else {
+          document.getElementById('ai-status-text').textContent = 'Escuchando video...';
+        }
+      } catch (e) {
+        document.getElementById('ai-status-text').textContent = 'Listo';
+      } finally {
+        isProcessingVideoChunk = false;
+      }
+    }
+
+    async function processNarratorPhraseWithAI(phrase) {
+      if (!phrase || !phrase.trim()) return;
+      document.getElementById('ai-status-text').textContent = 'Consultando OpenRouter IA...';
+
+      const token = document.getElementById('ev-token').value || 'unal-periodista-2026';
+      const res = await fetch('/api/ai/narrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Journalist-Token': token },
+        body: JSON.stringify({ transcript: phrase })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const ev = data.event;
+        document.getElementById('ai-status-text').textContent = `Publicado en ${data.latency_ms} ms`;
+        appendAiLog(`
+          <div class="text-zinc-400">🗣️ <strong>Relato del Comentarista:</strong> "${phrase}"</div>
+          <div class="text-purple-300">🤖 <strong>${ev.ai_model || 'OpenRouter IA'}:</strong> Tipo=<code>${ev.type}</code> | Minuto=<code>${ev.minute}'</code> | Protagonista=<code>${ev.player}</code> | Marcador=<code>${data.match.home_team} ${data.match.home_score}-${data.match.away_score} ${data.match.away_team}</code></div>
+          <div class="text-emerald-400">🚀 <strong>Fan-Out enviado a Espectadores:</strong> "${ev.description}" (${data.latency_ms} ms)</div>
+        `);
+        syncStudioStatus();
+      } else {
+        appendAiLog(`<div class="text-rose-400">❌ Error IA: ${data.error}</div>`);
+      }
+    }
+
+    async function sendTranscriptToAI() {
+      const inp = document.getElementById('ai-transcript-input');
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = '';
+      await processNarratorPhraseWithAI(text);
+    }
+
+    function toggleMicrophoneNarration() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const btn = document.getElementById('btn-mic');
+      const ind = document.getElementById('mic-listening-indicator');
+
+      if (!SpeechRecognition) {
+        appendAiLog(`<div class="text-amber-400">⚠️ Tu navegador no soporta Web Speech API por micrófono (usa Chrome/Edge o escribe el relato en la barra).</div>`);
+        return;
+      }
+
+      if (isListeningMic && recognition) {
+        isListeningMic = false;
+        recognition.stop();
+        btn.textContent = '🎙️ Activar Micrófono en Vivo';
+        ind.classList.add('hidden');
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = 'es-CO';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            processNarratorPhraseWithAI(transcript.trim());
+          } else {
+            interim += transcript;
+          }
+        }
+        if (interim) {
+          document.getElementById('mic-interim-text').textContent = `Escuchando: "${interim}..."`;
+        }
+      };
+
+      recognition.onerror = () => {};
+      recognition.onend = () => {
+        if (isListeningMic) {
+          try { recognition.start(); } catch (e) {}
+        }
+      };
+
+      isListeningMic = true;
+      recognition.start();
+      btn.textContent = '⏹️ Detener Micrófono';
+      ind.classList.remove('hidden');
+    }
+
     function selectType(typeVal, btnEl) {
       document.getElementById('ev-type').value = typeVal;
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('type-btn-active'));
@@ -255,16 +660,22 @@
         const sumData = await sumRes.json();
         const metData = await metRes.json();
 
+        document.getElementById('studio-home-name').textContent = sumData.match.home_team;
+        document.getElementById('studio-away-name').textContent = sumData.match.away_team;
+        document.getElementById('opt-home-team').textContent = `🛡️ ${sumData.match.home_team} (Local)`;
+        document.getElementById('opt-away-team').textContent = `⚽ ${sumData.match.away_team} (Visitante)`;
         document.getElementById('studio-home').textContent = sumData.match.home_score;
         document.getElementById('studio-away').textContent = sumData.match.away_score;
         document.getElementById('studio-min').textContent = sumData.match.minute;
 
         document.getElementById('studio-readers').textContent = metData.total_active_readers;
-        document.getElementById('studio-p95').textContent = `${metData.latency_ms.p95} ms`;
         document.getElementById('studio-deliveries').textContent = metData.total_fanout_deliveries.toLocaleString();
         document.getElementById('metric-p50').textContent = `${metData.latency_ms.p50} ms`;
         document.getElementById('metric-p99').textContent = `${metData.latency_ms.p95} / ${metData.latency_ms.p99} ms`;
         document.getElementById('metric-cache').textContent = metData.architecture.cache_engine;
+        if (metData.architecture.ai_engine) {
+          document.getElementById('metric-ai').textContent = metData.architecture.ai_engine;
+        }
       } catch (e) {}
     }
 
@@ -323,6 +734,7 @@
       syncStudioStatus();
     }
 
+    loadMediaCatalog();
     syncStudioStatus();
     setInterval(syncStudioStatus, 3000);
   </script>

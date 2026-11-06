@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/home/felipe/Documentos/Proyecto predeterminado/trabajo_nube/solucion_proyecto/app/.venv/bin/python3" "$0" "$@"
-' '''
+#!/home/felipe/Documentos/PROYECTOS/trabajo_nube/solucion_proyecto/app/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

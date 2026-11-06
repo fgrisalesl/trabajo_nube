@@ -59,7 +59,7 @@ flowchart LR
 
 | Requisito / Historia | Cómo lo resuelve nuestra arquitectura | Endpoint / Archivo clave |
 |---|---|---|
-| **`[HU-01]` Periodista reporta gol/tarjeta/cambio desde el celular en segundos** | Cabina móvil autenticada con header `X-Journalist-Token` que dispara el patrón Fan-Out hacia SNS y Redis en `< 10 ms`. | `POST /api/events` ([`app/src/app.py`](./app/src/app.py)) |
+| **`[HU-01]` Periodista reporta gol/tarjeta/cambio en segundos (+ Auto-Narrador IA con OpenRouter)** | Cabina dedicada con **2 modos**: **Modo 1 (IA Live)** que interpreta el video/audio o la voz del comentarista en vivo vía **OpenRouter LLM** (`POST /api/ai/narrate`) actualizando equipos, minuto y jugadas automáticamente; y **Modo 2 (Manual)** (`POST /api/events`). | [`app/src/app.py`](./app/src/app.py) y [`app/src/templates/periodista.html`](./app/src/templates/periodista.html) |
 | **`[HU-02]` Aficionado ve eventos en vivo sin recargar la página** | Streaming unidireccional **Server-Sent Events (SSE)** sobre conexiones asíncronas `gevent` con `heartbeat` automático cada 15s. | `GET /api/stream/vivo` ([`app/src/templates/index.html`](./app/src/templates/index.html)) |
 | **`[HU-03]` Aficionado que entra tarde obtiene el resumen rápido** | Lectura en complejidad `O(1)` desde **Redis** con marcador, estadísticas de tarjetas/cambios y filtro de jugadas clave (`highlights`). | `GET /api/summary` ([`app/src/app.py`](./app/src/app.py)) |
 | **`[HU-04]` Soportar 1,000 lectores simultáneos en el partido final** | Simulador concurrente incluido + workers asíncronos `gevent` + caché en memoria que responde 1,000 lecturas con **0% error y p95 < 25 ms**. | [`app/simulator/load_simulator.py`](./app/simulator/load_simulator.py) y `POST /api/simulate-peak` |

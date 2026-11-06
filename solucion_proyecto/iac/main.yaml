@@ -46,6 +46,12 @@ Parameters:
     Default: unal-periodista-2026
     Description: Token secreto para autenticar publicaciones del periodista (HU-01)
 
+  OpenRouterApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Llave de API de OpenRouter (NoEcho) para el Auto-Narrador IA en tiempo real
+
   DeployElastiCache:
     Type: String
     Default: "false"
@@ -381,13 +387,15 @@ Resources:
           usermod -aG docker jenkins
           systemctl enable --now jenkins
 
-          # Guardar variables de entorno del stack (SNS y SQS) sin hardcodear credenciales (Lab 06)
+          # Guardar variables de entorno del stack (SNS, SQS y OpenRouter) sin hardcodear credenciales (Lab 06)
           cat <<EOF > /etc/gtn-app.env
           AWS_REGION=${AWS::Region}
           SNS_TOPIC_ARN=${TopicEventosPartido}
           SQS_LIVE_URL=${ColaCanalVivo}
           SQS_SUMMARY_URL=${ColaCanalResumen}
           JOURNALIST_TOKEN=${JournalistToken}
+          OPENROUTER_API_KEY=${OpenRouterApiKey}
+          OPENROUTER_MODEL=google/gemini-2.0-flash-exp:free
           EOF
           chmod 640 /etc/gtn-app.env
           chown root:docker /etc/gtn-app.env
