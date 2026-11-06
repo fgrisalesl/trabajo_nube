@@ -84,14 +84,12 @@ SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN", "")
 SQS_LIVE_URL = os.environ.get("SQS_LIVE_URL", "")
 SQS_SUMMARY_URL = os.environ.get("SQS_SUMMARY_URL", "")
 JOURNALIST_TOKEN = os.environ.get("JOURNALIST_TOKEN", "unal-periodista-2026")
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "openrouter/free")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 HOSTNAME = socket.gethostname()
 
-# Memoria de los últimos fragmentos narrados para no perder contexto entre cortes de audio
+# Memoria deslizante de los últimos fragmentos narrados y memoria dinámica de jugadores aprendidos en el partido actual
 recent_transcripts_history = deque(maxlen=4)
-_openrouter_quota_exhausted_until = 0.0
+discovered_match_players = deque(maxlen=40)
 
 ALLOWED_MEDIA_EXT = {".mp4", ".webm", ".ogg", ".mp3", ".wav", ".m4a"}
 
@@ -307,11 +305,108 @@ def is_statistical_or_non_live_goal_mention(text: str) -> bool:
     return any(re.search(pat, low) for pat in false_goal_patterns)
 
 
+def remember_discovered_players(players_list: list[str] | None, single_player: str = ""):
+    """
+    Guarda dinámicamente los nombres de jugadores que van apareciendo en la narración del partido actual
+    (funciona para cualquier partido: Liverpool vs Chelsea, Bayern vs Madrid, etc.) para inyectarlos
+    en el prompt de Whisper Large v3 Turbo en los siguientes fragmentos sin gastar recursos extra.
+    """
+    ignored = {
+        "", "n/a", "na", "ninguno", "none", "null", "narración en vivo", "relato en vivo",
+        "autor por confirmar", "por confirmar", "transmisión oficial", "equipo local", "equipo visitante"
+    }
+    candidates = list(players_list or [])
+    if single_player:
+        candidates.append(single_player)
+    existing_lower = {p.lower() for p in discovered_match_players}
+    for raw_p in candidates:
+        clean_p = str(raw_p).strip()
+        if len(clean_p) >= 3 and clean_p.lower() not in ignored and clean_p.lower() not in existing_lower:
+            discovered_match_players.append(clean_p)
+            existing_lower.add(clean_p.lower())
+
+
+def get_recent_goal_event() -> dict | None:
+    """Obtiene el último evento de GOL si ocurrió en los últimos 3 fragmentos para permitir confirmar/corregir su autor."""
+    events = get_all_events(limit=3)
+    for ev in events:
+        if ev.get("type") == "GOAL":
+            return ev
+    return None
+
+
+def update_latest_goal_in_place(confirmed_player: str, updated_desc: str, state: dict, t0: float) -> dict | None:
+    """
+    Actualiza el autor y comentario de la tarjeta del último GOL recién cantado (cuando el relator
+    confirma el nombre del goleador segundos después en el festejo o la repetición) SIN duplicar el gol en el marcador.
+    """
+    clean_player = (confirmed_player or "").strip()
+    if not clean_player or clean_player.lower() in {"narración en vivo", "relato en vivo", "autor por confirmar", "por confirmar"}:
+        return None
+
+    target_event = None
+    # 1. Actualizar en memoria local (buscando desde el más reciente en los últimos 3 eventos)
+    for idx in range(len(local_events) - 1, max(-1, len(local_events) - 4), -1):
+        if local_events[idx].get("type") == "GOAL":
+            local_events[idx]["player"] = clean_player
+            if updated_desc:
+                local_events[idx]["description"] = updated_desc
+            local_events[idx]["scorer_confirmed"] = True
+            target_event = dict(local_events[idx])
+            break
+
+    # 2. Actualizar en Redis si está activo
+    if redis_client:
+        try:
+            total_len = redis_client.llen("match:events")
+            for offset in range(1, min(4, total_len + 1)):
+                raw_idx = total_len - offset
+                raw_item = redis_client.lindex("match:events", raw_idx)
+                if raw_item:
+                    ev_obj = json.loads(raw_item)
+                    if ev_obj.get("type") == "GOAL":
+                        ev_obj["player"] = clean_player
+                        if updated_desc:
+                            ev_obj["description"] = updated_desc
+                        ev_obj["scorer_confirmed"] = True
+                        redis_client.lset("match:events", raw_idx, json.dumps(ev_obj))
+                        target_event = ev_obj
+                        break
+        except Exception:
+            pass
+
+    if not target_event:
+        return None
+
+    state["updated_at"] = datetime.now(timezone.utc).isoformat()
+    payload_str = json.dumps({"event": target_event, "match": state, "updated_event": True})
+
+    if redis_client:
+        try:
+            pipe = redis_client.pipeline()
+            pipe.set("match:state", json.dumps(state))
+            pipe.publish("channel:vivo", payload_str)
+            pipe.publish("channel:resumen", payload_str)
+            pipe.execute()
+        except Exception:
+            pass
+
+    for q in list(local_subscribers_vivo):
+        q.append(payload_str)
+    for q in list(local_subscribers_resumen):
+        q.append(payload_str)
+
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
+    target_event["fanout_latency_ms"] = elapsed_ms
+    return {"event": target_event, "match": state, "latency_ms": elapsed_ms, "updated_existing_goal": True}
+
+
 def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) -> dict:
     """
     Implementa el Patrón Fan-Out:
     1. Recibe la jugada (manual o interpretada por la IA desde el video/audio/micrófono).
-    2. Actualiza nombres de equipos, minuto y marcador en tiempo real.
+    2. Si es GOAL_CONFIRMATION (el narrador confirma en la repetición quién hizo el gol recién cantado),
+       actualiza el autor de ese gol sin sumar un segundo gol falso.
     3. Publica en AWS SNS -> 2 Colas SQS (Vivo y Resumen) -> Redis Cache O(1) -> Server-Sent Events (SSE).
     """
     global total_events_published, total_fanout_deliveries
@@ -327,16 +422,30 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
         state["tournament"] = str(event_data["tournament"]).strip()
 
     ev_type = str(event_data.get("type", "COMMENT")).upper()
-    if ev_type not in {"GOAL", "PENALTY", "RED_CARD", "YELLOW_CARD", "SUBSTITUTION", "COMMENT", "MATCH_START", "MATCH_END"}:
-        ev_type = "COMMENT"
-
     team = str(event_data.get("team", "NEUTRAL")).upper()
     if team not in {"HOME", "AWAY", "NEUTRAL"}:
         team = "NEUTRAL"
 
-    # Barrera Anti-Falsas Alarmas de Gol:
-    # Si la IA clasificó GOAL pero es un comentario estadístico (ej. "lleva 30 goles Haaland"), o no hay equipo anotador (NEUTRAL)
-    # ni cambio real en el marcador, degradarlo automáticamente a COMMENT para nunca disparar una falsa alarma de gol que no suma.
+    # Aprender dinámicamente los jugadores mencionados en este fragmento para enriquecer Whisper
+    remember_discovered_players(event_data.get("detected_players"), str(event_data.get("player", "")))
+
+    # ¿Es confirmación o corrección del autor del último gol cantado hace pocos segundos (ej. "Lo hizo Arda Güler")?
+    recent_goal = get_recent_goal_event()
+    if ev_type == "GOAL_CONFIRMATION" and recent_goal:
+        updated_res = update_latest_goal_in_place(
+            str(event_data.get("player", "")),
+            str(event_data.get("description", "")),
+            state,
+            t0
+        )
+        if updated_res:
+            return updated_res
+        ev_type = "COMMENT"
+
+    if ev_type not in {"GOAL", "PENALTY", "RED_CARD", "YELLOW_CARD", "SUBSTITUTION", "COMMENT", "MATCH_START", "MATCH_END"}:
+        ev_type = "COMMENT"
+
+    # Barrera Anti-Falsas Alarmas de Gol y Anti-Duplicación en Festejos:
     cur_h = int(state.get("home_score", 0))
     cur_a = int(state.get("away_score", 0))
     ov_h = event_data.get("home_score_override")
@@ -346,7 +455,18 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
         override_changes_score = (
             ov_h is not None and ov_a is not None and (int(ov_h) > cur_h or int(ov_a) > cur_a)
         )
-        if team == "NEUTRAL" and not override_changes_score:
+        # Si hace instantes se cantó gol del mismo equipo y el marcador reportado sigue siendo el mismo, es la repetición confirmando el autor
+        if recent_goal and recent_goal.get("team") == team and ov_h is not None and ov_a is not None and int(ov_h) == cur_h and int(ov_a) == cur_a:
+            updated_res = update_latest_goal_in_place(
+                str(event_data.get("player", "")),
+                raw_desc,
+                state,
+                t0
+            )
+            if updated_res:
+                return updated_res
+            ev_type = "COMMENT"
+        elif team == "NEUTRAL" and not override_changes_score:
             ev_type = "COMMENT"
         elif ov_h is not None and ov_a is not None and int(ov_h) == cur_h and int(ov_a) == cur_a:
             ev_type = "COMMENT"
@@ -532,19 +652,19 @@ def apply_football_phonetics(raw_text: str) -> str:
     return cleaned
 
 
-def extract_and_transcribe_media_chunk(file_path: Path, start_sec: float, duration_sec: float = 14.0, match_state: dict | None = None) -> tuple[str, str]:
+def extract_and_transcribe_media_chunk(file_path: Path, start_sec: float, duration_sec: float = 15.0, match_state: dict | None = None) -> tuple[str, str]:
     """
-    Extrae el fragmento de audio real [start_sec - 2s, start_sec + duration_sec] con FFmpeg (con solapamiento
-    de 2s para nunca cortar un grito de gol a la mitad) y lo transcribe usando:
-      1. Whisper Large v3 Turbo (vía Groq API con GROQ_API_KEY) pasándole contexto de fútbol y plantillas.
-      2. Google SpeechRecognition en español + corrector fonético futbolístico como respaldo gratuito.
-    Retorna (transcripcion_limpia, motor_stt_usado).
+    Extrae el fragmento de audio real con solapamiento inteligente de 4s [start_sec - 4s, start_sec + duration_sec]
+    para nunca cortar un grito de gol ni el nombre del autor a la mitad, y lo transcribe con:
+      1. Whisper Large v3 Turbo (Groq API) enriquecido con la memoria auto-aprendida de jugadores del partido actual.
+      2. Google SpeechRecognition en español + corrector fonético futbolístico como respaldo.
     """
     if not file_path.exists():
         return "", "none"
 
-    actual_start = max(0.0, round(start_sec - 2.0, 1)) if start_sec > 2.0 else max(0.0, round(start_sec, 1))
-    actual_dur = round(duration_sec + (2.0 if start_sec > 2.0 else 0.0), 1)
+    overlap = min(4.0, start_sec) if start_sec > 0 else 0.0
+    actual_start = max(0.0, round(start_sec - overlap, 1))
+    actual_dur = round(duration_sec + overlap, 1)
 
     try:
         cmd = [
@@ -562,17 +682,24 @@ def extract_and_transcribe_media_chunk(file_path: Path, start_sec: float, durati
         home_t = (match_state or {}).get("home_team", "Equipo Local")
         away_t = (match_state or {}).get("away_team", "Equipo Visitante")
 
-        # 1. Usar Whisper Large v3 Turbo + Prompt de Vocabulario Futbolístico (Groq API)
+        # Construir lista dinámica de jugadores aprendidos en este partido + vocabulario base
+        learned_roster = ", ".join(list(discovered_match_players))
+        base_vocab = (
+            "Erling Haaland, Nico O'Reilly, Rayan Cherki, Phil Foden, Kevin De Bruyne, Rodri, Gvardiol, "
+            "Loïs Openda, Xavi Simons, Benjamin Šeško, Antonio Nusa, Dani Olmo, Castello Lukeba, David Raum, "
+            "Manuel Neuer, Upamecano, Kimmich, Jamal Musiala, Leroy Sané, Harry Kane, Luis Díaz, Gnabry, Michael Olise, "
+            "Lunin, Carvajal, Rüdiger, Toni Kroos, Federico Valverde, Jude Bellingham, Arda Güler, Rodrygo, Vinícius Jr., Kylian Mbappé, "
+            "Mohamed Salah, Virgil van Dijk, Mac Allister, Cole Palmer, Moisés Caicedo, Enzo Fernández"
+        )
+        roster_prompt_str = f"{learned_roster}, {base_vocab}" if learned_roster else base_vocab
+
+        # 1. Usar Whisper Large v3 Turbo + Prompt Dinámico del Partido (Groq API)
         if groq_key and http_requests:
             try:
                 football_context_prompt = (
-                    f"Relato deportivo de fútbol en español (UEFA Champions League / ESPN). "
+                    f"Relato deportivo de fútbol en vivo en español (ESPN / Champions League / Premier League). "
                     f"Partido entre {home_t} y {away_t}. "
-                    f"Vocabulario y jugadores clave: Manchester City, RB Leipzig, Bayern Múnich, Real Madrid, "
-                    f"Erling Haaland, Nico O'Reilly, Rayan Cherki, Phil Foden, Kevin De Bruyne, Rodri, Bernardo Silva, Josko Gvardiol, Rico Lewis, Jeremy Doku, Savinho, Jack Grealish, Rúben Dias, Akanji, Ederson, "
-                    f"Loïs Openda, Xavi Simons, Benjamin Šeško, Dani Olmo, Castello Lukeba, David Raum, Péter Gulácsi, "
-                    f"Manuel Neuer, Upamecano, Kimmich, Jamal Musiala, Leroy Sané, Harry Kane, Luis Díaz, Gnabry, "
-                    f"Lunin, Carvajal, Rüdiger, Toni Kroos, Federico Valverde, Jude Bellingham, Arda Güler, Rodrygo, Vinícius Jr., Kylian Mbappé."
+                    f"Jugadores en cancha: {roster_prompt_str}."
                 )
                 resp = http_requests.post(
                     "https://api.groq.com/openai/v1/audio/transcriptions",
@@ -581,7 +708,7 @@ def extract_and_transcribe_media_chunk(file_path: Path, start_sec: float, durati
                     data={
                         "model": "whisper-large-v3-turbo",
                         "language": "es",
-                        "prompt": football_context_prompt,
+                        "prompt": football_context_prompt[:850],
                         "response_format": "json",
                         "temperature": "0.0"
                     },
@@ -594,7 +721,7 @@ def extract_and_transcribe_media_chunk(file_path: Path, start_sec: float, durati
             except Exception:
                 pass
 
-        # 2. Respaldo sin llave extra: SpeechRecognition + Corrector Fonético de Fútbol
+        # 2. Respaldo sin llave: SpeechRecognition + Corrector Fonético de Fútbol
         if sr:
             recognizer = sr.Recognizer()
             with sr.AudioFile(io.BytesIO(proc.stdout)) as source:
@@ -795,40 +922,51 @@ def fallback_parse_narrator_text(transcript: str, current_state: dict, video_min
 
 def interpret_narrator_with_openrouter(transcript: str, current_state: dict, video_minute: int | None = None) -> dict:
     """
-    Envía el texto transcrito del narrador (junto con la memoria de los fragmentos anteriores)
-    a Groq LLM (si GROQ_API_KEY está activa) o a OpenRouter LLM para que estructure el JSON deportivo,
-    corrija nombres mal transcritos y sincronice el marcador exacto.
+    Envía el texto transcrito del narrador (junto con la memoria de los fragmentos anteriores,
+    la lista de jugadores aprendidos dinámicamente y el último gol registrado)
+    a Groq LLM (openai/gpt-oss-120b / qwen3.8-27b) para estructurar el JSON deportivo sin adivinar goleadores.
     """
     corrected_transcript = apply_football_phonetics(transcript)
     prev_context = " | ".join(list(recent_transcripts_history)[-2:])
     recent_transcripts_history.append(corrected_transcript)
 
-    api_key = os.environ.get("OPENROUTER_API_KEY", OPENROUTER_API_KEY).strip()
     groq_key = os.environ.get("GROQ_API_KEY", GROQ_API_KEY).strip()
-
     est_min = video_minute if video_minute is not None else max(1, int(current_state.get("minute", 0)) + 1)
+
+    recent_goal = get_recent_goal_event()
+    recent_goal_str = (
+        f"Último GOL registrado hace instantes: Equipo='{recent_goal.get('team_name')}' ({recent_goal.get('team')}), "
+        f"Autor registrado='{recent_goal.get('player')}', Minuto={recent_goal.get('minute')}."
+        if recent_goal else "Ningún gol registrado en los últimos instantes."
+    )
+    known_roster_str = ", ".join(list(discovered_match_players)) if discovered_match_players else "En proceso de descubrimiento en el relato"
+
     system_prompt = (
         "Eres un periodista deportivo senior de ESPN redactando el minuto a minuto en vivo. "
-        "Recibes la transcripción automática de voz del relator (con Whisper Large v3 Turbo) "
-        "y el contexto previo del partido. Corrige cualquier nombre de futbolista mal escrito según los equipos que juegan "
-        "(ej. Erling Haaland, Nico O'Reilly, Rayan Cherki, Phil Foden, Gvardiol, Openda, Xavi Simons, Neuer, Upamecano, Arda Güler, Mbappé).\n"
-        "NUNCA devuelvas texto crudo sin puntuación ni en minúsculas: redacta una descripción vibrante, profesional y con ortografía perfecta.\n"
-        "REGLA ESTRICTA ANTI-FALSOS GOLES: Cuando el comentarista menciona la palabra 'goles' o 'goleador' hablando de estadísticas, "
-        "cifras históricas o rachas (ej. 'Haaland lleva 30 goles', 'es el goleador del torneo', 'casi gol', 'buscando el gol', 'sin goles'), "
-        "PROHIBIDO usar 'GOAL': clasifícalo SIEMPRE como 'COMMENT' y mantén 'home_score_override' y 'away_score_override' iguales al marcador actual. "
-        "SOLO usa 'GOAL' cuando realmente acabe de ocurrir una anotación en vivo en la jugada actual, y asigna obligatoriamente 'team' como 'HOME' o 'AWAY'.\n"
-        "Si el relator menciona un empate en vivo (ej. '1 a 1', 'lo empata'), asigna el GOL al equipo que iba abajo en el marcador.\n"
-        "Si Local='Equipo Local' o Visitante='Equipo Visitante' y identificas los equipos en el relato, actualiza 'home_team' y 'away_team'.\n"
+        "Recibes la transcripción de voz del relator (con Whisper Large v3 Turbo) y el contexto previo.\n"
+        "REGLAS CRÍTICAS DE PRECISIÓN DEPORTIVA (FUNCIONA PARA CUALQUIER PARTIDO):\n"
+        "1. PROHIBIDO ADIVINAR EL GOLEADOR POR FAMA O PASE PREVIO: En un 'GOAL', JAMÁS pongas por defecto a la estrella del equipo "
+        "(ej. NO pongas a Mbappé, Haaland o Salah si el relator no dijo explícitamente que él metió el gol) ni confundas a quien dio un pase previo con el autor del gol. "
+        "Si el relator grita '¡Gol!' o '¡Gol del Real Madrid!' pero en este fragmento aún no dice claramente el nombre de quién remató al arco, "
+        "pon obligatoriamente \"player\": \"Autor por confirmar\". Si menciona explícitamente al autor (ej. 'gol de Arda Güler', 'lo hizo el turco Güler'), pon su nombre exacto.\n"
+        "2. CONFIRMACIÓN O CORRECCIÓN DEL AUTOR EN LA REPETICIÓN ('GOAL_CONFIRMATION'): Si en 'Último GOL registrado hace instantes' ya aparece un gol reciente "
+        "y en este fragmento el relator está festejando o repitiendo ESE MISMO GOL y confirma quién lo anotó (ej. '¡Qué golazo de Arda Güler para el 1-0!'), "
+        "NO sumes otro gol: usa \"type\": \"GOAL_CONFIRMATION\", pon en \"player\" el nombre verdadero del autor ('Arda Güler') y mantén 'home_score_override' y 'away_score_override' iguales al marcador actual.\n"
+        "3. REGLA ANTI-FALSOS GOLES POR ESTADÍSTICAS: Si el comentarista menciona cifras históricas o rachas ('lleva 30 goles', 'es el goleador', 'casi gol', 'buscando el gol', 'sin goles'), "
+        "PROHIBIDO usar 'GOAL': clasifícalo SIEMPRE como 'COMMENT'.\n"
+        "4. EMPATES EN VIVO: Si el relator canta un gol de empate ('1 a 1', 'lo empata'), asigna el GOL al equipo que iba abajo en el marcador.\n"
+        "5. AUTO-APRENDIZAJE DE JUGADORES: Incluye en 'detected_players' una lista con todos los nombres de futbolistas mencionados en este fragmento (bien escritos).\n"
         "Responde UNICAMENTE con un objeto JSON válido con estas claves:\n"
         "{\n"
-        '  "type": "GOAL" | "PENALTY" | "RED_CARD" | "YELLOW_CARD" | "SUBSTITUTION" | "MATCH_START" | "MATCH_END" | "COMMENT",\n'
+        '  "type": "GOAL" | "GOAL_CONFIRMATION" | "PENALTY" | "RED_CARD" | "YELLOW_CARD" | "SUBSTITUTION" | "MATCH_START" | "MATCH_END" | "COMMENT",\n'
         '  "team": "HOME" | "AWAY" | "NEUTRAL",\n'
         '  "home_team": "Nombre del equipo local",\n'
         '  "away_team": "Nombre del equipo visitante",\n'
         '  "home_score_override": numero_entero_goles_local_actualizado,\n'
         '  "away_score_override": numero_entero_goles_visitante_actualizado,\n'
         '  "minute": numero_entero_del_minuto,\n'
-        '  "player": "Nombre corregido del jugador protagonista",\n'
+        '  "player": "Nombre confirmado del jugador protagonista o Autor por confirmar",\n'
+        '  "detected_players": ["Jugador 1", "Jugador 2"],\n'
         '  "description": "Comentario periodístico profesional con mayúsculas y puntuación impecable"\n'
         "}"
     )
@@ -836,53 +974,12 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
     user_prompt = (
         f"Estado actual del marcador: Local='{current_state.get('home_team')}' ({current_state.get('home_score')}) vs "
         f"Visitante='{current_state.get('away_team')}' ({current_state.get('away_score')}), Minuto={est_min}.\n"
+        f"{recent_goal_str}\n"
+        f"Jugadores ya identificados en este partido: {known_roster_str}\n"
         f"Contexto inmediatamente anterior: \"{prev_context}\"\n"
         f"Fragmento actual del relator: \"{corrected_transcript}\""
     )
 
-    # 1. Consultar PRIMERO OpenRouter LLM con la llave del usuario (mientras tenga cupo dentro de las 50 llamadas/día)
-    global _openrouter_quota_exhausted_until
-    now_ts = time.time()
-    if api_key and http_requests and now_ts >= globals().get("_openrouter_quota_exhausted_until", 0.0):
-        for model_name in dict.fromkeys([OPENROUTER_MODEL] + FREE_OPENROUTER_MODELS):
-            try:
-                resp = http_requests.post(
-                    "https://openrouter.ai/api/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": "http://localhost:8000",
-                        "X-Title": "UNAL Sports Live Fan-Out"
-                    },
-                    json={
-                        "model": model_name,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
-                        ],
-                        "temperature": 0.1,
-                        "max_tokens": 260
-                    },
-                    timeout=5.5
-                )
-                if resp.status_code == 200:
-                    body_json = resp.json()
-                    used_model = body_json.get("model", model_name)
-                    content = body_json["choices"][0]["message"]["content"].strip()
-                    json_match = re.search(r"\{.*\}", content, re.DOTALL)
-                    if json_match:
-                        parsed = json.loads(json_match.group(0))
-                        parsed["ai_generated"] = True
-                        parsed["ai_model"] = f"OpenRouter ({used_model} + Whisper v3 Turbo)"
-                        return parsed
-                elif resp.status_code == 429 and "free-models-per-day" in resp.text:
-                    # Cuota diaria de 50 llamadas de OpenRouter alcanzada: activar relevo automático a Groq por 30 min
-                    _openrouter_quota_exhausted_until = now_ts + 1800.0
-                    break
-            except Exception:
-                continue
-
-    # 2. Relevo Automático a Groq LLM (GPT-OSS-120B / Qwen3.8-27B) cuando OpenRouter llega a las 50 llamadas/día
     if groq_key and http_requests:
         for groq_model in ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]:
             try:
@@ -895,8 +992,8 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": user_prompt}
                         ],
-                        "temperature": 0.1,
-                        "max_tokens": 300,
+                        "temperature": 0.05,
+                        "max_tokens": 340,
                         "response_format": {"type": "json_object"}
                     },
                     timeout=5.0
@@ -905,7 +1002,7 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
                     content = g_resp.json()["choices"][0]["message"]["content"].strip()
                     parsed = json.loads(content)
                     parsed["ai_generated"] = True
-                    parsed["ai_model"] = f"Groq Fallback ({groq_model} + Whisper v3 Turbo)"
+                    parsed["ai_model"] = f"Groq ({groq_model} + Whisper v3 Turbo)"
                     return parsed
             except Exception:
                 continue
@@ -944,7 +1041,8 @@ def health():
         node=HOSTNAME,
         redis_connected=redis_ok,
         sns_configured=bool(SNS_TOPIC_ARN),
-        openrouter_configured=bool(os.environ.get("OPENROUTER_API_KEY", OPENROUTER_API_KEY)),
+        groq_configured=bool(os.environ.get("GROQ_API_KEY", GROQ_API_KEY)),
+        discovered_players_count=len(discovered_match_players),
         active_connections=active_sse_clients,
         timestamp=datetime.now(timezone.utc).isoformat()
     )
@@ -971,7 +1069,7 @@ def api_media_list():
     return jsonify(
         media_dir=str(MEDIA_DIR),
         files=files,
-        openrouter_ready=bool(os.environ.get("OPENROUTER_API_KEY", OPENROUTER_API_KEY))
+        groq_ready=bool(os.environ.get("GROQ_API_KEY", GROQ_API_KEY))
     )
 
 
@@ -1055,6 +1153,7 @@ def api_process_video_chunk():
         or current_state.get("home_team") != inferred[0]
         or current_state.get("away_team") != inferred[1]
     ):
+        discovered_match_players.clear()
         current_state["home_team"], current_state["away_team"] = inferred
         save_match_state(current_state, clear_events=False)
 
@@ -1124,6 +1223,7 @@ def api_match_setup():
     body = request.get_json(silent=True) or {}
     if body.get("blank_reset"):
         recent_transcripts_history.clear()
+        discovered_match_players.clear()
         blank = dict(DEFAULT_MATCH)
         blank["updated_at"] = datetime.now(timezone.utc).isoformat()
         save_match_state(blank, clear_events=True)
@@ -1137,12 +1237,15 @@ def api_match_setup():
     if body.get("tournament"):
         state["tournament"] = str(body["tournament"]).strip()
     if body.get("reset_score"):
+        recent_transcripts_history.clear()
+        discovered_match_players.clear()
         state["home_score"] = 0
         state["away_score"] = 0
         state["minute"] = 0
         state["status"] = "EN VIVO · 1T"
     if body.get("clear_events"):
         recent_transcripts_history.clear()
+        discovered_match_players.clear()
 
     save_match_state(state, clear_events=bool(body.get("clear_events", False)))
     return jsonify(status="updated", match=state)
@@ -1320,7 +1423,7 @@ def api_metrics():
         total_active_readers=sse_vivo + sse_res,
         total_events_published=ev_pub,
         total_fanout_deliveries=fanout_del,
-        openrouter_ready=bool(os.environ.get("OPENROUTER_API_KEY", OPENROUTER_API_KEY)),
+        groq_ready=bool(os.environ.get("GROQ_API_KEY", GROQ_API_KEY)),
         latency_ms={
             "avg": avg,
             "p50": round(p50, 2),
@@ -1331,7 +1434,7 @@ def api_metrics():
         architecture={
             "cache_engine": "Redis (ElastiCache / Docker)" if redis_client else "In-Memory Fallback",
             "fanout_broker": "AWS SNS + SQS + Redis Pub/Sub" if SNS_TOPIC_ARN else "Redis Pub/Sub + SSE Fan-Out",
-            "ai_engine": f"OpenRouter ({OPENROUTER_MODEL})",
+            "ai_engine": "Groq (Whisper Large v3 Turbo + GPT-OSS-120B)",
             "priority_channels": ["vivo (HIGH priority, 150ms poll)", "resumen (LOW priority / digest, 600ms poll)"]
         }
     )

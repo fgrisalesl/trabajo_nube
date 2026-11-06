@@ -263,9 +263,10 @@
       }
     }
 
-    function renderEventCard(ev, prepend = false) {
+    function renderEventCard(ev, prepend = false, forceUpdate = false) {
       const container = document.getElementById('events-container');
-      if (document.getElementById(`card-${ev.id}`)) return;
+      const existingCard = document.getElementById(`card-${ev.id}`);
+      if (existingCard && !forceUpdate && !ev.scorer_confirmed) return;
       knownEventIds.add(ev.id);
 
       const st = styleForEvent(ev.type);
@@ -277,10 +278,7 @@
         ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Prioridad Alta</span>`
         : `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-zinc-400">Estándar</span>`;
 
-      const card = document.createElement('article');
-      card.id = `card-${ev.id}`;
-      card.className = `event-spring apple-card ${st.accent} rounded-2xl p-5 shadow-lg`;
-      card.innerHTML = `
+      const innerHtml = `
         <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
           <div class="flex items-center gap-2.5">
             <span class="px-2.5 py-1 rounded-lg font-mono font-bold text-xs bg-white/10 text-white">${ev.minute}'</span>
@@ -295,6 +293,19 @@
         </div>
         <p class="text-[15px] text-zinc-200 leading-relaxed font-normal">${ev.description}</p>
       `;
+
+      if (existingCard) {
+        existingCard.innerHTML = innerHtml;
+        existingCard.classList.remove('event-spring');
+        void existingCard.offsetWidth;
+        existingCard.classList.add('event-spring');
+        return;
+      }
+
+      const card = document.createElement('article');
+      card.id = `card-${ev.id}`;
+      card.className = `event-spring apple-card ${st.accent} rounded-2xl p-5 shadow-lg`;
+      card.innerHTML = innerHtml;
 
       if (prepend) {
         container.prepend(card);
@@ -375,7 +386,7 @@
         if (payload.match) updateMatchHeader(payload.match);
         if (payload.event) {
           if (currentChannel === 'vivo' || payload.event.priority === 'HIGH' || ['YELLOW_CARD', 'SUBSTITUTION'].includes(payload.event.type)) {
-            renderEventCard(payload.event, true);
+            renderEventCard(payload.event, true, Boolean(payload.updated_event));
           }
         }
         loadSummary(false);
