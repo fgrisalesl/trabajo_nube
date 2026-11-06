@@ -86,7 +86,12 @@ SQS_SUMMARY_URL = os.environ.get("SQS_SUMMARY_URL", "")
 JOURNALIST_TOKEN = os.environ.get("JOURNALIST_TOKEN", "unal-periodista-2026")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "openrouter/free")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 HOSTNAME = socket.gethostname()
+
+# Memoria de los últimos fragmentos narrados para no perder contexto entre cortes de audio
+recent_transcripts_history = deque(maxlen=4)
+_openrouter_quota_exhausted_until = 0.0
 
 ALLOWED_MEDIA_EXT = {".mp4", ".webm", ".ogg", ".mp3", ".wav", ".m4a"}
 
@@ -223,20 +228,83 @@ def get_all_events(limit: int = 100) -> list:
     return ev_list[:limit]
 
 
+def normalize_team_display_name(raw_name: str) -> str:
+    """Normaliza mayúsculas/minúsculas y nombres de clubes conocidos (ej. 'Manchester CIty' -> 'Manchester City')."""
+    cleaned = re.sub(r"\s+", " ", raw_name.replace("_", " ")).strip(" _-.")
+    if not cleaned:
+        return cleaned
+    low = cleaned.lower()
+    known_clubs = {
+        "manchester city": "Manchester City",
+        "man city": "Manchester City",
+        "leipzig": "RB Leipzig",
+        "rb leipzig": "RB Leipzig",
+        "real madrid": "Real Madrid",
+        "bayern m": "Bayern Múnich",
+        "bayern munich": "Bayern Múnich",
+        "bayern múnich": "Bayern Múnich",
+        "barcelona": "FC Barcelona",
+        "fc barcelona": "FC Barcelona",
+        "arsenal": "Arsenal",
+        "liverpool": "Liverpool",
+        "psg": "Paris Saint-Germain",
+        "inter": "Inter de Milán",
+    }
+    if low in known_clubs:
+        return known_clubs[low]
+    return " ".join(w.capitalize() if not w.isupper() or len(w) > 3 else w for w in cleaned.split())
+
+
 def infer_teams_from_filename(filename: str) -> tuple[str, str] | None:
     """
-    Si el usuario sube un archivo como 'Bayern M. 4-3 Real Madrid.mp4' o 'Barcelona vs Real Madrid.mp4',
-    detecta automáticamente los nombres de los dos equipos del archivo para configurar el tablero inicial.
+    Si el usuario sube un archivo como 'Bayern M. 4-3 Real Madrid.mp4' o 'Manchester_CIty_Vs_Leipzig.mp4',
+    detecta automáticamente los nombres de los dos equipos (soportando guiones bajos, 'Vs', marcadores, etc.).
     """
-    stem = Path(filename).stem.strip()
-    # Patrón 1: EquipoA 4-3 EquipoB  o  EquipoA vs EquipoB
+    stem = Path(filename).stem.replace("_", " ").strip()
+    stem = re.sub(r"\s+", " ", stem)
+    # Patrón 1: EquipoA 4-3 EquipoB  o  EquipoA vs EquipoB (con espacios o guiones)
     m = re.search(r"^(.+?)\s+(?:\d+\s*[-:]\s*\d+|vs\.?|contra|[-–])\s+(.+)$", stem, re.IGNORECASE)
     if m:
-        t1 = m.group(1).strip(" _-.")
-        t2 = m.group(2).strip(" _-.")
+        t1 = normalize_team_display_name(m.group(1))
+        t2 = normalize_team_display_name(m.group(2))
         if len(t1) >= 2 and len(t2) >= 2:
             return t1, t2
     return None
+
+
+def is_statistical_or_non_live_goal_mention(text: str) -> bool:
+    """
+    Detecta cuando el comentarista menciona la palabra 'goles' o 'gol' hablando de estadísticas,
+    cifras históricas de un jugador (ej. Haaland), jugadas falladas o goles anulados,
+    para evitar falsas alarmas de GOL en el tablero.
+    """
+    low = text.lower()
+    false_goal_patterns = [
+        r"\b\d+\s+goles\b",
+        r"\bgoles\s+en\b",
+        r"\bgoles\s+lleva\b",
+        r"\bgoles\s+tiene\b",
+        r"\bgoles\s+suma\b",
+        r"\bgoles\s+con\b",
+        r"\bgoles\s+esta\b",
+        r"\bgoleador\b",
+        r"\bmáximo\s+anotador\b",
+        r"\bcifra\s+de\s+goles\b",
+        r"\bpromedio\s+de\s+gol\b",
+        r"\bhablando\s+de\s+goles\b",
+        r"\bsin\s+goles\b",
+        r"\bcasi\s+gol\b",
+        r"\bse\s+perdió\s+el\s+gol\b",
+        r"\bbuscando\s+el\s+gol\b",
+        r"\bbusca\s+el\s+gol\b",
+        r"\bno\s+fue\s+gol\b",
+        r"\bgol\s+anulado\b",
+        r"\bfuera\s+de\s+juego\b",
+        r"\boffside\b",
+        r"\ba\s+punto\s+del\s+gol\b",
+        r"\bcerca\s+del\s+gol\b",
+    ]
+    return any(re.search(pat, low) for pat in false_goal_patterns)
 
 
 def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) -> dict:
@@ -262,13 +330,32 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
     if ev_type not in {"GOAL", "PENALTY", "RED_CARD", "YELLOW_CARD", "SUBSTITUTION", "COMMENT", "MATCH_START", "MATCH_END"}:
         ev_type = "COMMENT"
 
-    priority, primary_channel = classify_event_priority(ev_type)
-    raw_min = event_data.get("minute")
-    minute = int(raw_min) if (raw_min is not None and str(raw_min).isdigit()) else max(1, int(state.get("minute", 0)) + 1)
-
     team = str(event_data.get("team", "NEUTRAL")).upper()
     if team not in {"HOME", "AWAY", "NEUTRAL"}:
         team = "NEUTRAL"
+
+    # Barrera Anti-Falsas Alarmas de Gol:
+    # Si la IA clasificó GOAL pero es un comentario estadístico (ej. "lleva 30 goles Haaland"), o no hay equipo anotador (NEUTRAL)
+    # ni cambio real en el marcador, degradarlo automáticamente a COMMENT para nunca disparar una falsa alarma de gol que no suma.
+    cur_h = int(state.get("home_score", 0))
+    cur_a = int(state.get("away_score", 0))
+    ov_h = event_data.get("home_score_override")
+    ov_a = event_data.get("away_score_override")
+    if ev_type == "GOAL" and bool(event_data.get("ai_generated", False)):
+        raw_desc = str(event_data.get("description", ""))
+        override_changes_score = (
+            ov_h is not None and ov_a is not None and (int(ov_h) > cur_h or int(ov_a) > cur_a)
+        )
+        if team == "NEUTRAL" and not override_changes_score:
+            ev_type = "COMMENT"
+        elif ov_h is not None and ov_a is not None and int(ov_h) == cur_h and int(ov_a) == cur_a:
+            ev_type = "COMMENT"
+        elif is_statistical_or_non_live_goal_mention(raw_desc) and not override_changes_score:
+            ev_type = "COMMENT"
+
+    priority, primary_channel = classify_event_priority(ev_type)
+    raw_min = event_data.get("minute")
+    minute = int(raw_min) if (raw_min is not None and str(raw_min).isdigit()) else max(1, int(state.get("minute", 0)) + 1)
 
     event = {
         "id": f"evt-{uuid.uuid4().hex[:8]}",
@@ -364,7 +451,7 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
 
 
 # ==============================================================================
-# EXTRACCIÓN REAL DE AUDIO CON FFMPEG + TRANSCRIPCIÓN + OPENROUTER IA
+# EXTRACCIÓN REAL DE AUDIO CON FFMPEG + WHISPER LARGE V3 TURBO / STT + LLM IA
 # ==============================================================================
 FREE_OPENROUTER_MODELS = [
     "openrouter/free",
@@ -374,59 +461,211 @@ FREE_OPENROUTER_MODELS = [
     "nvidia/nemotron-3-ultra-550b-a55b:free"
 ]
 
+# Diccionario de corrección fonética futbolística (corrige errores típicos de STT con ruido de estadio)
+FOOTBALL_PHONETIC_FIXES = [
+    (r"\bRoger\b", "Neuer"),
+    (r"\broger\b", "Neuer"),
+    (r"\bMecano\b", "Upamecano"),
+    (r"\bmecano\b", "Upamecano"),
+    (r"\bupamecano\b", "Upamecano"),
+    (r"\bNavy\b", "Gnabry"),
+    (r"\bnavy\b", "Gnabry"),
+    (r"\bdías\b", "Díaz"),
+    (r"\barda\b", "Arda Güler"),
+    (r"\bArda\b", "Arda Güler"),
+    (r"\bTurco\b", "Arda Güler"),
+    (r"\bvinicius\b", "Vinícius Jr."),
+    (r"\bVinicius\b", "Vinícius Jr."),
+    (r"\bsane\b", "Leroy Sané"),
+    (r"\bSane\b", "Leroy Sané"),
+    (r"\bmusiala\b", "Jamal Musiala"),
+    (r"\bMusiala\b", "Jamal Musiala"),
+    (r"\bkane\b", "Harry Kane"),
+    (r"\bKane\b", "Harry Kane"),
+    (r"\bkroos\b", "Toni Kroos"),
+    (r"\bbellingham\b", "Jude Bellingham"),
+    (r"\bmbappe\b", "Kylian Mbappé"),
+    (r"\bMbappe\b", "Kylian Mbappé"),
+    (r"\bcherqui\b", "Rayan Cherki"),
+    (r"\bCherqui\b", "Rayan Cherki"),
+    (r"\bcherki\b", "Rayan Cherki"),
+    (r"\bnico\s+reyli\b", "Nico O'Reilly"),
+    (r"\bNico\s+reyli\b", "Nico O'Reilly"),
+    (r"\breyli\b", "Nico O'Reilly"),
+    (r"\boreilly\b", "Nico O'Reilly"),
+    (r"\bo'reilly\b", "Nico O'Reilly"),
+    (r"\bleicey\b", "RB Leipzig"),
+    (r"\bLeicey\b", "RB Leipzig"),
+    (r"\bleipsig\b", "RB Leipzig"),
+    (r"\bleipzig\b", "RB Leipzig"),
+    (r"\bhalaand\b", "Erling Haaland"),
+    (r"\bHalaand\b", "Erling Haaland"),
+    (r"\bhaland\b", "Erling Haaland"),
+    (r"\bHaland\b", "Erling Haaland"),
+    (r"\bjalan\b", "Erling Haaland"),
+    (r"\bJalan\b", "Erling Haaland"),
+    (r"\bguardiol\b", "Josko Gvardiol"),
+    (r"\bgvardiol\b", "Josko Gvardiol"),
+    (r"\bfoden\b", "Phil Foden"),
+    (r"\bopenda\b", "Loïs Openda"),
+    (r"\bsesko\b", "Benjamin Šeško"),
+    (r"\breal madrid\b", "Real Madrid"),
+    (r"\bbayern munich\b", "Bayern Múnich"),
+    (r"\bbayern\b", "Bayern Múnich"),
+    (r"\bmanchester city\b", "Manchester City"),
+]
 
-def extract_and_transcribe_media_chunk(file_path: Path, start_sec: float, duration_sec: float = 12.0) -> str:
+# Plantillas conocidas para asignar con precisión de qué equipo es cada jugador y alimentar el prompt de Whisper
+KNOWN_TEAM_PLAYERS = {
+    "bayern": ["neuer", "upamecano", "kim", "kimmich", "goretzka", "laimer", "musiala", "sané", "sane", "gnabry", "kane", "müller", "muller", "davies", "guerreiro", "olise", "díaz", "diaz"],
+    "madrid": ["lunin", "courtois", "carvajal", "rüdiger", "rudiger", "nacho", "mendy", "valverde", "camavinga", "tchouameni", "kroos", "modric", "bellingham", "vinícius", "vinicius", "rodrygo", "arda", "güler", "guler", "mbappé", "mbappe", "joselu", "brahim"],
+    "city": ["haaland", "o'reilly", "cherki", "foden", "de bruyne", "rodri", "bernardo", "gündogan", "gundogan", "gvardiol", "rico lewis", "rúben dias", "akanji", "doku", "savinho", "grealish", "ederson", "ortega", "kovacic", "álvarez", "alvarez"],
+    "leipzig": ["openda", "simons", "xavi simons", "šeško", "sesko", "dani olmo", "baumgartner", "haidara", "lukeba", "orbán", "orban", "raum", "henrichs", "gulácsi", "gulacsi", "poulsen"]
+}
+
+
+def apply_football_phonetics(raw_text: str) -> str:
+    """Corrige nombres de jugadores mal transcritos por el ruido de ambiente del estadio."""
+    cleaned = raw_text.strip()
+    for pattern, replacement in FOOTBALL_PHONETIC_FIXES:
+        cleaned = re.sub(pattern, replacement, cleaned)
+    return cleaned
+
+
+def extract_and_transcribe_media_chunk(file_path: Path, start_sec: float, duration_sec: float = 14.0, match_state: dict | None = None) -> tuple[str, str]:
     """
-    Extrae el fragmento de audio real [start_sec, start_sec + duration_sec] del archivo de video/audio
-    subido (ej. Bayern M. 4-3 Real Madrid.mp4) usando FFmpeg y lo transcribe a texto en español.
+    Extrae el fragmento de audio real [start_sec - 2s, start_sec + duration_sec] con FFmpeg (con solapamiento
+    de 2s para nunca cortar un grito de gol a la mitad) y lo transcribe usando:
+      1. Whisper Large v3 Turbo (vía Groq API con GROQ_API_KEY) pasándole contexto de fútbol y plantillas.
+      2. Google SpeechRecognition en español + corrector fonético futbolístico como respaldo gratuito.
+    Retorna (transcripcion_limpia, motor_stt_usado).
     """
-    if not file_path.exists() or not sr:
-        return ""
+    if not file_path.exists():
+        return "", "none"
+
+    actual_start = max(0.0, round(start_sec - 2.0, 1)) if start_sec > 2.0 else max(0.0, round(start_sec, 1))
+    actual_dur = round(duration_sec + (2.0 if start_sec > 2.0 else 0.0), 1)
+
     try:
         cmd = [
             "ffmpeg", "-y",
-            "-ss", str(max(0.0, round(start_sec, 1))),
-            "-t", str(round(duration_sec, 1)),
+            "-ss", str(actual_start),
+            "-t", str(actual_dur),
             "-i", str(file_path),
             "-vn", "-ac", "1", "-ar", "16000", "-f", "wav", "pipe:1"
         ]
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=10)
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=12)
         if not proc.stdout or len(proc.stdout) < 1000:
-            return ""
-        recognizer = sr.Recognizer()
-        with sr.AudioFile(io.BytesIO(proc.stdout)) as source:
-            audio_data = recognizer.record(source)
-        text = recognizer.recognize_google(audio_data, language="es-ES")
-        return text.strip()
+            return "", "none"
+
+        groq_key = os.environ.get("GROQ_API_KEY", GROQ_API_KEY).strip()
+        home_t = (match_state or {}).get("home_team", "Equipo Local")
+        away_t = (match_state or {}).get("away_team", "Equipo Visitante")
+
+        # 1. Usar Whisper Large v3 Turbo + Prompt de Vocabulario Futbolístico (Groq API)
+        if groq_key and http_requests:
+            try:
+                football_context_prompt = (
+                    f"Relato deportivo de fútbol en español (UEFA Champions League / ESPN). "
+                    f"Partido entre {home_t} y {away_t}. "
+                    f"Vocabulario y jugadores clave: Manchester City, RB Leipzig, Bayern Múnich, Real Madrid, "
+                    f"Erling Haaland, Nico O'Reilly, Rayan Cherki, Phil Foden, Kevin De Bruyne, Rodri, Bernardo Silva, Josko Gvardiol, Rico Lewis, Jeremy Doku, Savinho, Jack Grealish, Rúben Dias, Akanji, Ederson, "
+                    f"Loïs Openda, Xavi Simons, Benjamin Šeško, Dani Olmo, Castello Lukeba, David Raum, Péter Gulácsi, "
+                    f"Manuel Neuer, Upamecano, Kimmich, Jamal Musiala, Leroy Sané, Harry Kane, Luis Díaz, Gnabry, "
+                    f"Lunin, Carvajal, Rüdiger, Toni Kroos, Federico Valverde, Jude Bellingham, Arda Güler, Rodrygo, Vinícius Jr., Kylian Mbappé."
+                )
+                resp = http_requests.post(
+                    "https://api.groq.com/openai/v1/audio/transcriptions",
+                    headers={"Authorization": f"Bearer {groq_key}"},
+                    files={"file": ("chunk.wav", proc.stdout, "audio/wav")},
+                    data={
+                        "model": "whisper-large-v3-turbo",
+                        "language": "es",
+                        "prompt": football_context_prompt,
+                        "response_format": "json",
+                        "temperature": "0.0"
+                    },
+                    timeout=8.0
+                )
+                if resp.status_code == 200:
+                    whisper_text = resp.json().get("text", "").strip()
+                    if whisper_text:
+                        return apply_football_phonetics(whisper_text), "Whisper-Large-v3-Turbo (Groq)"
+            except Exception:
+                pass
+
+        # 2. Respaldo sin llave extra: SpeechRecognition + Corrector Fonético de Fútbol
+        if sr:
+            recognizer = sr.Recognizer()
+            with sr.AudioFile(io.BytesIO(proc.stdout)) as source:
+                audio_data = recognizer.record(source)
+            text = recognizer.recognize_google(audio_data, language="es-ES")
+            return apply_football_phonetics(text), "SpeechRecognition+FootballDict"
     except Exception:
-        return ""
+        pass
+    return "", "none"
 
 
-def fallback_parse_narrator_text(transcript: str, current_state: dict, video_minute: int | None = None) -> dict:
-    """Analizador semántico de respaldo si todos los proveedores gratuitos de OpenRouter están saturados."""
-    text_lower = transcript.lower()
+def build_editorial_commentary(ev_type: str, team_label: str, player: str, corrected_transcript: str, home: str, away: str, h_score: int, a_score: int) -> str:
+    """
+    Transforma una transcripción hablada en una línea periodística deportiva profesional (con mayúsculas,
+    puntuación impecable y estilo minuto a minuto de ESPN/Opta) cuando los modelos de OpenRouter tienen rate-limit.
+    """
+    clean = corrected_transcript.strip()
+    if clean:
+        clean = clean[0].upper() + clean[1:]
+    if not clean.endswith((".", "!", "?")):
+        clean += "."
+
+    if ev_type == "MATCH_START":
+        return f"¡Pitazo inicial! Ya se juega el partido entre {home} y {away}. ({clean})"
+    if ev_type == "GOAL":
+        protagonist = f" por intermedio de {player}" if player and player != "Narración en Vivo" else ""
+        return f"¡GOOOOL de {team_label}! Anota el conjunto de {team_label}{protagonist} para sacudir el marcador ({home} {h_score} - {a_score} {away}). Relato en vivo: «{clean}»"
+    if ev_type == "PENALTY":
+        return f"¡PENAL sancionado en el área! Momento de máxima tensión entre {home} y {away}. «{clean}»"
+    if ev_type == "YELLOW_CARD":
+        return f"Tarjeta amarilla mostrada por el árbitro ({team_label}). «{clean}»"
+    if ev_type == "RED_CARD":
+        return f"¡Tarjeta ROJA y expulsión en {team_label}! «{clean}»"
+    if ev_type == "SUBSTITUTION":
+        return f"Movimiento táctico y variante en la cancha ({team_label}). «{clean}»"
+
+    if player and player != "Narración en Vivo":
+        return f"Intervención protagonista de {player} ({team_label}): {clean}"
+    return f"Acción en desarrollo ({home} vs {away}): {clean}"
+
+
+def fallback_parse_narrator_text(transcript: str, current_state: dict, video_minute: int | None = None, context_text: str = "") -> dict:
+    """
+    Analizador semántico futbolístico con memoria de contexto, detección de plantillas
+    y redacción periodística profesional.
+    """
+    corrected = apply_football_phonetics(transcript)
+    combined_context = f"{context_text} {corrected}".strip()
+    text_lower = corrected.lower()
+    combined_lower = combined_context.lower()
+
     home = current_state.get("home_team", "Equipo Local")
     away = current_state.get("away_team", "Equipo Visitante")
-
-    vs_match = re.search(r"(?:entre|partido)\s+([A-ZÁÉÍÓÚÑa-záéíóúñ\s]{3,22}?)\s+(?:y|contra|vs\.?)\s+([A-ZÁÉÍÓÚÑa-záéíóúñ\s]{3,22}?)(?:[,\.\!]|marcador|en el|$)", transcript)
-    if vs_match:
-        cand_h = vs_match.group(1).strip()
-        cand_a = vs_match.group(2).strip()
-        if len(cand_h) >= 3 and len(cand_a) >= 3:
-            home = cand_h
-            away = cand_a
+    cur_h_score = int(current_state.get("home_score", 0))
+    cur_a_score = int(current_state.get("away_score", 0))
 
     min_match = re.search(r"minuto\s+(\d{1,3})", text_lower)
     minute = int(min_match.group(1)) if min_match else (video_minute or max(1, int(current_state.get("minute", 0)) + 1))
+
+    # 1. Clasificar tipo de evento (con filtro anti-falsas alarmas cuando hablan de estadísticas de goles)
+    is_stat_goal = is_statistical_or_non_live_goal_mention(text_lower)
+    has_live_goal_trigger = bool(re.search(
+        r"\b(gol|go+l|golazo)\b|anota el|empata el|lo empata|comienza a ganar|pone el [1-9]|1 a 1|uno a uno|2 a 1|dos a uno|1 a 0|uno a cero",
+        text_lower
+    ))
 
     if any(w in text_lower for w in ["arranca el partido", "inicia el partido", "partido en marcha", "pitazo inicial", "orden del juez"]):
         ev_type = "MATCH_START"
     elif any(w in text_lower for w in ["penal", "penalti", "punto blanco"]):
         ev_type = "PENALTY"
-    elif any(w in text_lower for w in [
-        "gol", "goool", "goooool", "golazo", "anota el", "empata el partido",
-        "comienza a ganar", "para poner", "pone el 1", "pone el 2", "pone el 3", "pone el 4"
-    ]):
+    elif has_live_goal_trigger and not is_stat_goal:
         ev_type = "GOAL"
     elif any(w in text_lower for w in ["roja", "expulsado", "expulsión"]):
         ev_type = "RED_CARD"
@@ -437,39 +676,107 @@ def fallback_parse_narrator_text(transcript: str, current_state: dict, video_min
     else:
         ev_type = "COMMENT"
 
+    # 2. Detectar jugador protagonista (priorizando SIEMPRE el fragmento actual sobre el contexto previo)
+    player = "Narración en Vivo"
+    detected_player_team = None
+    famous_players = [
+        ("Erling Haaland", "city"), ("Nico O'Reilly", "city"), ("Rayan Cherki", "city"),
+        ("Phil Foden", "city"), ("Kevin De Bruyne", "city"), ("Rodri", "city"),
+        ("Bernardo Silva", "city"), ("Josko Gvardiol", "city"), ("Rico Lewis", "city"),
+        ("Jeremy Doku", "city"), ("Savinho", "city"), ("Jack Grealish", "city"),
+        ("Rúben Dias", "city"), ("Manuel Akanji", "city"), ("Ederson", "city"),
+        ("Xavi Simons", "leipzig"), ("Loïs Openda", "leipzig"), ("Benjamin Šeško", "leipzig"),
+        ("Dani Olmo", "leipzig"), ("Castello Lukeba", "leipzig"), ("David Raum", "leipzig"),
+        ("Péter Gulácsi", "leipzig"),
+        ("Kylian Mbappé", "madrid"), ("Vinícius Jr.", "madrid"), ("Rodrygo", "madrid"),
+        ("Jude Bellingham", "madrid"), ("Arda Güler", "madrid"), ("Toni Kroos", "madrid"),
+        ("Valverde", "madrid"), ("Camavinga", "madrid"), ("Rüdiger", "madrid"),
+        ("Carvajal", "madrid"), ("Lunin", "madrid"), ("Courtois", "madrid"),
+        ("Harry Kane", "bayern"), ("Jamal Musiala", "bayern"), ("Michael Olise", "bayern"),
+        ("Leroy Sané", "bayern"), ("Gnabry", "bayern"), ("Müller", "bayern"),
+        ("Luis Díaz", "bayern"), ("Díaz", "bayern"), ("Kimmich", "bayern"),
+        ("Goretzka", "bayern"), ("Laimer", "bayern"), ("Upamecano", "bayern"),
+        ("Kim", "bayern"), ("Neuer", "bayern")
+    ]
+    # Pasada 1: Buscar jugador en el fragmento ACTUAL (text_lower)
+    for p_name, p_club in famous_players:
+        last_token = p_name.split()[-1].lower().rstrip(".")
+        if p_name.lower() in text_lower or (len(last_token) >= 4 and last_token in text_lower):
+            player = p_name
+            detected_player_team = p_club
+            break
+    # Pasada 2: Solo si es GOL y en este fragmento no se dijo el nombre, buscar en el contexto inmediatamente anterior
+    if player == "Narración en Vivo" and ev_type == "GOAL" and context_text:
+        ctx_lower = context_text.lower()
+        for p_name, p_club in famous_players:
+            last_token = p_name.split()[-1].lower().rstrip(".")
+            if p_name.lower() in ctx_lower or (len(last_token) >= 4 and last_token in ctx_lower):
+                player = p_name
+                detected_player_team = p_club
+                break
+
+    # 3. Identificar equipo protagonista (HOME vs AWAY) con lógica de empate y marcador explícito
     team = "NEUTRAL"
-    home_tokens = [t for t in home.lower().split() if len(t) >= 4]
-    away_tokens = [t for t in away.lower().split() if len(t) >= 4]
+    home_tokens = [t.rstrip(".") for t in home.lower().split() if len(t.rstrip(".")) >= 4]
+    away_tokens = [t.rstrip(".") for t in away.lower().split() if len(t.rstrip(".")) >= 4]
     home_score_ov = None
     away_score_ov = None
 
-    for ht in home_tokens:
-        for at in away_tokens:
-            m1 = re.search(rf"{re.escape(ht)}\s*(\d+)\s+.*?{re.escape(at)}\s*(\d+)", text_lower)
-            m2 = re.search(rf"{re.escape(at)}\s*(\d+)\s+.*?{re.escape(ht)}\s*(\d+)", text_lower)
-            if m1:
-                home_score_ov, away_score_ov = int(m1.group(1)), int(m1.group(2))
-                team = "HOME" if home_score_ov > away_score_ov else "AWAY"
-            elif m2:
-                away_score_ov, home_score_ov = int(m2.group(1)), int(m2.group(2))
-                team = "AWAY" if away_score_ov > home_score_ov else "HOME"
+    # ¿El relator menciona empate ("empata", "1 a 1", "uno a uno")? Si es así, el gol es del equipo que iba abajo en el marcador
+    is_equalizer = ev_type == "GOAL" and any(
+        w in text_lower for w in ["empata", "igualdad", "1 a 1", "uno a uno", "2 a 2", "dos a dos", "3 a 3"]
+    )
+    if is_equalizer:
+        if cur_h_score < cur_a_score:
+            team = "HOME"
+            home_score_ov, away_score_ov = cur_a_score, cur_a_score
+        elif cur_a_score < cur_h_score:
+            team = "AWAY"
+            home_score_ov, away_score_ov = cur_h_score, cur_h_score
+
+    # ¿Menciona explícitamente "gol del <equipo>" o "gana el <equipo>" en el fragmento actual?
+    if team == "NEUTRAL":
+        if any(f"gol de {t}" in text_lower or f"gol del {t}" in text_lower or f"gana el {t}" in text_lower or f"ganar el {t}" in text_lower for t in home_tokens):
+            team = "HOME"
+        elif any(f"gol de {t}" in text_lower or f"gol del {t}" in text_lower or f"gana el {t}" in text_lower or f"ganar el {t}" in text_lower for t in away_tokens):
+            team = "AWAY"
+
+    # Si hay un jugador detectado en el fragmento actual, usar su club (salvo que haya sido empate forzado del otro club)
+    if team == "NEUTRAL" and detected_player_team:
+        club_keywords = {
+            "bayern": "bayern",
+            "madrid": "madrid",
+            "city": "city",
+            "leipzig": "leipzig"
+        }
+        kw = club_keywords.get(detected_player_team, "")
+        if kw:
+            if kw in home.lower():
+                team = "HOME"
+            elif kw in away.lower():
+                team = "AWAY"
+
+    # Si fue empate de HOME pero el jugador detectado era del AWAY (ej. decía "frente al Real Madrid"), ajustar jugador
+    if team == "HOME" and detected_player_team and detected_player_team not in home.lower() and detected_player_team in away.lower():
+        player = home
+    elif team == "AWAY" and detected_player_team and detected_player_team not in away.lower() and detected_player_team in home.lower():
+        player = away
 
     if team == "NEUTRAL":
-        if any(f"ganar el {t}" in text_lower or f"gol de {t}" in text_lower or f"gol del {t}" in text_lower for t in home_tokens):
-            team = "HOME"
-        elif any(f"ganar el {t}" in text_lower or f"gol de {t}" in text_lower or f"gol del {t}" in text_lower for t in away_tokens):
-            team = "AWAY"
-        elif any(t in text_lower for t in home_tokens) and not any(t in text_lower for t in away_tokens):
+        if any(t in text_lower for t in home_tokens) and not any(t in text_lower for t in away_tokens):
             team = "HOME"
         elif any(t in text_lower for t in away_tokens) and not any(t in text_lower for t in home_tokens):
             team = "AWAY"
 
-    player = "Narración en Vivo"
-    player_match = re.search(r"(?:de|para|por|entra|sobre|saca|remata)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+){0,1})", transcript)
-    if player_match:
-        cand_p = player_match.group(1).strip()
-        if cand_p.lower() not in {home.lower(), away.lower(), "el", "la", "cancha", "partido"}:
-            player = cand_p
+    # Si después de todo el análisis seguía siendo GOAL pero no hay equipo ni cambio de marcador, es comentario estadístico
+    if ev_type == "GOAL" and team == "NEUTRAL" and home_score_ov is None:
+        ev_type = "COMMENT"
+
+    new_h = home_score_ov if home_score_ov is not None else (cur_h_score + (1 if ev_type == "GOAL" and team == "HOME" else 0))
+    new_a = away_score_ov if away_score_ov is not None else (cur_a_score + (1 if ev_type == "GOAL" and team == "AWAY" else 0))
+    team_label = home if team == "HOME" else (away if team == "AWAY" else f"{home} / {away}")
+
+    editorial_desc = build_editorial_commentary(ev_type, team_label, player, corrected, home, away, new_h, new_a)
 
     return {
         "type": ev_type,
@@ -480,79 +787,130 @@ def fallback_parse_narrator_text(transcript: str, current_state: dict, video_min
         "away_score_override": away_score_ov,
         "minute": minute,
         "player": player,
-        "description": transcript.strip(),
+        "description": editorial_desc,
         "ai_generated": True,
-        "ai_model": "OpenRouter Fallback NLP"
+        "ai_model": "Sports Editorial AI"
     }
 
 
 def interpret_narrator_with_openrouter(transcript: str, current_state: dict, video_minute: int | None = None) -> dict:
     """
-    Envía el texto transcrito del narrador a OpenRouter para que el LLM estructure el evento JSON,
-    detecte equipos, jugador, minuto y tipo de jugada.
+    Envía el texto transcrito del narrador (junto con la memoria de los fragmentos anteriores)
+    a Groq LLM (si GROQ_API_KEY está activa) o a OpenRouter LLM para que estructure el JSON deportivo,
+    corrija nombres mal transcritos y sincronice el marcador exacto.
     """
-    api_key = os.environ.get("OPENROUTER_API_KEY", OPENROUTER_API_KEY)
-    if not api_key or not http_requests:
-        return fallback_parse_narrator_text(transcript, current_state, video_minute)
+    corrected_transcript = apply_football_phonetics(transcript)
+    prev_context = " | ".join(list(recent_transcripts_history)[-2:])
+    recent_transcripts_history.append(corrected_transcript)
+
+    api_key = os.environ.get("OPENROUTER_API_KEY", OPENROUTER_API_KEY).strip()
+    groq_key = os.environ.get("GROQ_API_KEY", GROQ_API_KEY).strip()
 
     est_min = video_minute if video_minute is not None else max(1, int(current_state.get("minute", 0)) + 1)
     system_prompt = (
-        "Eres un analista de fútbol en vivo que estructura lo que dice el comentarista de un partido. "
-        "Responde UNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) con estas claves exactas:\n"
+        "Eres un periodista deportivo senior de ESPN redactando el minuto a minuto en vivo. "
+        "Recibes la transcripción automática de voz del relator (con Whisper Large v3 Turbo) "
+        "y el contexto previo del partido. Corrige cualquier nombre de futbolista mal escrito según los equipos que juegan "
+        "(ej. Erling Haaland, Nico O'Reilly, Rayan Cherki, Phil Foden, Gvardiol, Openda, Xavi Simons, Neuer, Upamecano, Arda Güler, Mbappé).\n"
+        "NUNCA devuelvas texto crudo sin puntuación ni en minúsculas: redacta una descripción vibrante, profesional y con ortografía perfecta.\n"
+        "REGLA ESTRICTA ANTI-FALSOS GOLES: Cuando el comentarista menciona la palabra 'goles' o 'goleador' hablando de estadísticas, "
+        "cifras históricas o rachas (ej. 'Haaland lleva 30 goles', 'es el goleador del torneo', 'casi gol', 'buscando el gol', 'sin goles'), "
+        "PROHIBIDO usar 'GOAL': clasifícalo SIEMPRE como 'COMMENT' y mantén 'home_score_override' y 'away_score_override' iguales al marcador actual. "
+        "SOLO usa 'GOAL' cuando realmente acabe de ocurrir una anotación en vivo en la jugada actual, y asigna obligatoriamente 'team' como 'HOME' o 'AWAY'.\n"
+        "Si el relator menciona un empate en vivo (ej. '1 a 1', 'lo empata'), asigna el GOL al equipo que iba abajo en el marcador.\n"
+        "Si Local='Equipo Local' o Visitante='Equipo Visitante' y identificas los equipos en el relato, actualiza 'home_team' y 'away_team'.\n"
+        "Responde UNICAMENTE con un objeto JSON válido con estas claves:\n"
         "{\n"
         '  "type": "GOAL" | "PENALTY" | "RED_CARD" | "YELLOW_CARD" | "SUBSTITUTION" | "MATCH_START" | "MATCH_END" | "COMMENT",\n'
         '  "team": "HOME" | "AWAY" | "NEUTRAL",\n'
         '  "home_team": "Nombre del equipo local",\n'
         '  "away_team": "Nombre del equipo visitante",\n'
+        '  "home_score_override": numero_entero_goles_local_actualizado,\n'
+        '  "away_score_override": numero_entero_goles_visitante_actualizado,\n'
         '  "minute": numero_entero_del_minuto,\n'
-        '  "player": "Nombre del jugador protagonista (ej: Vinícius Jr., Musiala, Kane, etc.) o Relato en Vivo",\n'
-        '  "description": "Relato periodístico claro y emocionante en español de lo ocurrido en este fragmento"\n'
-        "}\n"
-        "Regla importante: Clasifica como GOAL si el comentarista canta un gol o menciona que un equipo anota, empata, pasa a ganar o cambia el marcador (ej: 'comienza a ganar el Madrid', 'para poner Real Madrid 1 Bayern 0', 'golazo', etc.). "
-        "Si es una jugada de ataque en trámite, pase o narración general sin cambio de marcador, clasifícalo como COMMENT."
+        '  "player": "Nombre corregido del jugador protagonista",\n'
+        '  "description": "Comentario periodístico profesional con mayúsculas y puntuación impecable"\n'
+        "}"
     )
 
     user_prompt = (
-        f"Partido actual: Local='{current_state.get('home_team')}' ({current_state.get('home_score')}) vs "
-        f"Visitante='{current_state.get('away_team')}' ({current_state.get('away_score')}), Minuto estimado={est_min}.\n"
-        f"Transcripción de voz del comentarista: \"{transcript}\""
+        f"Estado actual del marcador: Local='{current_state.get('home_team')}' ({current_state.get('home_score')}) vs "
+        f"Visitante='{current_state.get('away_team')}' ({current_state.get('away_score')}), Minuto={est_min}.\n"
+        f"Contexto inmediatamente anterior: \"{prev_context}\"\n"
+        f"Fragmento actual del relator: \"{corrected_transcript}\""
     )
 
-    for model_name in dict.fromkeys(FREE_OPENROUTER_MODELS):
-        try:
-            resp = http_requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "http://localhost:8000",
-                    "X-Title": "UNAL Sports Live Fan-Out"
-                },
-                json={
-                    "model": model_name,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    "temperature": 0.1,
-                    "max_tokens": 220
-                },
-                timeout=6.0
-            )
-            if resp.status_code == 200:
-                body_json = resp.json()
-                used_model = body_json.get("model", model_name)
-                content = body_json["choices"][0]["message"]["content"].strip()
-                json_match = re.search(r"\{.*\}", content, re.DOTALL)
-                if json_match:
-                    parsed = json.loads(json_match.group(0))
-                    parsed["ai_generated"] = True
-                    parsed["ai_model"] = f"OpenRouter ({used_model})"
-                    return parsed
-        except Exception:
-            continue
+    # 1. Consultar PRIMERO OpenRouter LLM con la llave del usuario (mientras tenga cupo dentro de las 50 llamadas/día)
+    global _openrouter_quota_exhausted_until
+    now_ts = time.time()
+    if api_key and http_requests and now_ts >= globals().get("_openrouter_quota_exhausted_until", 0.0):
+        for model_name in dict.fromkeys([OPENROUTER_MODEL] + FREE_OPENROUTER_MODELS):
+            try:
+                resp = http_requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "http://localhost:8000",
+                        "X-Title": "UNAL Sports Live Fan-Out"
+                    },
+                    json={
+                        "model": model_name,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        "temperature": 0.1,
+                        "max_tokens": 260
+                    },
+                    timeout=5.5
+                )
+                if resp.status_code == 200:
+                    body_json = resp.json()
+                    used_model = body_json.get("model", model_name)
+                    content = body_json["choices"][0]["message"]["content"].strip()
+                    json_match = re.search(r"\{.*\}", content, re.DOTALL)
+                    if json_match:
+                        parsed = json.loads(json_match.group(0))
+                        parsed["ai_generated"] = True
+                        parsed["ai_model"] = f"OpenRouter ({used_model} + Whisper v3 Turbo)"
+                        return parsed
+                elif resp.status_code == 429 and "free-models-per-day" in resp.text:
+                    # Cuota diaria de 50 llamadas de OpenRouter alcanzada: activar relevo automático a Groq por 30 min
+                    _openrouter_quota_exhausted_until = now_ts + 1800.0
+                    break
+            except Exception:
+                continue
 
-    return fallback_parse_narrator_text(transcript, current_state, est_min)
+    # 2. Relevo Automático a Groq LLM (GPT-OSS-120B / Qwen3.8-27B) cuando OpenRouter llega a las 50 llamadas/día
+    if groq_key and http_requests:
+        for groq_model in ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]:
+            try:
+                g_resp = http_requests.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                    json={
+                        "model": groq_model,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        "temperature": 0.1,
+                        "max_tokens": 300,
+                        "response_format": {"type": "json_object"}
+                    },
+                    timeout=5.0
+                )
+                if g_resp.status_code == 200:
+                    content = g_resp.json()["choices"][0]["message"]["content"].strip()
+                    parsed = json.loads(content)
+                    parsed["ai_generated"] = True
+                    parsed["ai_model"] = f"Groq Fallback ({groq_model} + Whisper v3 Turbo)"
+                    return parsed
+            except Exception:
+                continue
+
+    return fallback_parse_narrator_text(corrected_transcript, current_state, est_min, context_text=prev_context)
 
 
 # ==============================================================================
@@ -689,30 +1047,39 @@ def api_process_video_chunk():
         return jsonify(error=f"Archivo no encontrado en app/media: {raw_filename}"), 404
     filename = target_path.name
 
-    # 1. Extraer audio real del video y transcribir la voz del comentarista
-    transcript = extract_and_transcribe_media_chunk(target_path, start_sec, duration_sec)
-    if not transcript:
-        return jsonify(status="silence", message="Sin voz clara en este fragmento de audio"), 200
-
-    # Calcular minuto proporcional del partido o usar progresión real
+    # Obtener estado actual e inferir equipos del archivo antes de transcribir (para dar contexto a Whisper)
     current_state = get_match_state()
     inferred = infer_teams_from_filename(filename)
-    if inferred and current_state.get("home_team") == "Equipo Local":
+    if inferred and (
+        current_state.get("home_team") in {"Equipo Local", "Local", ""}
+        or current_state.get("home_team") != inferred[0]
+        or current_state.get("away_team") != inferred[1]
+    ):
         current_state["home_team"], current_state["away_team"] = inferred
+        save_match_state(current_state, clear_events=False)
+
+    # 1. Extraer audio real del video y transcribir la voz del comentarista (Whisper Large v3 Turbo o Google STT + Corrección Fonética)
+    transcript, stt_engine = extract_and_transcribe_media_chunk(
+        target_path, start_sec, duration_sec, match_state=current_state
+    )
+    if not transcript:
+        return jsonify(status="silence", message="Sin voz clara en este fragmento de audio"), 200
 
     if video_duration > 10:
         est_minute = max(1, min(90, int((start_sec / video_duration) * 90) + 1))
     else:
         est_minute = max(1, int(start_sec // 8) + 1)
 
-    # 2. Interpretar la transcripción real con OpenRouter LLM
+    # 2. Interpretar la transcripción real con IA (Groq Llama 3.3 / OpenRouter / Motor Editorial Futbolístico)
     ai_event = interpret_narrator_with_openrouter(transcript, current_state, video_minute=est_minute)
+    ai_event["stt_engine"] = stt_engine
 
     # 3. Publicar automáticamente al Portal de Espectadores (SNS -> SQS -> Redis -> SSE)
     result = publish_event_fanout(ai_event)
     return jsonify(
         status="ai_published",
         chunk_start_sec=round(start_sec, 1),
+        stt_engine=stt_engine,
         transcript_received=transcript,
         ai_interpretation=ai_event,
         **result
@@ -756,6 +1123,7 @@ def api_match_setup():
 
     body = request.get_json(silent=True) or {}
     if body.get("blank_reset"):
+        recent_transcripts_history.clear()
         blank = dict(DEFAULT_MATCH)
         blank["updated_at"] = datetime.now(timezone.utc).isoformat()
         save_match_state(blank, clear_events=True)
@@ -773,6 +1141,8 @@ def api_match_setup():
         state["away_score"] = 0
         state["minute"] = 0
         state["status"] = "EN VIVO · 1T"
+    if body.get("clear_events"):
+        recent_transcripts_history.clear()
 
     save_match_state(state, clear_events=bool(body.get("clear_events", False)))
     return jsonify(status="updated", match=state)

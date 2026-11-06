@@ -4,10 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>UNAL Sports Studio · Cabina del Periodista & Auto-Narrador IA</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/tailwind.min.css" />
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
@@ -498,21 +495,22 @@
       wrap.classList.remove('hidden');
       player.src = url;
 
-      // Cuando el video está en Play, cada 12 segundos extrae el audio real de ese tramo y lo envía a OpenRouter
+      // Cuando el video está en Play, cada 15 segundos extrae el audio real con 2s de solapamiento para no cortar frases ni goles
       player.ontimeupdate = () => {
         if (player.paused || player.ended || !currentSelectedFilename) return;
         const sec = Math.floor(player.currentTime);
-        const bucket = Math.floor(sec / 12);
+        const bucket = Math.floor(sec / 15);
         if (!processedChunkBuckets.has(bucket) && !isProcessingVideoChunk) {
           processedChunkBuckets.add(bucket);
-          extractAndAnalyzeVideoAudio(bucket * 12, 12, player.duration || 0);
+          const chunkStart = Math.max(0, bucket * 15 - (bucket > 0 ? 2 : 0));
+          extractAndAnalyzeVideoAudio(chunkStart, 16, player.duration || 0);
         }
       };
 
       // Si el usuario adelanta o atrasa el video, limpiar buckets futuros para que analice el nuevo punto
       player.onseeked = () => {
         const sec = Math.floor(player.currentTime);
-        const bucket = Math.floor(sec / 12);
+        const bucket = Math.floor(sec / 15);
         processedChunkBuckets.delete(bucket);
       };
     }
@@ -520,8 +518,8 @@
     async function analyzeCurrentVideoMomentNow() {
       const player = document.getElementById('match-media-player');
       if (!currentSelectedFilename) return;
-      const startSec = Math.max(0, Math.floor(player.currentTime) - 2);
-      await extractAndAnalyzeVideoAudio(startSec, 12, player.duration || 0);
+      const startSec = Math.max(0, Math.floor(player.currentTime) - 3);
+      await extractAndAnalyzeVideoAudio(startSec, 16, player.duration || 0);
     }
 
     async function extractAndAnalyzeVideoAudio(startSec, durationSec, totalDuration) {
@@ -546,8 +544,8 @@
           const ev = data.event;
           document.getElementById('ai-status-text').textContent = `Publicado en ${data.latency_ms} ms`;
           appendAiLog(`
-            <div class="text-zinc-400">🎬 <strong>Audio extraído del video [${startSec}s-${startSec + durationSec}s]:</strong> "${data.transcript_received}"</div>
-            <div class="text-purple-300">🤖 <strong>${ev.ai_model || 'OpenRouter IA'}:</strong> Tipo=<code>${ev.type}</code> | Min=<code>${ev.minute}'</code> | Protagonista=<code>${ev.player}</code></div>
+            <div class="text-zinc-400">🎬 <strong>Audio extraído [${startSec}s-${startSec + durationSec}s] (${data.stt_engine || 'STT'}):</strong> "${data.transcript_received}"</div>
+            <div class="text-purple-300">🤖 <strong>${ev.ai_model || 'IA'}:</strong> Tipo=<code>${ev.type}</code> | Min=<code>${ev.minute}'</code> | Protagonista=<code>${ev.player}</code> | Marcador=<code>${data.match.home_team} ${data.match.home_score}-${data.match.away_score} ${data.match.away_team}</code></div>
             <div class="text-emerald-400">🚀 <strong>Enviado a Espectadores:</strong> "${ev.description}" (${data.latency_ms} ms)</div>
           `);
           syncStudioStatus();
