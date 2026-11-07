@@ -366,7 +366,7 @@ Resources:
           #!/bin/bash
           set -euxo pipefail
           dnf update -y
-          dnf install -y java-17-amazon-corretto docker git python3-pip
+          dnf install -y java-21-amazon-corretto docker git python3-pip
           systemctl enable --now docker
           usermod -aG docker ec2-user
 
