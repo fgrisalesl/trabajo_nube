@@ -84,7 +84,7 @@ def main():
     parser.add_argument("--url", default="http://localhost:8000", help="URL base del servicio (EC2, ALB o local)")
     parser.add_argument("--readers", type=int, default=1000, help="Número de lectores simultáneos a simular")
     parser.add_argument("--concurrency", type=int, default=100, help="Hilos concurrentes del cliente generador")
-    parser.add_argument("--events", type=int, default=5, help="Eventos emitidos por el periodista durante el pico")
+    parser.add_argument("--events", type=int, default=0, help="Eventos opcionales emitidos durante el pico (0 para no alterar el marcador en blanco)")
     parser.add_argument("--token", default="unal-periodista-2026", help="Token del periodista")
     args = parser.parse_args()
 

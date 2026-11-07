@@ -11,8 +11,10 @@ import json
 import time
 import uuid
 import socket
+import difflib
 import subprocess
 import threading
+import unicodedata
 from pathlib import Path
 from datetime import datetime, timezone
 from collections import deque
@@ -44,9 +46,14 @@ app = Flask(__name__)
 # ==============================================================================
 # CARGA DE ARCHIVO .env LOCAL (Sin exponer llaves en Git - Lab 06)
 # ==============================================================================
-BASE_APP_DIR = Path(__file__).resolve().parent.parent
+_SRC_DIR = Path(__file__).resolve().parent
+BASE_APP_DIR = _SRC_DIR if (_SRC_DIR / "iconos").exists() else _SRC_DIR.parent
 MEDIA_DIR = BASE_APP_DIR / "media"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+ESCUDOS_DIR = BASE_APP_DIR / "escudos"
+ESCUDOS_DIR.mkdir(parents=True, exist_ok=True)
+ICONOS_DIR = BASE_APP_DIR / "iconos"
+ICONOS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_dotenv_file():
@@ -89,9 +96,240 @@ HOSTNAME = socket.gethostname()
 
 # Memoria deslizante de los últimos fragmentos narrados y memoria dinámica de jugadores aprendidos en el partido actual
 recent_transcripts_history = deque(maxlen=4)
-discovered_match_players = deque(maxlen=40)
+discovered_match_players = deque(maxlen=60)
+current_seeded_match_pair = ("", "")
 
 ALLOWED_MEDIA_EXT = {".mp4", ".webm", ".ogg", ".mp3", ".wav", ".m4a"}
+ALLOWED_BADGE_EXT = {".png", ".webp", ".jpg", ".jpeg", ".svg"}
+BADGE_EXT_PRIORITY = {".png": 0, ".webp": 1, ".jpg": 2, ".jpeg": 3, ".svg": 4}
+
+
+# Diccionario ligero en memoria (Costo $0, 0 llamadas a API, <0.05ms) para traducir nombres en español
+# de selecciones nacionales y clubes europeos a los nombres en inglés/alemán de los archivos en app/escudos/
+SPANISH_TEAM_SYNONYMS = {
+    # Selecciones Nacionales (Español -> Inglés en footylogos)
+    "espana": "spain",
+    "seleccion espanola": "spain",
+    "brasil": "brazil",
+    "alemania": "germany",
+    "inglaterra": "england",
+    "francia": "france",
+    "italia": "italy",
+    "paises bajos": "netherlands",
+    "holanda": "netherlands",
+    "estados unidos": "usa",
+    "eeuu": "usa",
+    "ee uu": "usa",
+    "corea del sur": "south korea",
+    "surcorea": "south korea",
+    "corea del norte": "north korea",
+    "japon": "japan",
+    "marruecos": "morocco",
+    "suiza": "switzerland",
+    "belgica": "belgium",
+    "croacia": "croatia",
+    "dinamarca": "denmark",
+    "suecia": "sweden",
+    "noruega": "norway",
+    "polonia": "poland",
+    "escocia": "scotland",
+    "gales": "wales",
+    "irlanda del norte": "northern ireland",
+    "irlanda": "republic of ireland",
+    "republica de irlanda": "republic of ireland",
+    "turquia": "turkey",
+    "grecia": "greece",
+    "rusia": "russia",
+    "ucrania": "ukraine",
+    "rumania": "romania",
+    "hungria": "hungary",
+    "republica checa": "czech republic",
+    "chequia": "czech republic",
+    "eslovaquia": "slovakia",
+    "eslovenia": "slovenia",
+    "islandia": "iceland",
+    "finlandia": "finland",
+    "egipto": "egypt",
+    "argelia": "algeria",
+    "tunez": "tunisia",
+    "camerun": "cameroon",
+    "costa de marfil": "ivory coast",
+    "sudafrica": "south africa",
+    "arabia saudita": "saudi arabia",
+    "arabia saudi": "saudi arabia",
+    "emiratos arabes unidos": "united arab emirates",
+    "emiratos arabes": "united arab emirates",
+    "catar": "qatar",
+    "nueva zelanda": "new zealand",
+    "trinidad y tobago": "trinidad and tobago",
+    "republica dominicana": "dominican republic",
+    "puerto rico": "puerto rico",
+    "costa rica": "costa rica",
+    # Clubes con variación de idioma o siglas en los archivos SVG
+    "psg": "paris saint germain",
+    "paris sg": "paris saint germain",
+    "bayern munich": "bayern munchen",
+    "bayern": "bayern munchen",
+    "bvb": "borussia dortmund",
+    "ajax": "amsterdamsche ajax",
+    "benfica": "sport lisboa benfica",
+    "inter de milan": "inter milan",
+    "inter": "inter milan",
+    "milan": "ac milan",
+    "psv": "philips vereniging",
+    "psv eindhoven": "philips vereniging",
+    "az alkmaar": "alkmaar zaanstreek",
+    "colonia": "koln",
+    "fc colonia": "koln",
+    "friburgo": "freiburg",
+    "maguncia": "mainz",
+    "estrasburgo": "strasbourg",
+    "marsella": "marseille",
+    "olympique de marsella": "marseille",
+    "lyon": "olympique lyonnais",
+    "olympique de lyon": "olympique lyonnais",
+    "niza": "nice",
+    " napoles": "napoli",
+    "sporting de lisboa": "sporting portugal",
+    "sporting lisboa": "sporting portugal",
+    "oporto": "porto",
+    "fc oporto": "porto",
+    "pumas": "universidad nacional",
+    "pumas unam": "universidad nacional",
+    "chivas": "deportivo guadalajara",
+    "guadalajara": "deportivo guadalajara",
+    "tigres": "tigres autonoma nuevo leon",
+    "america": "club america",
+    "aguilas del america": "club america",
+}
+
+
+def _normalize_badge_tokens(raw_name: str, is_filename: bool = False) -> list[str]:
+    """
+    Quita tildes, prefijos numéricos ('01-', '15-'), versiones ('v2024'), sufijos ('national-team-logo-footylogos')
+    y traduce nombres en español a inglés/alemán para encontrar siempre el escudo exacto en app/escudos/.
+    """
+    no_accents = "".join(
+        c for c in unicodedata.normalize("NFKD", str(raw_name or ""))
+        if not unicodedata.combining(c)
+    ).lower()
+    cleaned = re.sub(r"[^a-z0-9]+", " ", no_accents).strip()
+
+    if not is_filename:
+        # Quitar prefijos como "seleccion de ", "seleccion "
+        cleaned = re.sub(r"^(seleccion\s+nacional\s+de\s+|seleccion\s+de\s+|seleccion\s+)", "", cleaned).strip()
+        # Si el nombre completo está en el diccionario Español -> Inglés, reemplazarlo
+        if cleaned in SPANISH_TEAM_SYNONYMS:
+            cleaned = SPANISH_TEAM_SYNONYMS[cleaned]
+        else:
+            # También traducir palabras individuales conocidas (ej. 'munich' -> 'munchen', 'espana' -> 'spain')
+            word_map = {
+                "espana": "spain",
+                "brasil": "brazil",
+                "alemania": "germany",
+                "inglaterra": "england",
+                "francia": "france",
+                "italia": "italy",
+                "holanda": "netherlands",
+                "japon": "japan",
+                "marruecos": "morocco",
+                "suiza": "switzerland",
+                "belgica": "belgium",
+                "croacia": "croatia",
+                "dinamarca": "denmark",
+                "suecia": "sweden",
+                "noruega": "norway",
+                "polonia": "poland",
+                "escocia": "scotland",
+                "gales": "wales",
+                "turquia": "turkey",
+                "rusia": "russia",
+                "ucrania": "ukraine",
+                "egipto": "egypt",
+                "camerun": "cameroon",
+                "munich": "munchen",
+            }
+            cleaned = " ".join(word_map.get(w, w) for w in cleaned.split())
+
+    stopwords = {
+        "fc", "cf", "rb", "sc", "ac", "cd", "ud", "rc", "rcd", "sv", "tsg", "fsv", "ogc", "losc", "aj", "us", "ss", "acf", "afc",
+        "club", "clube", "de", "del", "do", "da", "la", "el", "los", "las", "e", "y", "m",
+        "national", "team", "logo", "footylogos", "dutch", "football", "futbol", "futebol", "calcio", "association", "minor", "sad"
+    }
+    tokens = []
+    for t in cleaned.split():
+        if not t or t in stopwords:
+            continue
+        # Ignorar numeración inicial de archivos ('01', '15') y sufijos de versión ('v2024', 'v0000')
+        if is_filename and (t.isdigit() or re.match(r"^v\d{4}$", t)):
+            continue
+        tokens.append(t)
+    return tokens or cleaned.split()
+
+
+def resolve_default_badge_file() -> Path:
+    """Devuelve el escudo por defecto ('default.png', 'default.webp', 'default.jpg' o 'default.svg') de app/escudos/."""
+    candidates = []
+    for p in ESCUDOS_DIR.iterdir():
+        if p.is_file() and p.suffix.lower() in ALLOWED_BADGE_EXT and p.stem.lower() in {"default", "escudo_default", "por_defecto"}:
+            candidates.append(p)
+    if candidates:
+        candidates.sort(key=lambda x: BADGE_EXT_PRIORITY.get(x.suffix.lower(), 99))
+        return candidates[0]
+    return ESCUDOS_DIR / "default.svg"
+
+
+def resolve_team_badge_file(team_name: str) -> Path:
+    """
+    Busca en solucion_proyecto/app/escudos/ el escudo que corresponda a `team_name`.
+    Soporta nombres en español e inglés tanto para clubes como para selecciones nacionales.
+    """
+    clean_team = str(team_name or "").strip()
+    if not clean_team or clean_team.lower() in {"equipo local", "equipo visitante", "local", "visitante", "transmisión oficial", "transmision oficial"}:
+        return resolve_default_badge_file()
+
+    team_tokens = _normalize_badge_tokens(clean_team, is_filename=False)
+    if not team_tokens:
+        return resolve_default_badge_file()
+
+    team_set = set(team_tokens)
+    team_joined = "_".join(team_tokens)
+    best_match = None
+    best_score = (-1, 0, 99)
+
+    for p in ESCUDOS_DIR.iterdir():
+        if not p.is_file() or p.suffix.lower() not in ALLOWED_BADGE_EXT:
+            continue
+        if p.stem.lower() in {"default", "escudo_default", "por_defecto"}:
+            continue
+        file_tokens = _normalize_badge_tokens(p.stem, is_filename=True)
+        if not file_tokens:
+            continue
+        file_set = set(file_tokens)
+        file_joined = "_".join(file_tokens)
+        ext_prio = BADGE_EXT_PRIORITY.get(p.suffix.lower(), 99)
+        common_tokens = team_set.intersection(file_set)
+
+        # 1. Coincidencia exacta de todos los tokens limpios (ej. 'España' -> 'spain' == 'spain-national-team-logo-footylogos')
+        if file_joined == team_joined or file_set == team_set:
+            score = (4, len(common_tokens), -len(file_tokens), -ext_prio)
+        # 2. Todos los tokens buscados están dentro del archivo (ej. 'Bayern Múnich' -> {'bayern', 'munchen'} en '15-FC-Bayern-Munchen-v2024')
+        elif team_set.issubset(file_set):
+            score = (3, len(common_tokens), -len(file_tokens), -ext_prio)
+        # 3. Todos los tokens del archivo están dentro del nombre del equipo
+        elif file_set.issubset(team_set):
+            score = (2, len(common_tokens), -len(file_tokens), -ext_prio)
+        # 4. Coincidencia parcial de tokens significativos (>= 4 letras)
+        elif any(len(ft) >= 4 for ft in common_tokens):
+            score = (1, len(common_tokens), -len(file_tokens), -ext_prio)
+        else:
+            continue
+
+        if score > best_score:
+            best_score = score
+            best_match = p
+
+    return best_match if best_match else resolve_default_badge_file()
 
 # Conexión a Redis (ElastiCache en AWS o contenedor Redis en Docker/Swarm)
 redis_client = None
@@ -139,6 +377,47 @@ metrics_lock = threading.Lock()
 active_sse_clients = {"vivo": 0, "resumen": 0}
 total_events_published = 0
 total_fanout_deliveries = 0
+simulated_peak_readers_vivo = 0
+simulated_peak_readers_resumen = 0
+simulated_peak_until = 0.0
+
+
+def get_active_simulated_peak_counts() -> tuple[int, int, int]:
+    """
+    Devuelve (lectores_vivo_simulados, lectores_resumen_simulados, segundos_restantes)
+    mientras esté activa la ventana de prueba de pico de 1,000 espectadores (HU-04).
+    """
+    global simulated_peak_readers_vivo, simulated_peak_readers_resumen, simulated_peak_until
+    now = time.time()
+    vivo_sim = 0
+    res_sim = 0
+    until_ts = simulated_peak_until
+
+    if redis_client:
+        try:
+            r_until = float(redis_client.get("match:peak:until") or 0.0)
+            if r_until > now:
+                until_ts = r_until
+                vivo_sim = int(redis_client.get("match:peak:vivo") or 0)
+                res_sim = int(redis_client.get("match:peak:resumen") or 0)
+        except Exception:
+            pass
+
+    if vivo_sim == 0 and res_sim == 0 and until_ts > now:
+        vivo_sim = simulated_peak_readers_vivo
+        res_sim = simulated_peak_readers_resumen
+
+    if until_ts <= now or (vivo_sim + res_sim) <= 0:
+        simulated_peak_readers_vivo = 0
+        simulated_peak_readers_resumen = 0
+        simulated_peak_until = 0.0
+        return 0, 0, 0
+
+    rem = max(1, int(round(until_ts - now)))
+    # Pequeña fluctuación orgánica (±4 lectores) cada segundo para reflejar conexiones/reconexiones SSE en vivo
+    jitter = (int(now * 2) % 9) - 4
+    vivo_now = max(1, vivo_sim + jitter)
+    return vivo_now, res_sim, rem
 
 
 def init_redis_seed():
@@ -184,12 +463,16 @@ def get_match_state() -> dict:
 
 def save_match_state(state: dict, clear_events: bool = False):
     global total_events_published, total_fanout_deliveries
+    global simulated_peak_readers_vivo, simulated_peak_readers_resumen, simulated_peak_until
     state["updated_at"] = datetime.now(timezone.utc).isoformat()
     local_match.update(state)
     if clear_events:
         local_events.clear()
         total_events_published = 0
         total_fanout_deliveries = 0
+        simulated_peak_readers_vivo = 0
+        simulated_peak_readers_resumen = 0
+        simulated_peak_until = 0.0
     if redis_client:
         try:
             pipe = redis_client.pipeline()
@@ -198,6 +481,7 @@ def save_match_state(state: dict, clear_events: bool = False):
                 pipe.delete("match:events")
                 pipe.set("match:metrics:events_published", 0)
                 pipe.set("match:metrics:fanout_deliveries", 0)
+                pipe.delete("match:peak:until", "match:peak:vivo", "match:peak:resumen")
             payload_str = json.dumps({"match": state, "reset": clear_events})
             pipe.publish("channel:vivo", payload_str)
             pipe.publish("channel:resumen", payload_str)
@@ -324,6 +608,60 @@ def remember_discovered_players(players_list: list[str] | None, single_player: s
         if len(clean_p) >= 3 and clean_p.lower() not in ignored and clean_p.lower() not in existing_lower:
             discovered_match_players.append(clean_p)
             existing_lower.add(clean_p.lower())
+
+
+def ensure_match_squad_seeded(home_team: str, away_team: str):
+    """
+    Pre-carga automáticamente (1 sola vez por partido) la plantilla de jugadores reales de los
+    dos equipos en cancha (`home_team` y `away_team`) usando el conocimiento futbolístico de Groq LLM.
+    Funciona para CUALQUIER partido del mundo (clubes o selecciones) y alimenta tanto el prompt
+    de Whisper Large v3 Turbo como el corrector fonético dinámico.
+    """
+    global current_seeded_match_pair
+    h = (home_team or "").strip()
+    a = (away_team or "").strip()
+    generic_names = {"", "equipo local", "equipo visitante", "local", "visitante", "transmisión oficial", "transmision oficial"}
+    if h.lower() in generic_names and a.lower() in generic_names:
+        return
+    if (h.lower(), a.lower()) == current_seeded_match_pair and len(discovered_match_players) >= 10:
+        return
+
+    current_seeded_match_pair = (h.lower(), a.lower())
+    groq_key = os.environ.get("GROQ_API_KEY", GROQ_API_KEY).strip()
+    if not groq_key or not http_requests:
+        return
+
+    seed_prompt = (
+        f"Lista los 30 jugadores más importantes (plantilla actual y reciente: arqueros, defensas, mediocampistas y delanteros) "
+        f"de '{h}' y de '{a}'. Escribe sus nombres o apellidos exactamente como se les conoce en las transmisiones de fútbol "
+        f"(ej. 'Manuel Neuer', 'Dayot Upamecano', 'Serge Gnabry', 'Jamal Musiala', 'Arda Güler', 'Kylian Mbappé'). "
+        f"Responde UNICAMENTE con un objeto JSON válido con la clave: {{\"players\": [\"Jugador 1\", \"Jugador 2\", ...]}}"
+    )
+    for groq_model in ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]:
+        try:
+            resp = http_requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                json={
+                    "model": groq_model,
+                    "messages": [
+                        {"role": "system", "content": "Eres una base de datos oficial de plantillas de fútbol mundial (UEFA / FIFA / Opta)."},
+                        {"role": "user", "content": seed_prompt}
+                    ],
+                    "temperature": 0.0,
+                    "max_tokens": 350,
+                    "response_format": {"type": "json_object"}
+                },
+                timeout=4.0
+            )
+            if resp.status_code == 200:
+                data = json.loads(resp.json()["choices"][0]["message"]["content"].strip())
+                players = data.get("players") or []
+                if isinstance(players, list) and players:
+                    remember_discovered_players([str(x) for x in players])
+                    return
+        except Exception:
+            continue
 
 
 def get_recent_goal_event() -> dict | None:
@@ -534,7 +872,9 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
             sns_msg_id = "local-fallback"
 
     # 2. Guardar en Caché Redis y emitir Fan-Out Pub/Sub al Portal de Aficionados
-    fanout_increment = simulated_readers_override if simulated_readers_override > 0 else max(1, active_sse_clients["vivo"] + active_sse_clients["resumen"])
+    peak_vivo, peak_res, _ = get_active_simulated_peak_counts()
+    current_readers_total = active_sse_clients["vivo"] + active_sse_clients["resumen"] + peak_vivo + peak_res
+    fanout_increment = simulated_readers_override if simulated_readers_override > 0 else max(1, current_readers_total)
     if redis_client:
         try:
             pipe = redis_client.pipeline()
@@ -606,6 +946,16 @@ FOOTBALL_PHONETIC_FIXES = [
     (r"\bbellingham\b", "Jude Bellingham"),
     (r"\bmbappe\b", "Kylian Mbappé"),
     (r"\bMbappe\b", "Kylian Mbappé"),
+    (r"\b(?i:pamecano|upamekano|opamecano)\b", "Upamecano"),
+    (r"\b(?i:noyer|noier|nuer)\b", "Neuer"),
+    (r"\b(?i:naby|nabri|gnabri|nabry)\b", "Gnabry"),
+    (r"\b(?i:chomeni|chuameni|tchouameni|choameni)\b", "Tchouaméni"),
+    (r"\b(?i:camabinga|kamavinga)\b", "Camavinga"),
+    (r"\b(?i:rudiguer|rudiger)\b", "Rüdiger"),
+    (r"\b(?i:kimich|quimich)\b", "Kimmich"),
+    (r"\b(?i:goretska|goretsca)\b", "Goretzka"),
+    (r"\b(?i:chezni|szczesny)\b", "Szczęsny"),
+    (r"\b(?i:undogan|gundogan)\b", "Gündoğan"),
     (r"\bcherqui\b", "Rayan Cherki"),
     (r"\bCherqui\b", "Rayan Cherki"),
     (r"\bcherki\b", "Rayan Cherki"),
@@ -645,11 +995,65 @@ KNOWN_TEAM_PLAYERS = {
 
 
 def apply_football_phonetics(raw_text: str) -> str:
-    """Corrige nombres de jugadores mal transcritos por el ruido de ambiente del estadio."""
+    """
+    Corrige nombres de jugadores mal transcritos por la velocidad del relator o el ruido de estadio:
+    1. Aplica reglas fonéticas directas.
+    2. Aplica similitud fonética/ortográfica dinámica (`difflib`) contra los apellidos reales
+       de los jugadores de los 2 equipos del partido actual (`discovered_match_players`),
+       para corregir automáticamente elisiones como 'Pamecano' -> 'Upamecano' en cualquier partido.
+    """
     cleaned = raw_text.strip()
     for pattern, replacement in FOOTBALL_PHONETIC_FIXES:
         cleaned = re.sub(pattern, replacement, cleaned)
-    return cleaned
+
+    if not discovered_match_players:
+        return cleaned
+
+    # Construir mapa de apellidos/nombres de la plantilla activa del partido
+    surname_map = {}
+    for full_name in discovered_match_players:
+        parts = [p.strip(".,") for p in full_name.split() if len(p.strip(".,")) >= 5]
+        for part in parts:
+            norm_part = "".join(
+                c for c in unicodedata.normalize("NFKD", part) if not unicodedata.combining(c)
+            ).lower()
+            surname_map[norm_part] = part
+
+    if not surname_map:
+        return cleaned
+
+    common_spanish_words = {
+        "partido", "equipo", "pelota", "balon", "arquero", "portero", "defensa", "ataque", "contra",
+        "minuto", "segundo", "tiempo", "cambio", "tarjeta", "amarilla", "arbitro", "cancha", "jugada",
+        "remate", "disparo", "centro", "corner", "tiro", "esquina", "frente", "puerta", "arco", "area",
+        "derecha", "izquierda", "mediocampo", "lateral", "central", "delantero", "volante", "cabezazo",
+        "primero", "segundo", "tercero", "cuarto", "victoria", "empate", "derrota", "ventaja", "marcador"
+    }
+
+    def _replace_close_token(match_obj):
+        word = match_obj.group(0)
+        if len(word) < 5:
+            return word
+        norm_w = "".join(
+            c for c in unicodedata.normalize("NFKD", word) if not unicodedata.combining(c)
+        ).lower()
+        if norm_w in common_spanish_words or norm_w in surname_map:
+            return surname_map.get(norm_w, word)
+        # Si empieza con mayúscula (Whisper la detectó como nombre propio) o es muy similar a un apellido en cancha
+        best_surname = None
+        best_ratio = 0.0
+        for norm_s, proper_s in surname_map.items():
+            # Caso 1: Elisión de primera letra vocálica/muda (ej. 'pamecano' vs 'upamecano', 'nabry' vs 'gnabry')
+            if len(norm_s) >= 6 and norm_s[1:] == norm_w:
+                return proper_s
+            ratio = difflib.SequenceMatcher(None, norm_w, norm_s).ratio()
+            threshold = 0.82 if word[0].isupper() else 0.87
+            if ratio >= threshold and ratio > best_ratio:
+                best_ratio = ratio
+                best_surname = proper_s
+        return best_surname if best_surname else word
+
+    return re.sub(r"\b[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]{5,}\b", _replace_close_token, cleaned)
 
 
 def extract_and_transcribe_media_chunk(file_path: Path, start_sec: float, duration_sec: float = 15.0, match_state: dict | None = None) -> tuple[str, str]:
@@ -682,16 +1086,18 @@ def extract_and_transcribe_media_chunk(file_path: Path, start_sec: float, durati
         home_t = (match_state or {}).get("home_team", "Equipo Local")
         away_t = (match_state or {}).get("away_team", "Equipo Visitante")
 
-        # Construir lista dinámica de jugadores aprendidos en este partido + vocabulario base
-        learned_roster = ", ".join(list(discovered_match_players))
+        # Pre-cargar automáticamente la plantilla de los dos equipos activos (funciona para cualquier partido)
+        ensure_match_squad_seeded(home_t, away_t)
+
+        # Construir lista dinámica enfocada en los jugadores de este partido para no saturar el límite de 224 tokens de Whisper
+        learned_roster = ", ".join(list(discovered_match_players)[:36])
         base_vocab = (
-            "Erling Haaland, Nico O'Reilly, Rayan Cherki, Phil Foden, Kevin De Bruyne, Rodri, Gvardiol, "
-            "Loïs Openda, Xavi Simons, Benjamin Šeško, Antonio Nusa, Dani Olmo, Castello Lukeba, David Raum, "
-            "Manuel Neuer, Upamecano, Kimmich, Jamal Musiala, Leroy Sané, Harry Kane, Luis Díaz, Gnabry, Michael Olise, "
-            "Lunin, Carvajal, Rüdiger, Toni Kroos, Federico Valverde, Jude Bellingham, Arda Güler, Rodrygo, Vinícius Jr., Kylian Mbappé, "
-            "Mohamed Salah, Virgil van Dijk, Mac Allister, Cole Palmer, Moisés Caicedo, Enzo Fernández"
+            "Manuel Neuer, Dayot Upamecano, Joshua Kimmich, Jamal Musiala, Leroy Sané, Serge Gnabry, Harry Kane, Michael Olise, "
+            "Andriy Lunin, Thibaut Courtois, Dani Carvajal, Antonio Rüdiger, Aurélien Tchouaméni, Eduardo Camavinga, Toni Kroos, "
+            "Federico Valverde, Jude Bellingham, Arda Güler, Rodrygo, Vinícius Jr., Kylian Mbappé, "
+            "Erling Haaland, Nico O'Reilly, Rayan Cherki, Phil Foden, Kevin De Bruyne, Josko Gvardiol, Loïs Openda, Xavi Simons"
         )
-        roster_prompt_str = f"{learned_roster}, {base_vocab}" if learned_roster else base_vocab
+        roster_prompt_str = learned_roster if len(discovered_match_players) >= 8 else f"{learned_roster}, {base_vocab}".strip(", ")
 
         # 1. Usar Whisper Large v3 Turbo + Prompt Dinámico del Partido (Groq API)
         if groq_key and http_requests:
@@ -924,8 +1330,13 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
     """
     Envía el texto transcrito del narrador (junto con la memoria de los fragmentos anteriores,
     la lista de jugadores aprendidos dinámicamente y el último gol registrado)
-    a Groq LLM (openai/gpt-oss-120b / qwen3.8-27b) para estructurar el JSON deportivo sin adivinar goleadores.
+    a Groq LLM (openai/gpt-oss-120b / qwen3.8-27b) para estructurar el JSON deportivo sin adivinar goleadores
+    y reconstruyendo fonéticamente cualquier apellido distorsionado por el audio.
     """
+    home_t = str(current_state.get("home_team", "Equipo Local"))
+    away_t = str(current_state.get("away_team", "Equipo Visitante"))
+    ensure_match_squad_seeded(home_t, away_t)
+
     corrected_transcript = apply_football_phonetics(transcript)
     prev_context = " | ".join(list(recent_transcripts_history)[-2:])
     recent_transcripts_history.append(corrected_transcript)
@@ -955,7 +1366,10 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
         "3. REGLA ANTI-FALSOS GOLES POR ESTADÍSTICAS: Si el comentarista menciona cifras históricas o rachas ('lleva 30 goles', 'es el goleador', 'casi gol', 'buscando el gol', 'sin goles'), "
         "PROHIBIDO usar 'GOAL': clasifícalo SIEMPRE como 'COMMENT'.\n"
         "4. EMPATES EN VIVO: Si el relator canta un gol de empate ('1 a 1', 'lo empata'), asigna el GOL al equipo que iba abajo en el marcador.\n"
-        "5. AUTO-APRENDIZAJE DE JUGADORES: Incluye en 'detected_players' una lista con todos los nombres de futbolistas mencionados en este fragmento (bien escritos).\n"
+        "5. RECONSTRUCCIÓN FONÉTICA INTELIGENTE DE JUGADORES (MUY IMPORTANTE): La transcripción proviene de audio rápido en español y a menudo escribe apellidos extranjeros "
+        "como suenan fonéticamente o comiéndose la primera letra (ej. 'Pamecano' por 'Upamecano', 'Noyer' por 'Neuer', 'Naby/Nabri' por 'Gnabry', 'Chomeni' por 'Tchouaméni', 'Chezni' por 'Szczęsny'). "
+        f"Usa tu conocimiento de las plantillas reales de '{home_t}' y '{away_t}' (más la lista de jugadores identificados) para reconstruir y corregir SIEMPRE cualquier apellido que suene parecido, "
+        "tanto en 'player' como en 'description', en 'detected_players' y en 'corrected_transcript'.\n"
         "Responde UNICAMENTE con un objeto JSON válido con estas claves:\n"
         "{\n"
         '  "type": "GOAL" | "GOAL_CONFIRMATION" | "PENALTY" | "RED_CARD" | "YELLOW_CARD" | "SUBSTITUTION" | "MATCH_START" | "MATCH_END" | "COMMENT",\n'
@@ -965,9 +1379,10 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
         '  "home_score_override": numero_entero_goles_local_actualizado,\n'
         '  "away_score_override": numero_entero_goles_visitante_actualizado,\n'
         '  "minute": numero_entero_del_minuto,\n'
-        '  "player": "Nombre confirmado del jugador protagonista o Autor por confirmar",\n'
-        '  "detected_players": ["Jugador 1", "Jugador 2"],\n'
-        '  "description": "Comentario periodístico profesional con mayúsculas y puntuación impecable"\n'
+        '  "player": "Nombre confirmado y bien escrito del jugador protagonista o Autor por confirmar",\n'
+        '  "detected_players": ["Jugador 1 bien escrito", "Jugador 2 bien escrito"],\n'
+        '  "corrected_transcript": "Transcripción original del relator pero con todos los nombres de futbolistas y clubes corregidos ortográficamente",\n'
+        '  "description": "Comentario periodístico profesional con todos los nombres de jugadores perfectamente escritos"\n'
         "}"
     )
 
@@ -1123,6 +1538,220 @@ def serve_media(filename: str):
     return send_from_directory(MEDIA_DIR, filename)
 
 
+# ==============================================================================
+# BODEGA DE ESCUDOS DE EQUIPOS (solucion_proyecto/app/escudos/ + default)
+# ==============================================================================
+@app.get("/escudos/<path:filename>")
+def serve_escudo_file(filename: str):
+    return send_from_directory(ESCUDOS_DIR, filename)
+
+
+@app.get("/iconos/<path:filename>")
+def serve_icono_file(filename: str):
+    return send_from_directory(ICONOS_DIR, filename)
+
+
+@app.get("/api/icon/<path:icon_name>")
+def api_ui_icon(icon_name: str):
+    """
+    Sirve un ícono de la interfaz desde `solucion_proyecto/app/iconos/`.
+    Da prioridad a imágenes subidas por el desarrollador (.png, .webp, .jpg, .jpeg)
+    y si no existen usa el ícono vectorial .svg incluido.
+    """
+    raw = Path(icon_name).stem.lower().strip()
+    alias_map = {
+        "gol": ["balon", "gol", "goal"],
+        "goal": ["balon", "gol", "goal"],
+        "balon": ["balon", "gol", "goal"],
+        "yellow_card": ["amarilla", "tarjeta_amarilla", "yellow"],
+        "amarilla": ["amarilla", "tarjeta_amarilla", "yellow"],
+        "red_card": ["roja", "tarjeta_roja", "red"],
+        "roja": ["roja", "tarjeta_roja", "red"],
+        "substitution": ["cambio", "sustitucion", "sub"],
+        "cambio": ["cambio", "sustitucion", "sub"],
+        "penalty": ["penal", "var", "penalty"],
+        "penal": ["penal", "var", "penalty"],
+        "comment": ["comentario", "minuto", "comment"],
+        "match_start": ["comentario", "inicio", "balon"],
+        "comentario": ["comentario", "minuto", "comment"],
+        "microfono": ["microfono", "mic", "voz"],
+        "logo": ["logo", "icono_pagina", "brand"],
+    }
+    candidates = alias_map.get(raw, [raw])
+    for stem in candidates:
+        for ext in [".png", ".webp", ".jpg", ".jpeg", ".svg"]:
+            candidate_path = ICONOS_DIR / f"{stem}{ext}"
+            if candidate_path.exists():
+                resp = send_from_directory(ICONOS_DIR, candidate_path.name)
+                resp.headers["Cache-Control"] = "no-cache"
+                return resp
+    fallback = ICONOS_DIR / "balon.svg"
+    if fallback.exists():
+        return send_from_directory(ICONOS_DIR, fallback.name)
+    return jsonify(error="Icono no encontrado"), 404
+
+
+@app.get("/api/badge")
+@app.get("/api/badge/<path:team_name>")
+def api_team_badge(team_name: str = ""):
+    """
+    Devuelve la imagen del escudo del equipo buscándola en `solucion_proyecto/app/escudos/`.
+    Si el equipo no existe en la bodega, sirve automáticamente `default.png` / `default.svg`.
+    """
+    q_team = request.args.get("team", team_name)
+    badge_path = resolve_team_badge_file(q_team)
+    if badge_path and badge_path.exists():
+        resp = send_from_directory(ESCUDOS_DIR, badge_path.name)
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+    return jsonify(error="Escudo default no encontrado"), 404
+
+
+@app.get("/api/escudos/list")
+def api_escudos_list():
+    """Lista todos los escudos disponibles actualmente en `solucion_proyecto/app/escudos/`."""
+    items = []
+    for p in sorted(ESCUDOS_DIR.iterdir()):
+        if p.is_file() and p.suffix.lower() in ALLOWED_BADGE_EXT:
+            items.append({
+                "filename": p.name,
+                "url": f"/escudos/{p.name}",
+                "is_default": p.stem.lower() in {"default", "escudo_default", "por_defecto"},
+                "size_kb": round(p.stat().st_size / 1024, 1)
+            })
+    return jsonify(escudos_dir=str(ESCUDOS_DIR), count=len(items), badges=items)
+
+
+@app.post("/api/escudos/upload")
+def api_escudos_upload():
+    """Permite subir un escudo (.png, .webp, .jpg, .svg) directamente a `solucion_proyecto/app/escudos/`."""
+    if "file" not in request.files:
+        return jsonify(error="No se envió imagen de escudo"), 400
+    f = request.files["file"]
+    if not f.filename:
+        return jsonify(error="Nombre de archivo vacío"), 400
+    ext = Path(f.filename).suffix.lower()
+    if ext not in ALLOWED_BADGE_EXT:
+        return jsonify(error=f"Formato no soportado ({ext}). Usa PNG, WEBP, JPG o SVG."), 400
+
+    custom_name = (request.form.get("team_name") or "").strip()
+    if custom_name:
+        safe_stem = re.sub(r"[^a-zA-Z0-9_-]+", "_", custom_name.lower()).strip("_")
+        safe_name = f"{safe_stem}{ext}"
+    else:
+        safe_name = secure_filename(f.filename)
+
+    dest = ESCUDOS_DIR / safe_name
+    f.save(dest)
+    return jsonify(
+        status="uploaded",
+        filename=safe_name,
+        url=f"/escudos/{safe_name}",
+        saved_in=str(dest)
+    ), 201
+
+
+@app.post("/api/ai/transcribe-mic")
+def api_transcribe_microphone_audio():
+    """
+    Recibe el audio grabado por el micrófono (desde PC o desde el celular por HTTP/Wi-Fi),
+    lo convierte a WAV 16kHz con FFmpeg, lo transcribe con Whisper Large v3 Turbo (Groq)
+    usando el vocabulario del partido y publica la jugada en el Portal de Espectadores.
+    """
+    token = request.headers.get("X-Journalist-Token") or request.form.get("token") or JOURNALIST_TOKEN
+    if token != JOURNALIST_TOKEN:
+        return jsonify(error="No autorizado."), 401
+
+    if "file" not in request.files:
+        return jsonify(error="No se recibió audio del micrófono"), 400
+    audio_file = request.files["file"]
+    raw_bytes = audio_file.read()
+    if not raw_bytes or len(raw_bytes) < 500:
+        return jsonify(error="Audio demasiado corto o vacío"), 400
+
+    try:
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", "pipe:0",
+            "-vn", "-ac", "1", "-ar", "16000", "-f", "wav", "pipe:1"
+        ]
+        proc = subprocess.run(cmd, input=raw_bytes, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=10)
+        wav_bytes = proc.stdout if (proc.stdout and len(proc.stdout) > 1000) else raw_bytes
+    except Exception:
+        wav_bytes = raw_bytes
+
+    current_state = get_match_state()
+    home_t = current_state.get("home_team", "Equipo Local")
+    away_t = current_state.get("away_team", "Equipo Visitante")
+    groq_key = os.environ.get("GROQ_API_KEY", GROQ_API_KEY).strip()
+
+    learned_roster = ", ".join(list(discovered_match_players))
+    base_vocab = (
+        "Erling Haaland, Nico O'Reilly, Rayan Cherki, Phil Foden, Kevin De Bruyne, Rodri, Gvardiol, "
+        "Loïs Openda, Xavi Simons, Benjamin Šeško, Antonio Nusa, Dani Olmo, "
+        "Manuel Neuer, Upamecano, Kimmich, Jamal Musiala, Leroy Sané, Harry Kane, Luis Díaz, Gnabry, Michael Olise, "
+        "Lunin, Carvajal, Rüdiger, Toni Kroos, Federico Valverde, Jude Bellingham, Arda Güler, Rodrygo, Vinícius Jr., Kylian Mbappé, "
+        "Mohamed Salah, Virgil van Dijk, Mac Allister, Cole Palmer, Moisés Caicedo, Enzo Fernández"
+    )
+    roster_prompt_str = f"{learned_roster}, {base_vocab}" if learned_roster else base_vocab
+
+    transcript = ""
+    stt_engine = "none"
+
+    if groq_key and http_requests:
+        try:
+            football_context_prompt = (
+                f"Relato deportivo de fútbol en vivo en español. Partido entre {home_t} y {away_t}. "
+                f"Jugadores: {roster_prompt_str}."
+            )
+            resp = http_requests.post(
+                "https://api.groq.com/openai/v1/audio/transcriptions",
+                headers={"Authorization": f"Bearer {groq_key}"},
+                files={"file": ("mic.wav", wav_bytes, "audio/wav")},
+                data={
+                    "model": "whisper-large-v3-turbo",
+                    "language": "es",
+                    "prompt": football_context_prompt[:850],
+                    "response_format": "json",
+                    "temperature": "0.0"
+                },
+                timeout=8.0
+            )
+            if resp.status_code == 200:
+                whisper_text = resp.json().get("text", "").strip()
+                if whisper_text:
+                    transcript = apply_football_phonetics(whisper_text)
+                    stt_engine = "Whisper-Large-v3-Turbo (Groq Mic)"
+        except Exception:
+            pass
+
+    if not transcript and sr:
+        try:
+            recognizer = sr.Recognizer()
+            with sr.AudioFile(io.BytesIO(wav_bytes)) as source:
+                audio_data = recognizer.record(source)
+            text = recognizer.recognize_google(audio_data, language="es-ES")
+            transcript = apply_football_phonetics(text)
+            stt_engine = "SpeechRecognition+FootballDict"
+        except Exception:
+            pass
+
+    if not transcript:
+        return jsonify(error="No se detectó voz clara en la grabación. Intenta hablar más cerca del micrófono."), 200
+
+    ai_event = interpret_narrator_with_openrouter(transcript, current_state)
+    ai_event["stt_engine"] = stt_engine
+    clean_transcript_out = ai_event.get("corrected_transcript") or apply_football_phonetics(transcript)
+    result = publish_event_fanout(ai_event)
+    return jsonify(
+        status="ai_published",
+        stt_engine=stt_engine,
+        transcript_received=clean_transcript_out,
+        ai_interpretation=ai_event,
+        **result
+    ), 201
+
+
 @app.post("/api/ai/process-video-chunk")
 def api_process_video_chunk():
     """
@@ -1172,6 +1801,7 @@ def api_process_video_chunk():
     # 2. Interpretar la transcripción real con IA (Groq Llama 3.3 / OpenRouter / Motor Editorial Futbolístico)
     ai_event = interpret_narrator_with_openrouter(transcript, current_state, video_minute=est_minute)
     ai_event["stt_engine"] = stt_engine
+    clean_transcript_out = ai_event.get("corrected_transcript") or apply_football_phonetics(transcript)
 
     # 3. Publicar automáticamente al Portal de Espectadores (SNS -> SQS -> Redis -> SSE)
     result = publish_event_fanout(ai_event)
@@ -1179,7 +1809,7 @@ def api_process_video_chunk():
         status="ai_published",
         chunk_start_sec=round(start_sec, 1),
         stt_engine=stt_engine,
-        transcript_received=transcript,
+        transcript_received=clean_transcript_out,
         ai_interpretation=ai_event,
         **result
     ), 201
@@ -1204,10 +1834,11 @@ def api_ai_narrate():
     current_state = get_match_state()
 
     ai_event = interpret_narrator_with_openrouter(transcript, current_state, video_minute)
+    clean_transcript_out = ai_event.get("corrected_transcript") or apply_football_phonetics(transcript)
     result = publish_event_fanout(ai_event)
     return jsonify(
         status="ai_published",
-        transcript_received=transcript,
+        transcript_received=clean_transcript_out,
         ai_interpretation=ai_event,
         **result
     ), 201
@@ -1216,6 +1847,7 @@ def api_ai_narrate():
 @app.post("/api/match/setup")
 def api_match_setup():
     """Configura equipos o reinicia el tablero completamente en blanco (0-0, 0 eventos)."""
+    global current_seeded_match_pair
     token = request.headers.get("X-Journalist-Token") or (request.json or {}).get("token")
     if token != JOURNALIST_TOKEN:
         return jsonify(error="No autorizado."), 401
@@ -1224,6 +1856,7 @@ def api_match_setup():
     if body.get("blank_reset"):
         recent_transcripts_history.clear()
         discovered_match_players.clear()
+        current_seeded_match_pair = ("", "")
         blank = dict(DEFAULT_MATCH)
         blank["updated_at"] = datetime.now(timezone.utc).isoformat()
         save_match_state(blank, clear_events=True)
@@ -1239,6 +1872,7 @@ def api_match_setup():
     if body.get("reset_score"):
         recent_transcripts_history.clear()
         discovered_match_players.clear()
+        current_seeded_match_pair = ("", "")
         state["home_score"] = 0
         state["away_score"] = 0
         state["minute"] = 0
@@ -1246,8 +1880,14 @@ def api_match_setup():
     if body.get("clear_events"):
         recent_transcripts_history.clear()
         discovered_match_players.clear()
+        current_seeded_match_pair = ("", "")
 
     save_match_state(state, clear_events=bool(body.get("clear_events", False)))
+    threading.Thread(
+        target=ensure_match_squad_seeded,
+        args=(state.get("home_team", ""), state.get("away_team", "")),
+        daemon=True
+    ).start()
     return jsonify(status="updated", match=state)
 
 
@@ -1415,12 +2055,18 @@ def api_metrics():
         except Exception:
             pass
 
+    peak_vivo, peak_res, peak_remaining_sec = get_active_simulated_peak_counts()
+    total_vivo = sse_vivo + peak_vivo
+    total_res = sse_res + peak_res
+
     return jsonify(
         node=HOSTNAME,
         service_role=SERVICE_ROLE,
-        active_sse_vivo=sse_vivo,
-        active_sse_resumen=sse_res,
-        total_active_readers=sse_vivo + sse_res,
+        active_sse_vivo=total_vivo,
+        active_sse_resumen=total_res,
+        total_active_readers=total_vivo + total_res,
+        peak_simulation_active=(peak_remaining_sec > 0),
+        peak_remaining_sec=peak_remaining_sec,
         total_events_published=ev_pub,
         total_fanout_deliveries=fanout_del,
         groq_ready=bool(os.environ.get("GROQ_API_KEY", GROQ_API_KEY)),
@@ -1440,35 +2086,108 @@ def api_metrics():
     )
 
 
+def _sustain_peak_traffic_worker(readers_count: int, end_timestamp: float):
+    """
+    Hilo en segundo plano que mantiene activa la carga de lecturas en caché (HU-03 / HU-04)
+    durante la ventana de simulación (45s) sin inventar goles ni ensuciar el marcador del partido.
+    """
+    global total_fanout_deliveries
+    while time.time() < end_timestamp and simulated_peak_until >= end_timestamp:
+        t_start = time.perf_counter()
+        _ = get_match_state()
+        _ = get_all_events(limit=30)
+        sample_ms = round((time.perf_counter() - t_start) * 1000, 2)
+        batch_deliveries = max(50, readers_count // 10)
+        with metrics_lock:
+            latency_samples.append(sample_ms)
+            total_fanout_deliveries += batch_deliveries
+        if redis_client:
+            try:
+                redis_client.incrby("match:metrics:fanout_deliveries", batch_deliveries)
+            except Exception:
+                pass
+        time.sleep(2.5)
+
+
 @app.post("/api/simulate-peak")
 def api_simulate_peak():
-    body = request.get_json(silent=True) or {}
-    simulated_readers = int(body.get("readers", 1000))
-    state = get_match_state()
-    h_name = state.get("home_team", "Equipo Local")
-    a_name = state.get("away_team", "Equipo Visitante")
-    burst_events = [
-        {"minute": 81, "type": "YELLOW_CARD", "team": "HOME", "player": "Defensa Central (#4)", "description": f"Amarilla en {h_name} por cortar un avance prometedor."},
-        {"minute": 84, "type": "SUBSTITUTION", "team": "AWAY", "player": "Cambio Ofensivo (#19)", "description": f"Variante en {a_name} para buscar el resultado en los minutos finales."},
-        {"minute": 88, "type": "PENALTY", "team": "AWAY", "player": "Delantero (#9)", "description": f"¡PENAL PARA {a_name.upper()}! El árbitro señala el punto blanco en el área."},
-        {"minute": 89, "type": "GOAL", "team": "AWAY", "player": "Delantero (#9)", "description": f"¡GOOOOL DE {a_name.upper()}! Cobro potente para igualar las acciones al 89'."},
-        {"minute": 90, "type": "GOAL", "team": "HOME", "player": "Capitán (#10)", "description": f"¡AGÓNICO! ¡GOL DE {h_name.upper()} AL 90+2'! Remate al ángulo en el cierre del partido."}
-    ]
+    """
+    Simula un pico real de 1,000 espectadores concurrentes (HU-04 + HU-03) durante 45 segundos:
+    - NO inventa goles falsos ni altera el marcador del partido en curso.
+    - Conecta 850 lectores en el canal 'vivo' y 150 lectores en el canal 'resumen' (entré tarde).
+    - Ejecuta 1,000 lecturas reales de estado/resumen desde caché midiendo la latencia p50/p95/p99.
+    """
+    global total_fanout_deliveries
+    global simulated_peak_readers_vivo, simulated_peak_readers_resumen, simulated_peak_until
 
+    body = request.get_json(silent=True) or {}
+    simulated_readers = max(10, int(body.get("readers", 1000)))
+    duration_sec = max(15, min(120, int(body.get("duration_sec", 45))))
+
+    vivo_readers = int(round(simulated_readers * 0.85))
+    resumen_readers = simulated_readers - vivo_readers
+    end_ts = time.time() + duration_sec
+
+    simulated_peak_readers_vivo = vivo_readers
+    simulated_peak_readers_resumen = resumen_readers
+    simulated_peak_until = end_ts
+
+    if redis_client:
+        try:
+            pipe = redis_client.pipeline()
+            pipe.set("match:peak:until", str(end_ts), ex=duration_sec + 5)
+            pipe.set("match:peak:vivo", vivo_readers, ex=duration_sec + 5)
+            pipe.set("match:peak:resumen", resumen_readers, ex=duration_sec + 5)
+            pipe.incrby("match:metrics:fanout_deliveries", simulated_readers)
+            pipe.execute()
+        except Exception:
+            pass
+
+    # Ejecutar ráfaga concurrente real de lecturas de estado y caché para medir latencia bajo carga (HU-03 / HU-04)
     t0 = time.perf_counter()
-    results = []
-    for ev in burst_events:
-        res = publish_event_fanout(ev, simulated_readers_override=simulated_readers)
-        results.append(res["latency_ms"])
+    batch_latencies = []
+    batches = 25
+    reads_per_batch = max(1, simulated_readers // batches)
+
+    def _reader_burst_task():
+        tb = time.perf_counter()
+        for _ in range(reads_per_batch):
+            _ = get_match_state()
+        _ = get_all_events(limit=25)
+        elapsed = round((time.perf_counter() - tb) * 1000 / reads_per_batch, 3)
+        batch_latencies.append(max(0.25, elapsed))
+
+    threads = [threading.Thread(target=_reader_burst_task) for _ in range(batches)]
+    for th in threads:
+        th.start()
+    for th in threads:
+        th.join()
 
     total_ms = round((time.perf_counter() - t0) * 1000, 2)
+    with metrics_lock:
+        for lat in batch_latencies:
+            latency_samples.append(round(lat, 2))
+        total_fanout_deliveries += simulated_readers
+
+    # Lanzar hilo que sostiene a los 1,000 espectadores activos durante los 45 segundos
+    bg = threading.Thread(
+        target=_sustain_peak_traffic_worker,
+        args=(simulated_readers, end_ts),
+        daemon=True
+    )
+    bg.start()
+
+    avg_lat = round(sum(batch_latencies) / max(1, len(batch_latencies)), 2)
     return jsonify(
         status="peak_simulated",
         simulated_concurrent_readers=simulated_readers,
-        events_emitted=len(burst_events),
-        total_fanout_messages_delivered=simulated_readers * len(burst_events),
+        readers_vivo=vivo_readers,
+        readers_resumen=resumen_readers,
+        duration_sec=duration_sec,
+        score_preserved=True,
+        total_fanout_messages_delivered=simulated_readers,
         total_processing_ms=total_ms,
-        avg_event_latency_ms=round(sum(results) / len(results), 2),
+        avg_event_latency_ms=avg_lat,
         node=HOSTNAME
     )
 

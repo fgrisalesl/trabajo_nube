@@ -18,15 +18,22 @@ services:
     image: gtn-app:latest
     container_name: gtn-fan-portal
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       - SERVICE_ROLE=fan
       - PORT=8000
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - AWS_REGION=us-east-1
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - SNS_TOPIC_ARN=${SNS_TOPIC_ARN:-}
+      - SQS_LIVE_URL=${SQS_LIVE_URL:-}
+      - SQS_SUMMARY_URL=${SQS_SUMMARY_URL:-}
     volumes:
       - ./media:/app/media
+      - ./escudos:/app/escudos
+      - ./iconos:/app/iconos
     ports:
       - "8000:8000"
     depends_on:
@@ -41,15 +48,22 @@ services:
     container_name: gtn-journalist-studio
     command: ["gunicorn", "--worker-class", "gevent", "--workers", "1", "--worker-connections", "200", "--bind", "0.0.0.0:8001", "--timeout", "0", "app:app"]
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       - SERVICE_ROLE=journalist
       - PORT=8001
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - AWS_REGION=us-east-1
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - SNS_TOPIC_ARN=${SNS_TOPIC_ARN:-}
+      - SQS_LIVE_URL=${SQS_LIVE_URL:-}
+      - SQS_SUMMARY_URL=${SQS_SUMMARY_URL:-}
     volumes:
       - ./media:/app/media
+      - ./escudos:/app/escudos
+      - ./iconos:/app/iconos
     ports:
       - "8001:8001"
     depends_on:

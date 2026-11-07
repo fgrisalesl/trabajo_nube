@@ -3,202 +3,243 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UNAL Sports · Transmisión En Vivo</title>
+  <title>UNAL Sports · Minuto a Minuto en Vivo</title>
   <link rel="stylesheet" href="/static/tailwind.min.css" />
   <style>
+    :root {
+      --bg-base: #0b0e14;
+      --bg-surface: #151922;
+      --bg-elevated: #1c222e;
+      --border-subtle: #242b38;
+      --accent-green: #00e676;
+      --accent-live: #ff3b5c;
+    }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
-      background-color: #000000;
-      color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-base);
+      color: #f1f5f9;
       -webkit-font-smoothing: antialiased;
+      font-variant-numeric: tabular-nums;
     }
-    .apple-glass {
-      background: rgba(28, 28, 30, 0.72);
-      backdrop-filter: saturate(180%) blur(24px);
-      -webkit-backdrop-filter: saturate(180%) blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .fm-nav {
+      background-color: rgba(15, 19, 26, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
     }
-    .apple-card {
-      background: rgba(22, 22, 24, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+    .fm-surface {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
     }
-    .apple-card:hover {
-      border-color: rgba(255, 255, 255, 0.16);
+    .fm-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      transition: border-color 0.18s ease, background-color 0.18s ease;
     }
-    .hero-glow {
-      background:
-        radial-gradient(120% 100% at 15% 0%, rgba(16, 185, 129, 0.16) 0%, rgba(0, 0, 0, 0) 55%),
-        radial-gradient(120% 100% at 85% 0%, rgba(14, 165, 233, 0.16) 0%, rgba(0, 0, 0, 0) 55%),
-        linear-gradient(180deg, rgba(28, 28, 30, 0.9) 0%, rgba(12, 12, 14, 0.95) 100%);
+    .fm-card:hover {
+      border-color: #333d4f;
+      background-color: #181d27;
     }
-    @keyframes pulse-dot {
+    .fm-tab-active {
+      background-color: #00e676;
+      color: #08110c;
+      font-weight: 700;
+    }
+    .fm-tab-inactive {
+      background-color: transparent;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .fm-tab-inactive:hover {
+      color: #f8fafc;
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+    @keyframes pulse-live {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.35; transform: scale(1.2); }
+      50% { opacity: 0.35; transform: scale(1.15); }
     }
-    .live-dot { animation: pulse-dot 1.6s infinite ease-in-out; }
-    @keyframes spring-in {
-      0% { opacity: 0; transform: translateY(-12px) scale(0.98); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
+    .live-dot { animation: pulse-live 1.5s infinite ease-in-out; }
+    @keyframes slide-in {
+      0% { opacity: 0; transform: translateY(-8px); }
+      100% { opacity: 1; transform: translateY(0); }
     }
-    .event-spring { animation: spring-in 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    .score-pop {
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    .event-enter { animation: slide-in 0.25s ease-out; }
+    .score-num {
+      transition: transform 0.25s ease, color 0.25s ease;
     }
   </style>
 </head>
-<body class="min-h-screen selection:bg-emerald-500/30 selection:text-white">
+<body class="min-h-screen">
 
-  <!-- Barra Superior Translúcida Estilo Apple Sports / macOS -->
-  <header class="sticky top-0 z-50 apple-glass border-b border-white/10">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+  <!-- Barra de Navegación Superior Estilo FotMob -->
+  <header class="sticky top-0 z-50 fm-nav">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-black font-black text-sm">
-          ⚽
-        </div>
-        <div>
-          <span class="font-semibold tracking-tight text-white text-sm sm:text-base">UNAL Sports</span>
-          <span id="header-tournament" class="hidden sm:inline-block text-xs text-zinc-400 ml-2 font-normal">Transmisión Oficial En Vivo</span>
+        <img src="/api/icon/logo" alt="Logo" class="w-8 h-8 object-contain rounded-lg" />
+        <div class="flex items-baseline gap-2.5">
+          <span class="font-bold tracking-tight text-white text-base">UNAL SPORTS</span>
+          <span id="header-tournament" class="hidden sm:inline-block text-xs text-zinc-400 font-medium">
+            Cobertura Oficial
+          </span>
         </div>
       </div>
 
       <div class="flex items-center gap-2.5 text-xs">
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 font-semibold tracking-wide">
-          <span class="w-2 h-2 rounded-full bg-red-500 live-dot"></span>
-          LIVE
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-500/15 text-rose-400 border border-rose-500/30 font-bold tracking-wider text-[11px]">
+          <span class="w-2 h-2 rounded-full bg-rose-500 live-dot"></span>
+          EN VIVO
         </span>
-        <span class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 text-zinc-300 border border-white/10 font-mono text-[11px]">
-          ⚡ p95: <strong id="p95-badge" class="text-emerald-400">-- ms</strong>
-        </span>
-        <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 text-zinc-400 border border-white/10 font-mono text-[11px]">
-          Nodo: <strong id="node-badge" class="text-zinc-200">{{ hostname }}</strong>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] text-zinc-300 border border-white/10 text-[11px] font-medium">
+          <svg class="w-3.5 h-3.5 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <strong id="fan-readers-count" class="text-white font-semibold">1</strong>
+          <span class="text-zinc-400">viendo</span>
         </span>
       </div>
     </div>
   </header>
 
-  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-    <!-- HERO SCOREBOARD (ESTILO APPLE SPORTS / TABLERO EN BLANCO 0-0 INICIAL) -->
-    <section class="hero-glow rounded-[32px] border border-white/10 p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+    <!-- MARCADOR CENTRAL ESTILO FOTMOB MATCH CENTER -->
+    <section class="fm-surface rounded-2xl p-6 sm:p-8 shadow-xl">
+      <!-- Encabezado de Competición y Reloj -->
       <div class="flex flex-col items-center text-center mb-6">
-        <span id="match-tournament-subtitle" class="text-[11px] uppercase tracking-[0.2em] text-zinc-400 font-semibold">
-          Transmisión Oficial En Vivo
+        <span id="match-tournament-subtitle" class="text-[11px] uppercase tracking-[0.16em] text-zinc-400 font-semibold">
+          Transmisión Oficial
         </span>
-        <div class="mt-2 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.06] border border-white/10 text-xs font-medium text-zinc-200">
-          <span class="text-emerald-400 font-semibold" id="match-status-label">EN ESPERA DE INICIO</span>
-          <span class="text-zinc-600">•</span>
+        <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/[0.04] border border-white/10 text-xs font-semibold">
+          <span class="text-emerald-400 uppercase tracking-wide text-[11px]" id="match-status-label">EN ESPERA DE INICIO</span>
+          <span class="text-zinc-600">·</span>
           <span class="font-mono font-bold text-white"><span id="match-minute">0</span>'</span>
         </div>
       </div>
 
-      <!-- Marcador Principal (Arranca 0 - 0 limpio) -->
+      <!-- Marcador Principal de 3 Columnas -->
       <div class="grid grid-cols-3 items-center max-w-2xl mx-auto gap-2 sm:gap-6">
         <!-- Equipo Local -->
-        <div class="flex flex-col items-center sm:items-end text-center sm:text-right">
-          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-2xl sm:text-3xl mb-3 shadow-inner">
-            🛡️
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center p-1.5 mb-2.5">
+            <img id="home-badge" src="/api/badge?team=Equipo%20Local" alt="Escudo Local"
+              class="w-full h-full object-contain" onerror="this.src='/escudos/default.svg'" />
           </div>
-          <h2 id="home-team" class="text-lg sm:text-2xl font-bold tracking-tight text-white leading-tight">
+          <h2 id="home-team" class="text-sm sm:text-lg font-bold tracking-tight text-white leading-snug">
             Equipo Local
           </h2>
-          <span class="text-xs text-zinc-400 mt-0.5">Local</span>
+          <span class="text-[11px] text-zinc-500 font-medium mt-0.5 uppercase tracking-wider">Local</span>
         </div>
 
-        <!-- Puntuación Central -->
-        <div class="flex items-center justify-center gap-3 sm:gap-5 py-3 px-5 sm:px-8 rounded-3xl bg-black/50 border border-white/10 backdrop-blur-xl shadow-2xl">
-          <span id="home-score" class="score-pop text-5xl sm:text-7xl font-black tracking-tighter text-white">0</span>
-          <span class="text-2xl sm:text-3xl font-light text-zinc-600">-</span>
-          <span id="away-score" class="score-pop text-5xl sm:text-7xl font-black tracking-tighter text-white">0</span>
+        <!-- Resultado Tabular -->
+        <div class="flex flex-col items-center justify-center">
+          <div class="flex items-center justify-center gap-3 sm:gap-5 py-2.5 px-5 sm:px-7 rounded-xl bg-black/40 border border-white/10">
+            <span id="home-score" class="score-num text-4xl sm:text-6xl font-extrabold tracking-tight text-white">0</span>
+            <span class="text-xl sm:text-2xl font-semibold text-zinc-600">-</span>
+            <span id="away-score" class="score-num text-4xl sm:text-6xl font-extrabold tracking-tight text-white">0</span>
+          </div>
         </div>
 
         <!-- Equipo Visitante -->
-        <div class="flex flex-col items-center sm:items-start text-center sm:text-left">
-          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-2xl sm:text-3xl mb-3 shadow-inner">
-            ⚽
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center p-1.5 mb-2.5">
+            <img id="away-badge" src="/api/badge?team=Equipo%20Visitante" alt="Escudo Visitante"
+              class="w-full h-full object-contain" onerror="this.src='/escudos/default.svg'" />
           </div>
-          <h2 id="away-team" class="text-lg sm:text-2xl font-bold tracking-tight text-white leading-tight">
+          <h2 id="away-team" class="text-sm sm:text-lg font-bold tracking-tight text-white leading-snug">
             Equipo Visitante
           </h2>
-          <span class="text-xs text-zinc-400 mt-0.5">Visitante</span>
+          <span class="text-[11px] text-zinc-500 font-medium mt-0.5 uppercase tracking-wider">Visitante</span>
         </div>
       </div>
 
-      <!-- Píldoras de Estadísticas Rápidas (Servidas desde Caché O(1) - HU-03) -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 pt-6 border-t border-white/[0.08]">
-        <div class="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 flex items-center justify-between">
-          <span class="text-xs text-zinc-400">Jugadas</span>
-          <strong id="stat-events" class="text-base font-bold text-white font-mono">0</strong>
+      <!-- Barra de Resumen Estadístico con Íconos desde app/iconos/ -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-7 pt-5 border-t border-white/[0.07]">
+        <div class="rounded-xl bg-black/25 border border-white/[0.06] px-3.5 py-2.5 flex items-center justify-between">
+          <span class="inline-flex items-center gap-2 text-xs text-zinc-400 font-medium">
+            <img src="/api/icon/balon" alt="" class="w-4 h-4 object-contain" />
+            <span>Acciones</span>
+          </span>
+          <strong id="stat-events" class="text-sm font-bold text-white font-mono">0</strong>
         </div>
-        <div class="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 flex items-center justify-between">
-          <span class="text-xs text-zinc-400">🟨 Amarillas</span>
-          <strong id="stat-yellow" class="text-base font-bold text-amber-400 font-mono">0</strong>
+        <div class="rounded-xl bg-black/25 border border-white/[0.06] px-3.5 py-2.5 flex items-center justify-between">
+          <span class="inline-flex items-center gap-2 text-xs text-zinc-400 font-medium">
+            <img src="/api/icon/amarilla" alt="" class="w-4 h-4 object-contain" />
+            <span>Amarillas</span>
+          </span>
+          <strong id="stat-yellow" class="text-sm font-bold text-amber-400 font-mono">0</strong>
         </div>
-        <div class="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 flex items-center justify-between">
-          <span class="text-xs text-zinc-400">🟥 Rojas</span>
-          <strong id="stat-red" class="text-base font-bold text-rose-400 font-mono">0</strong>
+        <div class="rounded-xl bg-black/25 border border-white/[0.06] px-3.5 py-2.5 flex items-center justify-between">
+          <span class="inline-flex items-center gap-2 text-xs text-zinc-400 font-medium">
+            <img src="/api/icon/roja" alt="" class="w-4 h-4 object-contain" />
+            <span>Rojas</span>
+          </span>
+          <strong id="stat-red" class="text-sm font-bold text-rose-400 font-mono">0</strong>
         </div>
-        <div class="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 flex items-center justify-between">
-          <span class="text-xs text-zinc-400">🔄 Cambios</span>
-          <strong id="stat-subs" class="text-base font-bold text-sky-400 font-mono">0</strong>
+        <div class="rounded-xl bg-black/25 border border-white/[0.06] px-3.5 py-2.5 flex items-center justify-between">
+          <span class="inline-flex items-center gap-2 text-xs text-zinc-400 font-medium">
+            <img src="/api/icon/cambio" alt="" class="w-4 h-4 object-contain" />
+            <span>Cambios</span>
+          </span>
+          <strong id="stat-subs" class="text-sm font-bold text-emerald-400 font-mono">0</strong>
         </div>
       </div>
     </section>
 
-    <!-- SEGMENTED CONTROL ESTILO iOS (RETO EXTRA: CANAL VIVO vs CANAL RESUMEN) -->
-    <section class="space-y-5">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 class="text-xl font-bold tracking-tight text-white">Minuto a Minuto</h3>
-          <p class="text-xs text-zinc-400 mt-0.5">
-            Actualización automática en tiempo real sin recargar la página (Server-Sent Events)
+    <!-- CRONOLOGÍA DEL PARTIDO (TIMELINE ESTILO FOTMOB) -->
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 fm-surface rounded-xl p-3.5">
+        <div class="px-1">
+          <h3 class="text-base font-bold tracking-tight text-white">Cronología del Partido</h3>
+          <p class="text-xs text-zinc-400">
+            Actualización automática en tiempo real
           </p>
         </div>
 
-        <!-- Selector estilo iOS Segmented Control -->
-        <div class="inline-flex p-1 rounded-2xl bg-zinc-900/90 border border-white/10 self-start sm:self-auto">
+        <!-- Selector de Canal Estilo FotMob -->
+        <div class="inline-flex p-1 rounded-lg bg-black/40 border border-white/10 self-start sm:self-auto">
           <button id="btn-channel-vivo" onclick="switchChannel('vivo')"
-            class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 bg-white text-black shadow-sm">
-            ⚡ En Vivo (Todo)
+            class="px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-active">
+            Minuto a Minuto
           </button>
           <button id="btn-channel-resumen" onclick="switchChannel('resumen')"
-            class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-zinc-400 hover:text-white">
-            📋 Resumen Rápido (Entré tarde)
+            class="px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-inactive">
+            Momentos Clave
           </button>
         </div>
       </div>
 
-      <!-- Banner informativo cuando el aficionado selecciona "Entré tarde" (HU-03 + Reto Extra) -->
-      <div id="late-joiner-banner" class="hidden rounded-2xl bg-amber-500/10 border border-amber-500/25 px-5 py-4 text-xs text-amber-200/90 leading-relaxed">
-        <div class="font-semibold text-amber-300 mb-0.5">✨ Resumen Instantáneo desde Caché (HU-03 + Reto Extra)</div>
-        Estás viendo únicamente los momentos determinantes del partido (Goles, Penales y Tarjetas) filtrados por prioridad alta en <code>AWS SNS/SQS</code> y servidos desde <code>Redis Cache</code> en menos de 5 ms.
+      <!-- Aviso de Filtro de Momentos Clave -->
+      <div id="late-joiner-banner" class="hidden rounded-xl bg-emerald-500/10 border border-emerald-500/25 px-4 py-3 text-xs text-emerald-200 leading-relaxed">
+        <span class="font-bold text-emerald-400">Vista de Momentos Clave:</span>
+        Mostrando únicamente goles, penales, tarjetas y sustituciones del encuentro.
       </div>
 
-      <!-- Estado vacío cuando el tablero está en blanco (0 jugadas aún) -->
-      <div id="empty-board-placeholder" class="apple-card rounded-3xl p-10 text-center space-y-2">
-        <div class="text-3xl mb-2">📡</div>
-        <h4 class="text-base font-semibold text-white">Esperando el inicio de la transmisión en vivo</h4>
+      <!-- Estado inicial sin jugadas -->
+      <div id="empty-board-placeholder" class="fm-surface rounded-2xl p-10 text-center space-y-2">
+        <img src="/api/icon/balon" alt="" class="w-8 h-8 object-contain mx-auto mb-2 opacity-60" />
+        <h4 class="text-sm font-bold text-white uppercase tracking-wider">Sin incidencias registradas</h4>
         <p class="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
-          El tablero está listo en 0 - 0. En cuanto el periodista o el Auto-Narrador con IA transmitan desde la cabina, las jugadas aparecerán aquí automáticamente sin recargar.
+          El marcador se encuentra 0 - 0. Las jugadas aparecerán aquí automáticamente en cuanto inicie el partido.
         </p>
       </div>
 
-      <!-- Feed de Eventos en Tiempo Real -->
-      <div id="events-container" class="space-y-3">
+      <!-- Contenedor del Feed de Jugadas -->
+      <div id="events-container" class="space-y-2.5">
       </div>
     </section>
 
-    <!-- FOOTER DISCRETO CON ESTADO DE LA NUBE Y ACCESO A CABINA INDEPENDIENTE -->
-    <footer class="pt-8 pb-12 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-      <div class="flex flex-wrap items-center gap-4">
-        <span>☁️ Arquitectura Fan-Out: <strong>AWS SNS + 2 Colas SQS + Redis + SSE</strong></span>
-        <span>•</span>
-        <span>Mensajes Fan-Out entregados: <strong id="stat-deliveries" class="text-zinc-300 font-mono">0</strong></span>
+    <!-- PIE DE PÁGINA -->
+    <footer class="pt-6 pb-10 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+      <div class="flex items-center gap-2.5">
+        <img src="/api/icon/logo" alt="" class="w-4 h-4 object-contain rounded" />
+        <span><strong>UNAL Sports</strong> · Centro de Partidos en Vivo</span>
       </div>
       <div>
         <a href="/periodista" target="_blank"
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 text-zinc-300 transition">
-          🎙️ Abrir Consola del Periodista (App Independiente) ↗
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-zinc-300 font-medium transition">
+          <span>Consola de Transmisión</span>
+          <span class="text-zinc-500">↗</span>
         </a>
       </div>
     </footer>
@@ -215,38 +256,45 @@
     function styleForEvent(type) {
       const styles = {
         'GOAL': {
-          badge: '⚽ GOL',
-          pill: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+          label: 'GOL',
+          icon: '/api/icon/balon',
+          pill: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
           accent: 'border-l-4 border-l-emerald-400'
         },
         'PENALTY': {
-          badge: '🎯 PENAL / VAR',
-          pill: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-          accent: 'border-l-4 border-l-purple-400'
+          label: 'PENAL',
+          icon: '/api/icon/penal',
+          pill: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+          accent: 'border-l-4 border-l-sky-400'
         },
         'RED_CARD': {
-          badge: '🟥 TARJETA ROJA',
-          pill: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+          label: 'TARJETA ROJA',
+          icon: '/api/icon/roja',
+          pill: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
           accent: 'border-l-4 border-l-rose-500'
         },
         'YELLOW_CARD': {
-          badge: '🟨 AMARILLA',
-          pill: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+          label: 'TARJETA AMARILLA',
+          icon: '/api/icon/amarilla',
+          pill: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
           accent: 'border-l-4 border-l-amber-400'
         },
         'SUBSTITUTION': {
-          badge: '🔄 CAMBIO',
-          pill: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
-          accent: 'border-l-4 border-l-sky-400'
-        },
-        'MATCH_START': {
-          badge: '🏁 INICIO',
-          pill: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+          label: 'CAMBIO',
+          icon: '/api/icon/cambio',
+          pill: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25',
           accent: 'border-l-4 border-l-emerald-500'
         },
+        'MATCH_START': {
+          label: 'INICIO',
+          icon: '/api/icon/comentario',
+          pill: 'bg-white/10 text-zinc-200 border-white/15',
+          accent: 'border-l-4 border-l-zinc-400'
+        },
         'COMMENT': {
-          badge: '💬 MINUTO A MINUTO',
-          pill: 'bg-white/10 text-zinc-300 border-white/10',
+          label: 'MINUTO A MINUTO',
+          icon: '/api/icon/comentario',
+          pill: 'bg-white/[0.06] text-zinc-400 border-white/10',
           accent: ''
         }
       };
@@ -271,40 +319,43 @@
 
       const st = styleForEvent(ev.type);
       const teamLabel = ev.team_name || (ev.team === 'HOME' ? currentHomeTeam : (ev.team === 'AWAY' ? currentAwayTeam : 'Transmisión Oficial'));
-      const aiBadge = ev.ai_generated
-        ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30">🤖 IA Live</span>`
-        : '';
-      const priorityTag = ev.priority === 'HIGH'
-        ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Prioridad Alta</span>`
-        : `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-zinc-400">Estándar</span>`;
+      const badgeUrl = `/api/badge?team=${encodeURIComponent(teamLabel)}`;
 
       const innerHtml = `
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-          <div class="flex items-center gap-2.5">
-            <span class="px-2.5 py-1 rounded-lg font-mono font-bold text-xs bg-white/10 text-white">${ev.minute}'</span>
-            <span class="px-2.5 py-1 rounded-lg font-semibold text-xs border ${st.pill}">${st.badge}</span>
-            <span class="text-sm font-semibold text-white">${ev.player || ''}</span>
-            <span class="text-xs text-zinc-400">· ${teamLabel}</span>
+        <div class="flex items-start gap-3.5">
+          <!-- Columna de Minuto e Ícono Estilo FotMob -->
+          <div class="flex flex-col items-center gap-1.5 pt-0.5 shrink-0 w-11">
+            <span class="px-2 py-0.5 rounded bg-black/40 border border-white/10 font-mono font-bold text-xs text-white">${ev.minute}'</span>
+            <img src="${st.icon}" alt="${st.label}" class="w-4 h-4 object-contain" />
           </div>
-          <div class="flex items-center gap-2">
-            ${aiBadge}
-            ${priorityTag}
+
+          <!-- Contenido de la Jugada -->
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 mb-1.5">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold tracking-wide border ${st.pill}">${st.label}</span>
+              <span class="text-sm font-bold text-white">${ev.player || ''}</span>
+              <span class="inline-flex items-center gap-1.5 text-xs text-zinc-400 font-medium">
+                <span>·</span>
+                <img src="${badgeUrl}" alt="" class="w-4 h-4 object-contain" onerror="this.src='/escudos/default.svg'" />
+                <span>${teamLabel}</span>
+              </span>
+            </div>
+            <p class="text-sm text-zinc-300 leading-relaxed">${ev.description}</p>
           </div>
         </div>
-        <p class="text-[15px] text-zinc-200 leading-relaxed font-normal">${ev.description}</p>
       `;
 
       if (existingCard) {
         existingCard.innerHTML = innerHtml;
-        existingCard.classList.remove('event-spring');
+        existingCard.classList.remove('event-enter');
         void existingCard.offsetWidth;
-        existingCard.classList.add('event-spring');
+        existingCard.classList.add('event-enter');
         return;
       }
 
       const card = document.createElement('article');
       card.id = `card-${ev.id}`;
-      card.className = `event-spring apple-card ${st.accent} rounded-2xl p-5 shadow-lg`;
+      card.className = `event-enter fm-card ${st.accent} rounded-xl p-4`;
       card.innerHTML = innerHtml;
 
       if (prepend) {
@@ -319,20 +370,34 @@
       const el = document.getElementById(elId);
       if (el.textContent !== String(newValue)) {
         el.textContent = newValue;
-        el.style.transform = 'scale(1.22)';
-        setTimeout(() => { el.style.transform = 'scale(1)'; }, 300);
+        el.style.transform = 'scale(1.18)';
+        el.style.color = '#00e676';
+        setTimeout(() => {
+          el.style.transform = 'scale(1)';
+          el.style.color = '#ffffff';
+        }, 320);
       }
     }
 
     function updateMatchHeader(match) {
       if (!match) return;
       if (match.home_team) {
+        const prevHome = currentHomeTeam;
         currentHomeTeam = match.home_team;
         document.getElementById('home-team').textContent = match.home_team;
+        const hb = document.getElementById('home-badge');
+        if (hb && prevHome !== match.home_team) {
+          hb.src = `/api/badge?team=${encodeURIComponent(match.home_team)}&t=${Date.now()}`;
+        }
       }
       if (match.away_team) {
+        const prevAway = currentAwayTeam;
         currentAwayTeam = match.away_team;
         document.getElementById('away-team').textContent = match.away_team;
+        const ab = document.getElementById('away-badge');
+        if (ab && prevAway !== match.away_team) {
+          ab.src = `/api/badge?team=${encodeURIComponent(match.away_team)}&t=${Date.now()}`;
+        }
       }
       if (match.tournament) {
         document.getElementById('match-tournament-subtitle').textContent = match.tournament;
@@ -350,7 +415,6 @@
       const res = await fetch('/api/summary');
       const data = await res.json();
       updateMatchHeader(data.match);
-      document.getElementById('node-badge').textContent = data.served_by_node;
       document.getElementById('stat-events').textContent = data.stats.total_events;
       document.getElementById('stat-yellow').textContent = data.stats.yellow_cards;
       document.getElementById('stat-red').textContent = data.stats.red_cards;
@@ -373,10 +437,6 @@
     function connectSSE(channel) {
       if (evtSource) evtSource.close();
       evtSource = new EventSource(`/api/stream/${channel}`);
-      evtSource.addEventListener('connected', (e) => {
-        const payload = JSON.parse(e.data);
-        document.getElementById('node-badge').textContent = payload.node;
-      });
       evtSource.addEventListener('match_event', (e) => {
         const payload = JSON.parse(e.data);
         if (payload.reset) {
@@ -401,12 +461,12 @@
       const banner = document.getElementById('late-joiner-banner');
 
       if (channel === 'vivo') {
-        btnVivo.className = 'px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 bg-white text-black shadow-sm';
-        btnRes.className = 'px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-zinc-400 hover:text-white';
+        btnVivo.className = 'px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-active';
+        btnRes.className = 'px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-inactive';
         banner.classList.add('hidden');
       } else {
-        btnRes.className = 'px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 bg-white text-black shadow-sm';
-        btnVivo.className = 'px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-zinc-400 hover:text-white';
+        btnRes.className = 'px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-active';
+        btnVivo.className = 'px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-inactive';
         banner.classList.remove('hidden');
       }
       loadSummary(true);
@@ -417,8 +477,10 @@
       try {
         const res = await fetch('/api/metrics');
         const m = await res.json();
-        document.getElementById('p95-badge').textContent = `${m.latency_ms.p95} ms`;
-        document.getElementById('stat-deliveries').textContent = m.total_fanout_deliveries.toLocaleString();
+        const readersEl = document.getElementById('fan-readers-count');
+        if (readersEl) {
+          readersEl.textContent = Math.max(1, m.total_active_readers || 1).toLocaleString();
+        }
       } catch (e) {}
     }
 
@@ -426,7 +488,7 @@
     connectSSE('vivo');
     refreshMetrics();
     setInterval(() => loadSummary(false), 1500);
-    setInterval(refreshMetrics, 4000);
+    setInterval(refreshMetrics, 1500);
   </script>
 </body>
 </html>

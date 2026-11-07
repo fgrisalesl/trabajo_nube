@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_图层_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 800 800">
+  <!-- Generator: Adobe Illustrator 30.4.0, SVG Export Plug-In . SVG Version: 2.1.4 Build 226)  -->
+  <defs>
+    <linearGradient id="_未命名的渐变" data-name="未命名的渐变" x1="197.082" y1="409.006" x2="197.082" y2="391.173" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset=".69" stop-color="#636363"/>
+      <stop offset="1" stop-color="#666"/>
+    </linearGradient>
+    <radialGradient id="_未命名的渐变_2" data-name="未命名的渐变 2" cx="2.0273" cy=".0273" fx="2.0273" fy=".0273" r="1" gradientTransform="translate(100.093 407.2332) scale(47.697)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_3" data-name="未命名的渐变 3" cx="2.0677" cy=".0677" fx="2.0677" fy=".0677" r="1" gradientTransform="translate(101.901 402.9587) scale(45.891)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".74" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_4" data-name="未命名的渐变 4" cx="2.1579" cy=".1579" fx="2.1579" fy=".1579" r="1" gradientTransform="translate(109.1802 398.1478) scale(42.3178)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_5" data-name="未命名的渐变 5" cx="2.4141" cy=".4141" fx="2.4141" fy=".4141" r="1" gradientTransform="translate(111.907 390.4832) scale(34.65)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".74" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_6" data-name="未命名的渐变 6" cx="2.8145" cy=".8145" fx="2.8145" fy=".8145" r="1" gradientTransform="translate(117.0826 370.4896) scale(27.0044)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#666"/>
+      <stop offset=".41" stop-color="#636363"/>
+      <stop offset="1" stop-color="#000"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_7" data-name="未命名的渐变 7" cx="2.7103" cy=".7102" fx="2.7103" fy=".7102" r="1" gradientTransform="translate(99.3863 380.7821) scale(28.6507)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".39" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <linearGradient id="_未命名的渐变_8" data-name="未命名的渐变 8" x1="152.3963" y1="398.344" x2="185.6722" y2="394.258" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ccc"/>
+      <stop offset=".23" stop-color="#ccc"/>
+      <stop offset=".51" stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_9" data-name="未命名的渐变 9" x1="160.1989" y1="423.1029" x2="174.4019" y2="408.3949" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset=".39" stop-color="#636363"/>
+      <stop offset="1" stop-color="#666"/>
+    </linearGradient>
+    <radialGradient id="_未命名的渐变_10" data-name="未命名的渐变 10" cx="1.9617" cy="-.0383" fx="1.9617" fy="-.0383" r="1" gradientTransform="translate(96.8381 424.0734) scale(50.9519)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".61" stop-color="#ccc"/>
+      <stop offset="1" stop-color="gray"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_11" data-name="未命名的渐变 11" cx="2.2375" cy=".2375" fx="2.2375" fy=".2375" r="1" gradientTransform="translate(104.49 418.8882) scale(39.597)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".72" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <linearGradient id="_未命名的渐变_12" data-name="未命名的渐变 12" x1="197.083" y1="449.751" x2="197.083" y2="427.46" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset=".69" stop-color="#636363"/>
+      <stop offset="1" stop-color="#666"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_13" data-name="未命名的渐变 13" x1="197.0395" y1="365.791" x2="197.0395" y2="391.229" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b3b3b3"/>
+      <stop offset=".25" stop-color="#ccc"/>
+      <stop offset=".57" stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_14" data-name="未命名的渐变 14" x1="197.082" y1="358.382" x2="197.082" y2="392.085" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ccc"/>
+      <stop offset=".31" stop-color="#ccc"/>
+      <stop offset=".53" stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <radialGradient id="_未命名的渐变_15" data-name="未命名的渐变 15" cx="2.5694" cy=".5694" fx="2.5694" fy=".5694" r="1" gradientTransform="translate(116.569 388.2917) scale(31.223)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".39" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_16" data-name="未命名的渐变 16" cx="3.0186" cy="1.0186" fx="3.0186" fy="1.0186" r="1" gradientTransform="translate(123.5181 376.4042) scale(24.2739)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".74" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_17" data-name="未命名的渐变 17" cx="2.0273" cy=".0273" fx="2.0273" fy=".0273" r="1" gradientTransform="translate(100.095 407.2332) scale(47.697)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_18" data-name="未命名的渐变 18" cx="2.0678" cy=".0678" fx="2.0678" fy=".0678" r="1" gradientTransform="translate(101.9018 402.9559) scale(45.8902)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".74" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_19" data-name="未命名的渐变 19" cx="2.1578" cy=".1578" fx="2.1578" fy=".1578" r="1" gradientTransform="translate(101.7613 398.1497) scale(42.3207)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_20" data-name="未命名的渐变 20" cx="2.4138" cy=".4138" fx="2.4138" fy=".4138" r="1" gradientTransform="translate(114.3575 390.4924) scale(34.6585)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".74" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_21" data-name="未命名的渐变 21" cx="2.8144" cy=".8144" fx="2.8144" fy=".8144" r="1" gradientTransform="translate(124.4875 370.4919) scale(27.0055)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#666"/>
+      <stop offset=".41" stop-color="#636363"/>
+      <stop offset="1" stop-color="#000"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_22" data-name="未命名的渐变 22" cx="2.7103" cy=".7103" fx="2.7103" fy=".7103" r="1" gradientTransform="translate(140.1322 380.7797) scale(28.6498)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".39" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <linearGradient id="_未命名的渐变_23" data-name="未命名的渐变 23" x1="241.168" y1="398.4313" x2="207.966" y2="393.7643" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ccc"/>
+      <stop offset=".23" stop-color="#ccc"/>
+      <stop offset=".51" stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_24" data-name="未命名的渐变 24" x1="234.2891" y1="423.4898" x2="220.3451" y2="408.5368" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset=".39" stop-color="#636363"/>
+      <stop offset="1" stop-color="#666"/>
+    </linearGradient>
+    <radialGradient id="_未命名的渐变_25" data-name="未命名的渐变 25" cx="1.9617" cy="-.0383" fx="1.9617" fy="-.0383" r="1" gradientTransform="translate(96.8386 424.0771) scale(50.9534)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".61" stop-color="#ccc"/>
+      <stop offset="1" stop-color="gray"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_26" data-name="未命名的渐变 26" cx="2.2374" cy=".2374" fx="2.2374" fy=".2374" r="1" gradientTransform="translate(111.8974 418.8895) scale(39.5976)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".72" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <linearGradient id="_未命名的渐变_27" data-name="未命名的渐变 27" x1="602.912" y1="409.006" x2="602.912" y2="391.173" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset=".69" stop-color="#636363"/>
+      <stop offset="1" stop-color="#666"/>
+    </linearGradient>
+    <radialGradient id="_未命名的渐变_28" data-name="未命名的渐变 28" cx="2.0274" cy=".0274" fx="2.0274" fy=".0274" r="1" gradientTransform="translate(506.3219 407.2334) scale(47.6951)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_29" data-name="未命名的渐变 29" cx="2.0678" cy=".0678" fx="2.0678" fy=".0678" r="1" gradientTransform="translate(508.1241 402.9548) scale(45.8899)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".74" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_30" data-name="未命名的渐变 30" cx="2.1581" cy=".1581" fx="2.1581" fy=".1581" r="1" gradientTransform="translate(508.0029 398.1395) scale(42.3111)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_31" data-name="未命名的渐变 31" cx="2.4141" cy=".4141" fx="2.4141" fy=".4141" r="1" gradientTransform="translate(520.5968 390.4827) scale(34.6502)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".74" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_32" data-name="未命名的渐变 32" cx="2.8144" cy=".8144" fx="2.8144" fy=".8144" r="1" gradientTransform="translate(530.7115 370.49) scale(27.0055)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#666"/>
+      <stop offset=".41" stop-color="#636363"/>
+      <stop offset="1" stop-color="#000"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_33" data-name="未命名的渐变 33" cx="2.7104" cy=".7104" fx="2.7104" fy=".7104" r="1" gradientTransform="translate(546.359 380.7772) scale(28.648)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".39" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <linearGradient id="_未命名的渐变_34" data-name="未命名的渐变 34" x1="647.3814" y1="398.4851" x2="614.1814" y2="393.819" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ccc"/>
+      <stop offset=".23" stop-color="#ccc"/>
+      <stop offset=".51" stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_35" data-name="未命名的渐变 35" x1="639.7287" y1="423.0722" x2="625.7837" y2="408.1182" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset=".39" stop-color="#636363"/>
+      <stop offset="1" stop-color="#666"/>
+    </linearGradient>
+    <radialGradient id="_未命名的渐变_36" data-name="未命名的渐变 36" cx="1.9617" cy="-.0383" fx="1.9617" fy="-.0383" r="1" gradientTransform="translate(503.064 424.0773) scale(50.953)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".61" stop-color="#ccc"/>
+      <stop offset="1" stop-color="gray"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_37" data-name="未命名的渐变 37" cx="2.2374" cy=".2374" fx="2.2374" fy=".2374" r="1" gradientTransform="translate(518.1185 418.89) scale(39.5985)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".72" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <linearGradient id="_未命名的渐变_38" data-name="未命名的渐变 38" x1="602.912" y1="449.751" x2="602.912" y2="427.46" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset=".69" stop-color="#636363"/>
+      <stop offset="1" stop-color="#666"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_39" data-name="未命名的渐变 39" x1="602.912" y1="365.812" x2="602.912" y2="391.25" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b3b3b3"/>
+      <stop offset=".25" stop-color="#ccc"/>
+      <stop offset=".57" stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_40" data-name="未命名的渐变 40" x1="602.912" y1="358.346" x2="602.912" y2="392.049" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ccc"/>
+      <stop offset=".31" stop-color="#ccc"/>
+      <stop offset=".53" stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <radialGradient id="_未命名的渐变_41" data-name="未命名的渐变 41" cx="2.5694" cy=".5694" fx="2.5694" fy=".5694" r="1" gradientTransform="translate(522.7949 388.2913) scale(31.2221)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".39" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_42" data-name="未命名的渐变 42" cx="3.0186" cy="1.0186" fx="3.0186" fy="1.0186" r="1" gradientTransform="translate(529.7433 376.4047) scale(24.2737)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".74" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_43" data-name="未命名的渐变 43" cx="2.0273" cy=".0273" fx="2.0273" fy=".0273" r="1" gradientTransform="translate(506.3199 407.2328) scale(47.6971)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_44" data-name="未命名的渐变 44" cx="2.0677" cy=".0677" fx="2.0677" fy=".0677" r="1" gradientTransform="translate(508.1254 402.957) scale(45.8916)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".74" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_45" data-name="未命名的渐变 45" cx="2.1579" cy=".1579" fx="2.1579" fy=".1579" r="1" gradientTransform="translate(515.403 398.1489) scale(42.317)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_46" data-name="未命名的渐变 46" cx="2.4141" cy=".4141" fx="2.4141" fy=".4141" r="1" gradientTransform="translate(518.1338 390.4827) scale(34.6502)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".74" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_47" data-name="未命名的渐变 47" cx="2.8145" cy=".8145" fx="2.8145" fy=".8145" r="1" gradientTransform="translate(523.3061 370.4902) scale(27.0049)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#666"/>
+      <stop offset=".41" stop-color="#636363"/>
+      <stop offset="1" stop-color="#000"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_48" data-name="未命名的渐变 48" cx="2.7103" cy=".7103" fx="2.7103" fy=".7103" r="1" gradientTransform="translate(504.3745 380.779) scale(28.6495)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".39" stop-color="#fafafa"/>
+      <stop offset=".64" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#b3b3b3"/>
+    </radialGradient>
+    <linearGradient id="_未命名的渐变_49" data-name="未命名的渐变 49" x1="558.6159" y1="398.2961" x2="591.8939" y2="394.2101" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ccc"/>
+      <stop offset=".23" stop-color="#ccc"/>
+      <stop offset=".51" stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_50" data-name="未命名的渐变 50" x1="565.6161" y1="423.5293" x2="579.8191" y2="408.8212" gradientTransform="translate(0 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset=".39" stop-color="#636363"/>
+      <stop offset="1" stop-color="#666"/>
+    </linearGradient>
+    <radialGradient id="_未命名的渐变_51" data-name="未命名的渐变 51" cx="1.9617" cy="-.0383" fx="1.9617" fy="-.0383" r="1" gradientTransform="translate(503.0613 424.0731) scale(50.9527)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#fafafa"/>
+      <stop offset=".61" stop-color="#ccc"/>
+      <stop offset="1" stop-color="gray"/>
+    </radialGradient>
+    <radialGradient id="_未命名的渐变_52" data-name="未命名的渐变 52" cx="2.2374" cy=".2374" fx="2.2374" fy=".2374" r="1" gradientTransform="translate(510.7163 418.8903) scale(39.5977)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".49" stop-color="#fafafa"/>
+      <stop offset=".72" stop-color="#ccc"/>
+      <stop offset="1" stop-color="#ccc"/>
+    </radialGradient>
+  </defs>
+  <path d="M400,750c192.736,0,349.997-157.261,349.997-349.997S592.736,50.0027,400,50.0027,50.0002,207.266,50.0002,400.003s157.2638,349.997,349.9998,349.997Z" style="fill: #7f3f98;"/>
+  <path d="M400,723.954c178.422,0,323.95-145.532,323.95-323.954S578.422,76.0474,400,76.0474,76.0476,221.578,76.0476,400s145.5304,323.954,323.9524,323.954Z" style="fill: #ebbd04;"/>
+  <path d="M465.074,165.925c53.606,15.114,98.591,46.939,130.417,92.102.447-4.892-.355-8.092-1.064-12.803-.892-5.778-1.422-12.89.442-21.691,25.248,2.311,22.405,19.023,23.824,31.826,1.514,13.157,11.024,17.691,23.47,18.403,4.446,3.466,6.757,9.155,6.934,17.069-12.445.71-19.735.178-29.955-6.847-3.739-2.488-7.026-4.979-9.869-6.4,5.688,6.935,11.913,12.8,20.002,18.491,13.069,9.158,21.87,19.38,19.292,36.539-3.737,24.091-32.005,33.337-52.721,24.181-8.978-3.912-25.246-14.848-30.317-23.559-25.066-42.852-59.382-84.545-107.387-102.146-35.475-12.98-80.813-12.98-116.283,0-48.005,17.601-82.321,59.294-107.39,102.146-5.068,8.711-21.336,19.647-30.316,23.559-20.714,9.156-48.982-.09-52.717-24.181-2.5779-17.159,6.223-27.381,19.29-36.539,8.092-5.691,14.314-11.556,20.005-18.491-2.845,1.421-6.135,3.912-9.868,6.4-10.224,7.025-17.514,7.557-29.961,6.847.178-7.914,2.489-13.603,6.934-17.069,12.446-.712,21.958-5.246,23.47-18.403,1.423-12.803-1.422-29.515,23.826-31.826,1.866,8.801,1.332,15.913.443,21.691-.71,4.711-1.509,7.911-1.067,12.803,31.828-45.163,76.81-76.988,130.419-92.102,43.292-12.178,86.855-12.178,130.147,0h0Z"/>
+  <path d="M460.454,224.953c49.784,18.226,83.92,60.363,110.412,104.457,4.177,6.935,20.002,17.958,27.646,21.338,16.625,7.377,40.449.622,43.476-19.115,2.221-14.579-5.513-22.492-16.447-30.137-12.98-9.068-21.601-18.758-30.226-32.003-31.206-48.007-76.811-81.611-132.018-97.167-42.138-11.916-84.455-11.916-126.593,0-55.207,15.556-100.814,49.16-132.015,97.167-8.626,13.245-17.249,22.935-30.227,32.003-10.936,7.645-18.67,15.558-16.447,30.137,3.022,19.737,26.847,26.492,43.471,19.115,7.647-3.38,23.47-14.403,27.649-21.338,26.492-44.094,60.628-86.231,110.415-104.457,36.981-13.602,83.92-13.512,120.904,0h0Z" style="fill: #7f3f98;"/>
+  <path d="M462.319,562.151c32.182-11.464,59.209-31.826,80.812-58.14,5.868-7.022,10.755-14.134,17.869-20.09,13.422-11.381,30.579-14.314,44.361-1.424,24.093,22.403-2.933,52.365-19.648,69.254l-3.379,3.378c-33.247,34.136-72.185,62.319-118.502,75.566-42.939,12.356-84.722,12.356-127.661,0-46.317-13.247-85.254-41.43-118.504-75.566l-3.377-3.378c-16.714-16.889-43.739-46.851-19.647-69.254,13.779-12.89,30.936-9.957,44.36,1.424,7.112,5.956,12.001,13.068,17.869,20.09,21.603,26.314,48.628,46.676,80.81,58.14,40.627,14.491,84.011,14.491,124.637,0h0Z"/>
+  <path d="M462.053,624.383c45.073-12.976,83.124-40.624,115.571-73.873l3.378-3.378c13.424-13.602,40.361-40.806,19.914-59.831-11.379-10.492-24.803-7.557-35.65,1.689-6.845,5.69-11.379,12.712-17.069,19.382-22.845,27.114-50.049,48.093-83.655,60.006-42.048,14.934-87.031,14.934-129.081,0-33.604-11.913-60.808-32.892-83.655-60.006-5.691-6.67-10.225-13.692-17.07-19.382-10.846-9.246-24.271-12.181-35.65-1.689-20.446,19.025,6.49,46.229,19.915,59.831l3.38,3.378c32.447,33.249,70.495,60.897,115.568,73.873,41.783,12.005,82.322,12.005,124.104,0h0Z" style="fill: #7f3f98;"/>
+  <path d="M400,568.911c-42.939-35.207-79.211-77.699-102.059-128.728-21.78-48.894-28.802-100.192-23.379-153.351,23.114,7.377,46.584,8.623,69.963,1.599,23.115-6.935,41.074-20.447,55.475-39.472,14.401,19.025,32.36,32.537,55.475,39.472,23.377,7.024,46.849,5.778,69.961-1.599,5.425,53.159-1.599,104.457-23.38,153.351-22.847,51.029-59.117,93.521-102.056,128.728h0Z"/>
+  <path d="M400,563.753c43.382-35.825,77.253-77.877,98.409-125.258,19.827-44.274,28.448-93.346,23.562-146.42-22.58,6.755-46.139,6.668-67.655.178-20.977-6.311-40.004-18.669-54.316-36.715-14.314,18.046-33.337,30.404-54.318,36.715-21.513,6.49-45.073,6.577-67.653-.178-4.891,53.074,3.735,102.146,23.559,146.42,21.157,47.381,55.028,89.433,98.412,125.258Z" style="fill: #fff;"/>
+  <path d="M400,558.599c39.649-33.339,73.431-74.145,94.677-121.705,19.737-43.917,27.471-91.657,23.737-139.663-21.426,5.511-44.092,5.246-65.25-1.156-20.634-6.129-39.082-18.037-53.164-34.316-14.081,16.279-32.528,28.187-53.162,34.316-21.158,6.402-43.828,6.667-65.254,1.156-3.734,48.006,4.002,95.746,23.737,139.663,21.248,47.56,55.03,88.366,94.679,121.705Z"/>
+  <path d="M400,553.354c38.048-32.54,70.588-72.189,91.035-118.059,18.668-41.695,26.489-87.39,23.646-133.085-20.714,4.534-42.407,3.823-62.676-2.223-19.825-6.045-37.871-17.069-52.005-32.182-14.134,15.113-32.183,26.137-52.007,32.182-20.27,6.046-41.96,6.757-62.674,2.223-2.846,45.695,4.978,91.39,23.646,133.085,20.447,45.87,52.985,85.519,91.035,118.059h0Z" style="fill: #fff;"/>
+  <path d="M416.979,332.525h.622c4.358,0,8.181-3.555,8.181-8.001s-3.823-7.912-8.181-7.912h-.622v15.913ZM405.69,332.525h7.644v-15.913h-14.934l7.29,15.913h0ZM386.664,332.525h14.936l-7.289-15.913h-7.647v15.913ZM378.308,332.525h4.714v-15.913h-4.714v15.913ZM403.289,336.17h-16.625v12.001c7.292,2.668,15.293,3.025,22.76,1.246l-6.135-13.247ZM413.334,336.17h-5.956l5.601,12.178c.09-.087.177-.087.355-.177v-12.001h0ZM416.979,312.878h.622c6.402,0,11.913,5.156,11.913,11.646s-5.511,11.646-11.913,11.646h-.622v10.489c2.31-1.154,4.358-2.398,6.137-3.909,12.535-10.047,12.535-26.315,0-36.362-1.86-1.575-3.924-2.89-6.137-3.91v10.4ZM396.711,312.878h16.623v-12.001c-7.287-2.578-15.291-2.933-22.758-1.156l6.135,13.157ZM386.664,312.878h5.958l-5.601-12.091c-.089,0-.177.09-.357.09v12.001ZM374.574,312.878h8.448v-10.4c-2.212,1.02-4.276,2.335-6.135,3.91-12.536,10.047-12.536,26.315,0,36.362,1.778,1.511,3.822,2.755,6.135,3.909v-10.489h-8.448v-23.292ZM413.334,296.965v-5.333h3.645v6.755c3.112,1.334,6.045,3.025,8.535,5.068,14.314,11.556,14.314,30.581,0,42.138-2.49,2.045-5.423,3.734-8.535,5.158v6.667l-3.466.8-2.578-5.423c-7.913,2.043-16.447,1.866-24.271-.623v5.246h-3.642v-6.667c-3.202-1.424-6.048-3.113-8.536-5.158-14.314-11.557-14.314-30.582,0-42.138,2.602-2.069,5.474-3.774,8.536-5.068v-6.755l3.465-.712,2.578,5.333c7.911-2.043,16.449-1.776,24.269.712Z"/>
+  <path d="M400,548.019c36.447-31.648,67.653-70.053,87.388-114.411,9.157-20.362,15.645-41.698,19.557-63.566.445-2.756.892-5.423,1.246-8.089h-216.382c.354,2.666.799,5.333,1.244,8.089,3.912,21.868,10.402,43.204,19.557,63.566,19.737,44.358,50.941,82.763,87.39,114.411Z"/>
+  <path d="M319.547,365.951h-23.115c.178.887.355,1.956.622,3.378,1.867,10.846,4.445,21.514,7.734,32.003,3.187,10.451,7.017,20.695,11.469,30.673,1.067,2.399,2.133,4.799,3.29,7.112v-73.166h0Z" style="fill: #fff;"/>
+  <path d="M383.909,365.951h-32.182v125.261c9.867,12.89,20.714,25.071,32.182,36.447v-161.708Z" style="fill: #fff;"/>
+  <path d="M480.453,439.118c1.159-2.311,2.223-4.714,3.29-7.112,4.451-9.978,8.282-20.221,11.468-30.671,3.287-10.485,5.871-21.177,7.735-32.006.267-1.421.446-2.578.622-3.377h-23.115v73.166h0Z" style="fill: #fff;"/>
+  <path d="M416.091,527.661c11.468-11.377,22.315-23.557,32.182-36.45v-125.258h-32.182v161.708Z" style="fill: #fff;"/>
+  <path d="M223.445,295.808l8.536-7.112c2.133,2.223,3.644,4.534,4.444,6.845.889,2.4,1.067,4.891.712,7.379-.445,2.401-1.601,5.156-3.468,8.091-2.4,3.645-4.801,6.223-7.289,7.822-2.578,1.601-5.69,2.4-9.335,2.313-3.735-.09-7.644-1.424-11.736-4.092-5.511-3.555-8.801-7.734-9.778-12.535-1.066-4.799.088-9.955,3.555-15.201,2.756-4.177,5.691-6.932,8.891-8.268,3.29-1.242,7.022-1.332,11.291-.265l-3.912,10.399c-1.156-.355-2.133-.532-2.845-.442-1.098.008-2.173.315-3.11.887-.979.534-1.779,1.334-2.491,2.403-1.511,2.311-1.689,4.621-.622,7.109.711,1.869,2.578,3.736,5.601,5.601,3.645,2.401,6.49,3.467,8.623,3.29,2.044-.267,3.732-1.421,5.066-3.377,1.244-1.956,1.691-3.823,1.244-5.514-.442-1.688-1.598-3.467-3.377-5.333h0Z" style="fill: #ebbd04;"/>
+  <path d="M236.778,285.942l7.202-9.245,8.623,6.755-7.202,9.245-8.623-6.755Z" style="fill: #ebbd04;"/>
+  <path d="M291.009,231.977l9.867-6.401,5.956,9.246-9.778,6.4-6.045-9.245Z" style="fill: #ebbd04;"/>
+  <path d="M241.758,236.245l13.424-12.179c2.666-2.313,5.156-3.912,7.379-4.623,2.195-.773,4.547-.987,6.845-.622,2.311.444,4.444,1.333,6.578,2.667,2.129,1.408,4.071,3.081,5.778,4.979,2.845,3.2,4.714,5.955,5.513,8.269.841,2.239,1.175,4.638.977,7.022-.267,2.31-.887,4.266-2.044,6.045-1.262,2.081-2.819,3.967-4.624,5.601l-13.512,12.178-26.314-29.337h0ZM256.781,234.736l14.404,16,2.221-2.044c1.867-1.69,3.022-3.113,3.467-4.269.445-1.064.355-2.4-.087-3.822-.535-1.511-1.779-3.377-3.912-5.69-2.846-3.111-5.246-4.799-7.292-5.067-2.044-.177-4.177.712-6.578,2.846l-2.223,2.046h0Z" style="fill: #ebbd04;"/>
+  <path d="M320.346,183.082l11.024-2.935,19.914,17.159-5.601-21.069,11.112-2.935,10.224,38.051-11.113,3.022-19.915-17.069,5.601,20.892-11.022,2.932-10.224-38.048h0Z" style="fill: #ebbd04;"/>
+  <path d="M394.844,194.729l-4.799-14.047-3.912,14.314,8.711-.267ZM397.689,203.174l-13.869.445-1.689,6.58-12.445.442,13.422-39.914,13.337-.445,16.09,38.85-12.623.443-2.223-6.401h0Z" style="fill: #ebbd04;"/>
+  <path d="M439.564,197.129l10.133,4.712c-1.155,2.845-2.581,5.156-4.445,6.934-1.758,1.754-3.928,3.038-6.312,3.735-2.4.711-5.334.799-8.801.265-4.269-.533-7.646-1.689-10.137-3.288-2.575-1.602-4.618-4.092-6.13-7.469-1.514-3.377-1.869-7.467-1.247-12.358.977-6.488,3.378-11.199,7.29-14.224,3.912-2.933,9.068-3.999,15.29-3.11,4.979.712,8.624,2.221,11.202,4.621,2.578,2.401,4.179,5.691,4.978,10.048l-11.024.889c-.177-1.244-.444-2.223-.797-2.845-.515-.956-1.246-1.778-2.135-2.401-.89-.712-1.954-1.067-3.201-1.244-2.667-.355-4.978.444-6.757,2.4-1.332,1.51-2.221,3.998-2.665,7.467-.625,4.357-.445,7.38.709,9.246,1.067,1.778,2.76,2.845,5.159,3.112,2.31.355,4.174,0,5.508-1.156,1.334-1.157,2.493-2.933,3.382-5.334h0Z" style="fill: #ebbd04;"/>
+  <path d="M462.765,178.549l11.646,3.555-11.558,37.783-11.644-3.645,11.556-37.693h0Z" style="fill: #ebbd04;"/>
+  <path d="M487.744,210.02c-1.953,3.468-2.755,6.313-2.308,8.534.532,2.223,1.866,4.002,4.089,5.246,2.219,1.244,4.442,1.511,6.488.712,2.135-.802,4.267-3.113,6.4-7.025,1.778-3.2,2.403-5.955,1.956-8.178-.445-2.224-1.866-3.912-4.089-5.156-2.132-1.245-4.267-1.424-6.401-.623-2.223.8-4.266,2.933-6.135,6.49h0ZM477.077,204.063c3.111-5.689,7.112-9.156,12.001-10.58,4.889-1.421,10.135-.532,15.738,2.578,5.689,3.203,9.244,7.204,10.667,12.003,1.421,4.802.534,9.958-2.491,15.469-2.221,4.089-4.801,7.024-7.554,8.8-2.76,1.869-5.868,2.756-9.246,2.756-3.377.09-6.934-.977-10.756-3.11-3.917-2.134-6.757-4.534-8.626-7.202-1.865-2.667-2.843-5.778-2.933-9.333-.09-3.557.977-7.38,3.2-11.381Z" style="fill: #ebbd04;"/>
+  <path d="M531.309,212.687l8.446,7.646-3.555,26.135,14.579-16.178,8.533,7.645-26.402,29.337-8.536-7.647,3.557-26.045-14.491,16.09-8.536-7.646,26.405-29.337Z" style="fill: #ebbd04;"/>
+  <path d="M562.602,279.985l8.356-12.268-13.781,5.511,5.425,6.757h0ZM557.621,287.364l-8.713-10.846-6.31,2.668-7.824-9.69,40.006-13.337,8.3589,10.314-21.339,36.36-8.001-9.87,3.822-5.599h0Z" style="fill: #ebbd04;"/>
+  <path d="M595.051,282.919l6.667,10.225-24.891,16.177,10.313,16.003-8.181,5.246-16.98-26.137,33.072-21.514Z" style="fill: #ebbd04;"/>
+  <path d="M277.319,542.509l13.157,9.155-8.71,23.205,18.845-16.093,13.068,9.158-22.58,32.36-8.179-5.78,17.246-24.624-23.556,20.269-7.38-5.245,10.934-28.983-17.246,24.626-8.179-5.778,22.58-32.27h0Z" style="fill: #ebbd04;"/>
+  <path d="M330.125,600.825l1.244-14.846-9.336,11.558,8.092,3.288ZM329.235,609.628l-12.802-5.158-4.267,5.333-11.556-4.711,28.535-31.024,12.358,4.978-1.066,42.138-11.824-4.801.622-6.755Z" style="fill: #ebbd04;"/>
+  <path d="M367.551,594.426l-3.377,21.246,2.932.445c2.491.445,4.357.445,5.513,0,1.155-.355,2.134-1.154,2.933-2.488.8-1.334,1.512-3.467,1.956-6.58.71-4.177.445-7.112-.622-8.803-1.156-1.776-3.2-2.8409-6.4-3.377l-2.935-.443ZM356.884,583.667l17.869,2.848c3.555.534,6.312,1.509,8.356,2.753,1.956,1.334,3.555,2.935,4.711,4.981,1.17,2.081,1.897,4.381,2.134,6.757.177,2.488.177,5.066-.268,7.644-.711,4.177-1.688,7.377-2.932,9.513-1.334,2.133-2.933,3.8199-4.889,5.154-1.956,1.246-3.912,1.956-5.958,2.223-2.755.269-5.156.269-7.289-.088l-17.869-2.845,6.135-38.94h0Z" style="fill: #ebbd04;"/>
+  <path d="M395.734,588.382l32.448-2.403.624,8.446-20.359,1.512.445,6.225,18.935-1.424.622,7.999-18.935,1.424.624,7.736,20.979-1.514.622,8.891-33.07,2.49-2.935-39.382Z" style="fill: #ebbd04;"/>
+  <path d="M436.273,584.38l11.911-2.933,9.513,38.225-11.824,2.933-9.6-38.225Z" style="fill: #ebbd04;"/>
+  <path d="M474.231,590.158l4.713-2.043c.532-.268,1.422-.802,2.756-1.779.624-.532,1.066-1.157,1.246-1.956.265-.802.177-1.599-.18-2.401-.532-1.154-1.334-1.956-2.31-2.223-1.067-.265-2.581,0-4.532.892l-4.893,2.221,3.2,7.289h0ZM472.634,616.563l-16.092-36.005,18.58-8.269c3.465-1.511,6.223-2.398,8.266-2.578,2.134-.266,4.09.178,5.868,1.332,1.866,1.067,3.288,2.758,4.267,5.071.889,1.956,1.246,3.909,1.067,5.688-.248,1.845-.917,3.609-1.956,5.154-.71.979-1.777,2.046-3.29,3.112,1.513-.087,2.668-.087,3.469.09.533.087,1.422.442,2.666,1.067,1.157.622,2.046,1.156,2.578,1.511l9.96,8.089-12.538,5.601-10.844-8.356c-1.424-1.067-2.493-1.689-3.29-1.869-1.067-.265-2.044-.087-3.115.359l-.975.443,6.58,14.581-11.201,4.979h0Z" style="fill: #ebbd04;"/>
+  <path d="M525.617,570.067l-11.825-8.888,4.801,13.957,7.024-5.069ZM532.727,575.49l-11.199,8.179,2.221,6.313-10.045,7.379-11.201-40.626,10.756-7.826,35.206,23.204-10.313,7.467-5.425-4.09h0Z" style="fill: #ebbd04;"/>
+  <path d="M323.547,166.369c3.555-8.536,7.29-16.8917,13.245-22.4026,14.137-12.8901,26.937-5.6007,36.272,7.2896,1.157,1.599,2.491,3.11,3.912,3.912-2.755,1.689-6.934.177-11.468-.625-10.49-1.776-24.002.89-32.715,7.115-3.023,2.133-6.223,3.555-9.246,4.711Z"/>
+  <path d="M423.025,155.169c-5.423-4.267-13.692-6.3124-23.025-6.3124s-17.601,2.0454-23.025,6.3124c9.868-33.3367,47.294-33.2491,46.05,0Z"/>
+  <path d="M476.455,166.369c-3.555-8.536-7.289-16.8917-13.337-22.4026-14.044-12.8901-26.845-5.6007-36.18,7.2896-1.154,1.599-2.488,3.11-3.912,3.912,2.758,1.689,6.935.177,11.467-.625,10.491-1.776,24.006.89,32.717,7.115,3.02,2.133,6.222,3.555,9.245,4.711h0Z"/>
+  <path d="M422.137,639.229c.175,1.246.267,2.49.267,3.824,0,13.157-10.047,24.004-22.403,24.004s-22.402-10.847-22.402-24.004c0-1.334.087-2.578.265-3.824,3.29,5.957,12.001,10.316,22.137,10.316s18.846-4.359,22.136-10.316h0Z"/>
+  <path d="M315.1,624.475c10.58,2.845,9.69,9.245,15.823,15.29,5.691,5.511,28.006-.801,35.917-1.601-8.623,7.467-23.646,19.737-36.004,15.738-9.513-3.0229-15.291-14.581-15.736-29.427h0Z"/>
+  <path d="M484.902,624.475c-10.579,2.845-9.69,9.245-15.825,15.29-5.688,5.511-28.004-.801-35.917-1.601,8.623,7.467,23.649,19.737,36.004,15.738,9.515-3.0229,15.293-14.581,15.738-29.427h0Z"/>
+  <path d="M197.04,424.805l14.669-10.667-5.601-17.159h-18.046l-5.601,17.159,14.579,10.667Z"/>
+  <path d="M189.66,399.203l-4.624,14.044,12.003,8.803,12.089-8.803-4.622-14.044h-14.846Z" style="fill: url(#_未命名的渐变);"/>
+  <path d="M170.368,419.028l-2.668,15.111c4.179,5.068,9.158,9.25,14.758,12.093v-.18l14.581-8.177v-13.069l-14.581-10.667-12.09,4.889Z" style="fill: url(#_未命名的渐变_2);"/>
+  <path d="M172.324,420.629l-2.224,12.888c1.805,2.159,3.798,4.153,5.958,5.957,1.941,1.583,4.025,2.982,6.225,4.179l12.621-7.112v-10.671l-12.801-9.245-9.779,4.004h0Z" style="fill: url(#_未命名的渐变_3);"/>
+  <path d="M169.213,390.222c-3.377,5.781-5.865,11.914-7.202,18.316l8.357,10.49,12.09-4.889,5.603-17.159-6.045-8.536-12.803,1.778Z" style="fill: url(#_未命名的渐变_4);"/>
+  <path d="M170.635,392.268c-1.45,2.488-2.727,5.072-3.822,7.734-.977,2.611-1.779,5.284-2.401,8.002l6.667,8.356,9.601-3.91,4.891-15.115-4.534-6.578-10.402,1.511h0Z" style="fill: url(#_未命名的渐变_5);"/>
+  <path d="M169.121,383.378c4.002-3.555,8.713-6.313,13.869-8.179l6.49,4.002-7.466,9.243-12.803,1.779-.09-6.845h0Z"/>
+  <path d="M176.768,380.532c-1.909,1.125-3.722,2.404-5.421,3.825v3.377l9.512-1.421,5.334-6.58-3.38-2.046c-2.133.712-4.087,1.691-6.045,2.845h0Z" style="fill: url(#_未命名的渐变_6);"/>
+  <path d="M154.545,414.851l7.377-6.405.089.092c1.337-6.402,3.825-12.535,7.202-18.315l-.089-6.845c-8.889,7.734-14.489,18.935-14.579,31.473Z" style="fill: url(#_未命名的渐变_7);"/>
+  <path d="M160.413,398.581c-1.656,3.515-2.766,7.262-3.29,11.111l2.933-2.488c.624-3.02,1.598-5.955,2.665-8.713,1.187-3.013,2.614-5.926,4.267-8.711v-1.156c-2.683,2.967-4.9,6.324-6.575,9.957h0Z" style="fill: url(#_未命名的渐变_8);"/>
+  <path d="M158.901,433.964c-2.845-5.691-4.356-12.004-4.356-18.669v-.447l7.379-6.4,8.446,10.58-2.668,15.111-8.801-.175Z"/>
+  <path d="M156.766,415.915c0,2.845.357,5.691.979,8.448.619,2.537,1.482,5.007,2.578,7.377l5.6.178,2.134-12.268-6.403-8.004-4.888,4.269h0Z" style="fill: url(#_未命名的渐变_9);"/>
+  <path d="M186.813,456.544l-4.355-10.313c-5.6-2.843-10.579-7.024-14.758-12.092l-8.799-.176c5.421,11.11,15.646,19.558,27.912,22.581h0Z" style="fill: url(#_未命名的渐变_10);"/>
+  <path d="M171.791,446.674c3.29,2.668,7.112,4.803,11.202,6.4l-2.223-5.241c-2.668-1.426-5.157-3.025-7.467-4.981-2.401-1.954-4.624-4.09-6.58-6.575l-4.089-.093c2.411,4.009,5.511,7.559,9.157,10.49h0Z" style="fill: url(#_未命名的渐变_11);"/>
+  <path d="M207.351,456.544c-3.375.823-6.837,1.241-10.312,1.246-3.467,0-6.934-.449-10.224-1.246l-4.357-10.312v-.18l14.581-8.176,14.669,8.176-4.357,10.492h0Z"/>
+  <path d="M185.216,447.029l3.198,7.648c1.237.249,2.483.456,3.734.62,1.625.178,3.257.267,4.891.268,1.687,0,3.378-.086,4.977-.268,1.246-.177,2.49-.355,3.734-.62l3.2-7.648-11.911-6.668-11.823,6.668Z" style="fill: url(#_未命名的渐变_12);"/>
+  <path d="M182.993,375.201l6.49,4c5.51-.712,9.69-.712,15.201,0l6.402-4c-4.512-1.591-9.262-2.403-14.047-2.403-4.756,0-9.512.802-14.046,2.403Z" style="fill: url(#_未命名的渐变_13);"/>
+  <path d="M188.414,376.001l1.601.889c2.49-.269,4.801-.447,7.024-.447,2.311,0,4.622.178,7.112.447l1.599-.889c-5.711-1.247-11.625-1.247-17.336,0Z" style="fill: url(#_未命名的渐变_14);"/>
+  <path d="M189.483,379.201l-7.467,9.243,6.045,8.536h18.046l6.046-8.536-7.469-9.243c-2.52-.344-5.059-.522-7.602-.535-2.421,0-4.844.178-7.599.535h0Z" style="fill: url(#_未命名的渐变_15);"/>
+  <path d="M190.637,381.244l-5.866,7.29,4.444,6.312h15.736l4.444-6.312-5.866-7.29c-2.311-.265-4.356-.354-6.49-.354-2.045,0-4.089.089-6.402.354Z" style="fill: url(#_未命名的渐变_16);"/>
+  <path d="M197.039,424.806v13.069l14.669,8.177v.18c5.601-2.843,10.577-7.025,14.756-12.093l-2.665-15.111-12.091-4.889-14.669,10.667Z" style="fill: url(#_未命名的渐变_17);"/>
+  <path d="M199.263,425.87v10.671l12.533,7.112c2.223-1.156,4.356-2.58,6.312-4.179,2.133-1.778,4.089-3.822,5.956-5.957l-2.224-12.888-9.865-4.004-12.712,9.245h0Z" style="fill: url(#_未命名的渐变_18);"/>
+  <path d="M206.107,396.98l5.601,17.159,12.091,4.889,8.356-10.49c-1.334-6.402-3.825-12.535-7.202-18.316l-12.8-1.778-6.046,8.536Z" style="fill: url(#_未命名的渐变_19);"/>
+  <path d="M208.595,397.335l4.889,15.115,9.603,3.91,6.667-8.356c-.612-2.731-1.445-5.406-2.49-8.002-.977-2.578-2.311-5.156-3.733-7.734l-10.402-1.511-4.534,6.578Z" style="fill: url(#_未命名的渐变_20);"/>
+  <path d="M225.043,383.378c-4-3.555-8.711-6.313-13.957-8.179l-6.4,4.002,7.467,9.243,12.8,1.779.09-6.845h0Z"/>
+  <path d="M207.884,379.733l5.425,6.58,9.51,1.421v-3.377c-1.688-1.422-3.554-2.668-5.423-3.825-1.956-1.154-3.912-2.133-6.045-2.845l-3.467,2.046h0Z" style="fill: url(#_未命名的渐变_21);"/>
+  <path d="M224.953,390.223c3.377,5.78,5.868,11.913,7.202,18.315l.09-.092,7.377,6.405c-.09-12.538-5.779-23.739-14.579-31.473l-.09,6.845Z" style="fill: url(#_未命名的渐变_22);"/>
+  <path d="M227.176,389.78c1.582,2.823,3.007,5.731,4.267,8.711,1.085,2.841,1.976,5.752,2.668,8.713l2.932,2.488c-.524-3.849-1.634-7.596-3.289-11.111-1.676-3.633-3.894-6.99-6.578-9.957v1.156h0Z" style="fill: url(#_未命名的渐变_23);"/>
+  <path d="M235.265,433.964c2.755-5.691,4.356-12.004,4.356-18.669v-.447l-7.379-6.4-8.446,10.58,2.668,15.111,8.801-.175Z"/>
+  <path d="M226.109,419.65l2.134,12.268,5.6-.178c1.067-2.313,1.956-4.799,2.489-7.377.712-2.757,1.069-5.603,1.069-8.448l-4.891-4.269-6.401,8.004h0Z" style="fill: url(#_未命名的渐变_24);"/>
+  <path d="M226.464,434.139c-4.179,5.068-9.155,9.249-14.756,12.092l-4.357,10.313c12.266-3.023,22.491-11.471,27.914-22.581l-8.801.176h0Z" style="fill: url(#_未命名的渐变_25);"/>
+  <path d="M227.441,436.277c-1.965,2.408-4.169,4.611-6.578,6.575-2.31,1.956-4.801,3.555-7.466,4.981l-2.224,5.241c4.09-1.597,7.914-3.732,11.202-6.4,3.646-2.931,6.746-6.481,9.158-10.49l-4.092.093Z" style="fill: url(#_未命名的渐变_26);"/>
+  <path d="M602.958,424.806l-14.671-10.667,5.601-17.159h18.048l5.601,17.159-14.579,10.667Z"/>
+  <path d="M595.489,399.203l-4.624,14.044,12.093,8.803,12.001-8.803-4.624-14.044h-14.846,0Z" style="fill: url(#_未命名的渐变_27);"/>
+  <path d="M602.958,424.806v13.069l14.579,8.177v.18c5.601-2.843,10.579-7.025,14.754-12.093l-2.666-15.111-12.088-4.889-14.579,10.667Z" style="fill: url(#_未命名的渐变_28);"/>
+  <path d="M605.089,425.87v10.671l12.623,7.112c2.138-1.156,4.267-2.58,6.223-4.179,2.16-1.804,4.153-3.798,5.958-5.957l-2.224-12.888-9.775-4.004-12.805,9.245Z" style="fill: url(#_未命名的渐变_29);"/>
+  <path d="M611.936,396.98l5.601,17.159,12.088,4.889,8.357-10.49c-1.332-6.402-3.82-12.535-7.198-18.316l-12.805-1.778-6.043,8.536Z" style="fill: url(#_未命名的渐变_30);"/>
+  <path d="M614.422,397.335l4.891,15.115,9.601,3.91,6.667-8.356c-.621-2.718-1.422-5.391-2.398-8.002-1.096-2.662-2.373-5.246-3.823-7.734l-10.401-1.511-4.537,6.578Z" style="fill: url(#_未命名的渐变_31);"/>
+  <path d="M630.872,383.378c-4-3.555-8.711-6.313-13.957-8.179l-6.4,4.002,7.467,9.243,12.802,1.779.088-6.845h0Z"/>
+  <path d="M613.8,379.733l5.338,6.58,9.508,1.421v-3.377c-1.696-1.424-3.509-2.703-5.418-3.825-1.959-1.154-3.915-2.133-6.046-2.845l-3.382,2.046h0Z" style="fill: url(#_未命名的渐变_32);"/>
+  <path d="M630.784,390.223c3.378,5.78,5.866,11.913,7.198,18.315l.092-.092,7.377,6.405c-.09-12.538-5.691-23.739-14.581-31.473l-.086,6.845Z" style="fill: url(#_未命名的渐变_33);"/>
+  <path d="M633.005,389.78c1.653,2.785,3.081,5.698,4.269,8.711,1.084,2.841,1.973,5.752,2.663,8.713l2.936,2.488c-.525-3.849-1.635-7.596-3.29-11.111-1.676-3.633-3.894-6.99-6.578-9.957v1.156h0Z" style="fill: url(#_未命名的渐变_34);"/>
+  <path d="M641.094,433.964c2.845-5.691,4.354-12.004,4.354-18.669v-.447l-7.377-6.4-8.446,10.58,2.666,15.111,8.803-.175Z"/>
+  <path d="M631.938,419.65l2.134,12.268,5.603-.178c1.064-2.313,1.956-4.799,2.573-7.377.641-2.77.97-5.604.982-8.448l-4.891-4.269-6.401,8.004h0Z" style="fill: url(#_未命名的渐变_35);"/>
+  <path d="M632.291,434.139c-4.175,5.068-9.153,9.249-14.754,12.092l-4.357,10.313c12.271-3.023,22.495-11.471,27.916-22.581l-8.805.176Z" style="fill: url(#_未命名的渐变_36);"/>
+  <path d="M633.27,436.277c-1.958,2.485-4.177,4.621-6.58,6.575-2.31,1.956-4.796,3.555-7.464,4.981l-2.223,5.241c4.087-1.597,7.911-3.732,11.201-6.4,3.645-2.931,6.745-6.482,9.155-10.49l-4.089.093Z" style="fill: url(#_未命名的渐变_37);"/>
+  <path d="M592.642,456.544c3.377.823,6.84,1.242,10.316,1.246,3.465,0,6.935-.449,10.223-1.246l4.356-10.312v-.18l-14.579-8.176-14.673,8.176,4.3571,10.492h-.0002Z"/>
+  <path d="M591.045,447.029l3.2,7.648c1.237.249,2.482.456,3.732.62,1.654.181,3.317.271,4.981.267,1.597,0,3.29-.085,4.889-.267,1.242-.177,2.488-.355,3.732-.62l3.2-7.648-11.821-6.668-11.913,6.668Z" style="fill: url(#_未命名的渐变_38);"/>
+  <path d="M588.909,375.201l6.403,4c5.511-.712,9.69-.712,15.203,0l6.4-4c-4.485-1.595-9.21-2.408-13.97-2.403-4.745,0-9.502.802-14.036,2.403h0Z" style="fill: url(#_未命名的渐变_39);"/>
+  <path d="M594.245,376.001l1.599.889c2.49-.269,4.804-.447,7.114-.447,2.221,0,4.53.178,7.023.447l1.598-.889c-5.711-1.247-11.623-1.247-17.334,0h0Z" style="fill: url(#_未命名的渐变_40);"/>
+  <path d="M595.312,379.201l-7.469,9.243,6.045,8.536h18.048l6.044-8.536-7.465-9.243c-2.52-.344-5.059-.522-7.602-.535-2.5421.013-5.082.191-7.601.535h0Z" style="fill: url(#_未命名的渐变_41);"/>
+  <path d="M596.468,381.244l-5.87,7.29,4.449,6.312h15.733l4.444-6.312-5.866-7.29c-2.313-.265-4.356-.354-6.4-.354-2.135,0-4.181.089-6.49.354h.0001Z" style="fill: url(#_未命名的渐变_42);"/>
+  <path d="M576.197,419.028l-2.666,15.111c4.177,5.068,9.156,9.25,14.754,12.093v-.18l14.673-8.177v-13.069l-14.673-10.667-12.088,4.889Z" style="fill: url(#_未命名的渐变_43);"/>
+  <path d="M578.155,420.629l-2.223,12.888c1.864,2.135,3.822,4.179,5.955,5.957,1.956,1.605,4.071,3.006,6.313,4.179l12.533-7.112v-10.671l-12.711-9.245-9.8669,4.004h-.0001Z" style="fill: url(#_未命名的渐变_44);"/>
+  <path d="M575.042,390.222c-3.377,5.781-5.867,11.914-7.204,18.316l8.359,10.49,12.088-4.889,5.603-17.159-6.045-8.536-12.801,1.778h0Z" style="fill: url(#_未命名的渐变_45);"/>
+  <path d="M576.464,392.268c-1.422,2.578-2.753,5.156-3.732,7.734-1.046,2.596-1.879,5.271-2.491,8.002l6.668,8.356,9.6-3.91,4.8911-15.115-4.534-6.578-10.402,1.511h-.0001Z" style="fill: url(#_未命名的渐变_46);"/>
+  <path d="M574.953,383.378c3.999-3.555,8.711-6.313,13.956-8.179l6.401,4.002-7.467,9.243-12.803,1.779-.087-6.845h0Z"/>
+  <path d="M582.599,380.532c-1.868,1.157-3.734,2.403-5.423,3.825v3.377l9.5099-1.421,5.426-6.58-3.468-2.046c-2.135.712-4.089,1.691-6.045,2.845h0Z" style="fill: url(#_未命名的渐变_47);"/>
+  <path d="M560.374,414.851l7.377-6.405.087.092c1.337-6.402,3.827-12.535,7.204-18.315l-.089-6.845c-8.801,7.734-14.492,18.935-14.579,31.473Z" style="fill: url(#_未命名的渐变_48);"/>
+  <path d="M566.239,398.581c-1.654,3.515-2.763,7.262-3.287,11.111l2.933-2.488c.688-2.962,1.579-5.873,2.668-8.713,1.26-2.98,2.684-5.888,4.266-8.711v-1.156c-2.684,2.967-4.903,6.324-6.58,9.957h0Z" style="fill: url(#_未命名的渐变_49);"/>
+  <path d="M564.73,433.964c-2.755-5.691-4.356-12.004-4.356-18.669v-.447l7.379-6.4,8.444,10.58-2.664,15.111-8.803-.175h0Z"/>
+  <path d="M562.597,415.915c0,2.845.355,5.691.979,8.448.618,2.537,1.481,5.007,2.576,7.377l5.598.178,2.138-12.268-6.405-8.004-4.886,4.269h0Z" style="fill: url(#_未命名的渐变_50);"/>
+  <path d="M592.642,456.544l-4.3571-10.313c-5.598-2.843-10.577-7.024-14.754-12.092l-8.801-.176c5.424,11.11,15.644,19.558,27.912,22.581h.0002Z" style="fill: url(#_未命名的渐变_51);"/>
+  <path d="M577.621,446.674c3.287,2.668,7.1071,4.803,11.201,6.4l-2.223-5.241c-2.668-1.426-5.156-3.025-7.467-4.981-2.41-1.963-4.614-4.166-6.578-6.575l-4.094-.093c2.413,4.009,5.514,7.56,9.1609,10.49h.0001Z" style="fill: url(#_未命名的渐变_52);"/>
+</svg>

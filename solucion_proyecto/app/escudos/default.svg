@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#27272a"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <linearGradient id="rimGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#a1a1aa"/>
+      <stop offset="100%" stop-color="#3f3f46"/>
+    </linearGradient>
+  </defs>
+  <path d="M60 8L18 24V58C18 85.5 35.8 106.8 60 114C84.2 106.8 102 85.5 102 58V24L60 8Z" fill="url(#shieldGrad)" stroke="url(#rimGrad)" stroke-width="5"/>
+  <path d="M60 16L25 29V57C25 80.2 40 98.4 60 105C80 98.4 95 80.2 95 57V29L60 16Z" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"/>
+  <circle cx="60" cy="60" r="22" fill="#18181b" stroke="#e4e4e7" stroke-width="2.5"/>
+  <polygon points="60,46 66,54 63,63 57,63 54,54" fill="#10b981"/>
+  <circle cx="60" cy="60" r="14" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5" stroke-dasharray="4 3"/>
+</svg>

@@ -12,7 +12,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ .
-RUN mkdir -p /app/media
+COPY escudos/ /app/escudos/
+COPY iconos/ /app/iconos/
+RUN mkdir -p /app/media /app/escudos /app/iconos
 
 # Usuario no-root por seguridad (Lab 06: principio de mínimo privilegio en contenedores)
 RUN useradd -m appuser && chown -R appuser:appuser /app

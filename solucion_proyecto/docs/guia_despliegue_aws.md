@@ -1,113 +1,141 @@
-# 🚀 Guía Paso a Paso: Cómo Desplegar Todo en 1 Sola Cuenta de AWS Academy
+# Guía Paso a Paso: Cómo Subir y Desplegar el Proyecto en AWS Academy
 
-Esta guía resume el flujo completo en **una única cuenta de AWS Academy** para que no dependan de encender múltiples laboratorios al mismo tiempo. Los otros 2 laboratorios del equipo quedan como **respaldo (backup)** o para practicar individualmente.
+Esta guía detalla paso a paso cómo subir el proyecto actual a tu laboratorio de **AWS Academy** y cómo cualquier persona (el profesor, tus compañeros o tú desde el celular) puede abrirlo desde su navegador en internet.
 
 ---
 
-## 🏗️ 1. Arquitectura Unificada en 1 Sola Cuenta AWS
+## ¿El proyecto así como está ahora se puede subir a AWS?
 
-```mermaid
-flowchart LR
-    subgraph Afuera["🌍 AFUERA DE AWS"]
-        DEV["👨‍💻 Equipo (3 Integrantes)\ngit push a GitHub"]
-        GH["🐙 Repositorio GitHub\n(Código, Dockerfile, iac/main.yaml, Jenkinsfile)"]
-        USERS["📱 Periodista (HU-01) y\n🏟️ 1,000 Aficionados (HU-02/03/04)"]
-    end
+**Sí, 100%.** Ya dejé sincronizados todos los archivos de despliegue para que incluyan todos los cambios nuevos:
+- **[Dockerfile](file:///home/felipe/Documentos/PROYECTOS/trabajo_nube/solucion_proyecto/app/Dockerfile):** Incluye `ffmpeg` (para extraer el audio de los videos `.mp4`), copia automáticamente tu bodega de 377 escudos (`app/escudos/`) y tu bodega de íconos (`app/iconos/`).
+- **[docker-compose.yml](file:///home/felipe/Documentos/PROYECTOS/trabajo_nube/solucion_proyecto/app/docker-compose.yml):** Levanta Redis, el Portal de Aficionados (`puerto 8000`), la Consola del Periodista (`puerto 8001`), el Worker SQS y el Gateway Nginx (`puerto 80`) inyectando `GROQ_API_KEY` y montando `media/`, `escudos/` e `iconos/`.
+- **[iac/main.yaml](file:///home/felipe/Documentos/PROYECTOS/trabajo_nube/solucion_proyecto/iac/main.yaml):** Crea toda la infraestructura en **1 sola cuenta de AWS Academy** (VPC, SNS, 2 Colas SQS, S3 y la instancia EC2 con los puertos `80`, `8000`, `8001` y `8080` abiertos al público y el parámetro `GroqApiKey` configurado en `/etc/gtn-app.env`).
 
-    subgraph AWS["☁️ ADENTRO DE 1 SOLA CUENTA AWS ACADEMY (iac/main.yaml)"]
-        subgraph EC2["🖥️ Instancia EC2 Unificada (LabInstanceProfile)"]
-            JK["🤖 Jenkins CI/CD (Puerto 8080)\n1. Clona GitHub\n2. Valida cfn-lint\n3. Construye y despliega Docker"]
-            NGINX["🌐 Nginx Gateway (Puerto 80)\nStreaming SSE sin buffering"]
-            APP["🐳 Clúster App (Gunicorn + Gevent)\n+ SQS Workers + Redis Cache O(1)"]
-        end
-        SNS(("📢 AWS SNS Topic\ngtn-eventos-partido"))
-        SQS_V[["⚡ AWS SQS Cola VIVO\n(Prioridad ALTA · Todos los eventos)"]]
-        SQS_R[["📋 AWS SQS Cola RESUMEN\n(Prioridad Diferenciada · FilterPolicy HIGH)"]]
-        S3[("🪣 AWS S3 Bucket\nActas encriptadas AES-256")]
-    end
+> **Importante sobre los videos `.mp4` y el archivo `.env`:**  
+> Por buenas prácticas de Git y seguridad (`.gitignore`), ni tu archivo `.env` (donde está tu API Key de Groq) ni los videos `.mp4` pesados de `app/media/` se suben a GitHub. En el **Paso 2** de abajo verás cómo pasarle tu `GroqApiKey` directamente al comando de CloudFormation y cómo subir tus videos desde la propia página web de la Cabina del Periodista una vez desplegada.
 
-    DEV -->|"1. Pull Request / Merge"| GH
-    GH -->|"2. Jenkins descarga el repo"| JK
-    JK -->|"3. docker compose up -d --build"| APP
-    USERS -->|"4. Entran a http://<IP_EC2>:80"| NGINX --> APP
-    APP -->|"5. Publica Gol/Tarjeta"| SNS
-    SNS -->|"Fan-Out Vivo"| SQS_V --> APP
-    SNS -->|"Fan-Out Resumen"| SQS_R --> APP
-    APP -.-> S3
+---
+
+## Paso 1: Subir tu código a tu repositorio de GitHub (Desde tu PC)
+
+Los archivos que deben quedar en la **raíz** de tu repositorio de GitHub son los que están dentro de `solucion_proyecto/` (`app/`, `iac/`, `docs/`, `evidencias/`, `Jenkinsfile`, `README.md`).
+
+Abre una terminal en tu computador dentro de la carpeta `solucion_proyecto/` y ejecuta:
+
+```bash
+cd /home/felipe/Documentos/PROYECTOS/trabajo_nube/solucion_proyecto
+
+git init
+git branch -M main
+git add .
+git commit -m "feat: plataforma UNAL Sports completa con Groq Whisper v3 Turbo, FotMob UI y CloudFormation"
+
+# Reemplaza la URL por la de tu repositorio en GitHub:
+git remote add origin https://github.com/<TU_USUARIO>/<TU_REPO>.git
+git push -u origin main
+```
+*(Nota: Tus 377 escudos `.svg` de `app/escudos/` y tus íconos de `app/iconos/` sí se suben a GitHub porque pesan muy poco y así quedan listos en AWS automáticamente).*
+
+---
+
+## Paso 2: Crear toda la infraestructura en AWS Academy (En la Nube)
+
+1. Entra a tu cuenta de **AWS Academy Learner Lab** y haz clic en **Start Lab**.
+2. Espera a que el punto al lado de *AWS* se ponga **Verde** y haz clic en **AWS** para abrir la consola de administración.
+3. En la barra superior derecha de la consola de AWS, haz clic en el ícono de terminal **`>_` (AWS CloudShell)**.
+4. Cuando cargue la terminal de CloudShell, clona tu repositorio de GitHub y despliega la plantilla de CloudFormation con tu llave de Groq:
+
+```bash
+# 1. Clonar tu repositorio en CloudShell
+git clone https://github.com/<TU_USUARIO>/<TU_REPO>.git
+cd <TU_REPO>
+
+# 2. Desplegar toda la infraestructura con CloudFormation (tarda ~2 minutos)
+aws cloudformation deploy \
+  --template-file iac/main.yaml \
+  --stack-name gtn-unal-sports \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameter-overrides \
+    NombreEquipo=unal-sports \
+    Ambiente=lab \
+    ProyectoId=proyecto-06 \
+    InstanceType=t3.small \
+    GroqApiKey=<TU_GROQ_API_KEY>
+```
+
+5. Apenas termine el comando, ejecuta este comando en el mismo CloudShell para ver la **IP pública y las URLs** de tu servidor:
+
+```bash
+aws cloudformation describe-stacks \
+  --stack-name gtn-unal-sports \
+  --query "Stacks[0].Outputs" \
+  --output table
+```
+Guarda el valor de **`EC2PublicIP`** (por ejemplo `54.160.XX.XX`) o **`DemoURL`**.
+
+---
+
+## Paso 3: Levantar los Contenedores en la Instancia EC2
+
+Cuando CloudFormation crea la instancia EC2, su script `UserData` instala automáticamente **Docker, Docker Compose, Git, Java 17 y Jenkins**, y guarda tu `GROQ_API_KEY`, el `SNS_TOPIC_ARN` y las URLs de las colas `SQS` en el archivo `/etc/gtn-app.env`.
+
+Tienes **dos formas** de levantar la aplicación dentro de la EC2 (puedes usar la Opción A para dejarla corriendo en 1 minuto, o la Opción B con Jenkins para mostrar el pipeline CI/CD):
+
+### Opción A — Directo por terminal de EC2 (La más rápida, en 1 minuto)
+1. En la consola de AWS ve a **EC2 → Instances**.
+2. Selecciona la instancia **`gtn-unal-sports-ec2-server`** y haz clic arriba en **Connect → Connect** (usando *EC2 Instance Connect* desde el navegador).
+3. Espera ~2 minutos si la instancia acaba de crearse para que termine el `UserData` (puedes verificar con `docker --version`).
+4. Ejecuta estos comandos en la terminal de la EC2:
+
+```bash
+git clone https://github.com/<TU_USUARIO>/<TU_REPO>.git
+cd <TU_REPO>/app
+
+# Copiar las variables de entorno generadas por CloudFormation (SNS, SQS y GROQ_API_KEY)
+sudo cp /etc/gtn-app.env .env
+sudo chown ec2-user:ec2-user .env
+
+# Construir y levantar todos los microservicios en segundo plano
+sg docker -c "docker compose up -d --build"
+```
+
+5. Verifica que los 5 contenedores estén arriba (`Up`):
+```bash
+sg docker -c "docker compose ps"
 ```
 
 ---
 
-## ⚡ 2. Paso a Paso para Levantar Todo desde Cero (En 5 Minutos)
-
-### Paso 1: Subir esta carpeta a su repositorio de GitHub
-Suban el contenido de `solucion_proyecto/` a la raíz del repositorio de su equipo en GitHub (`gtn-proyecto-<nombre>`).
-
-### Paso 2: Desplegar la Infraestructura en AWS con 1 solo comando (`Lab 05`)
-1. Entren a **1 cuenta de AWS Academy** -> clic en **Start Lab** hasta que el círculo esté en verde 🟢 -> clic en **AWS** para abrir la consola.
-2. Abran **AWS CloudShell** (el ícono `>_` en la barra superior derecha de la consola de AWS).
-3. Clonen su repositorio de GitHub y ejecuten el comando de despliegue de CloudFormation:
-   ```bash
-   git clone https://github.com/<TU_USUARIO>/<TU_REPO>.git
-   cd <TU_REPO>
-
-   aws cloudformation deploy \
-     --template-file iac/main.yaml \
-     --stack-name gtn-unal-sports \
-     --capabilities CAPABILITY_NAMED_IAM \
-     --parameter-overrides \
-       NombreEquipo=unal-sports \
-       Ambiente=lab \
-       ProyectoId=proyecto-06 \
-       InstanceType=t3.small
-   ```
-4. Cuando termine (`Successfully created/updated stack - gtn-unal-sports`), consulten las URLs públicas que les entregó CloudFormation:
-   ```bash
-   aws cloudformation describe-stacks \
-     --stack-name gtn-unal-sports \
-     --query "Stacks[0].Outputs" \
-     --output table
-   ```
-   Ahí verán:
-   - `DemoURL`: `http://ec2-XX-XX-XX-XX.compute-1.amazonaws.com` *(Puerto 80 — Para los usuarios y el profesor)*
-   - `JenkinsURL`: `http://ec2-XX-XX-XX-XX.compute-1.amazonaws.com:8080` *(Puerto 8080 — Para su pipeline CI/CD)*
-
----
-
-### Paso 3: Configurar Jenkins en el Puerto 8080 para que despliegue solo (`Lab 04`)
-CloudFormation ya instaló **Docker**, **Docker Compose**, **cfn-lint** y **Jenkins** dentro de la EC2. Solo deben activar el Pipeline:
-
-1. En la consola de AWS vayan a **EC2 -> Instances**, seleccionen la instancia `gtn-unal-sports-ec2-server` y den clic en **Connect -> EC2 Instance Connect**.
-2. En esa terminal de la EC2, vean la clave inicial de Jenkins:
+### Opción B — Desplegar automáticamente desde Jenkins CI/CD (Puerto 8080)
+Si quieres mostrarle al profesor cómo **Jenkins** despliega todo automáticamente desde GitHub:
+1. En la terminal de la EC2, obtén la contraseña inicial de Jenkins:
    ```bash
    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
    ```
-3. Abran en su navegador el `JenkinsURL` (`http://<IP_PUBLICA_EC2>:8080`), peguen la contraseña, elijan **"Install suggested plugins"** y creen su usuario admin.
-4. En Jenkins, den clic en **"New Item"** (Nueva Tarea):
-   - Nombre: `gtn-proyecto-06-pipeline`
-   - Tipo: **Pipeline** -> clic en **OK**.
-   - Bajen a la sección **Pipeline**:
-     - En **Definition** elijan: `Pipeline script from SCM`
-     - En **SCM** elijan: `Git`
-     - En **Repository URL**: peguen la URL de su repo de GitHub (`https://github.com/...`).
-     - En **Branches to build**: `*/main`
-     - En **Script Path**: `Jenkinsfile`
-   - Den clic en **Save** y luego en **▶️ Build Now (Construir ahora)**.
-
-**¿Qué hará Jenkins automáticamente en ese instante?**
-1. Descargará todos los archivos de su GitHub a la EC2.
-2. Correrá `cfn-lint iac/*.yaml` para validar CloudFormation.
-3. Construirá la imagen Docker (`gtn-app:latest`).
-4. Levantará con Docker Compose/Swarm los contenedores (`nginx` en puerto 80, `app` en puerto 8000, `sqs-worker` y `redis`) conectándolos automáticamente al **Topic SNS** y a las **2 Colas SQS** creadas por CloudFormation (`/etc/gtn-app.env`).
-5. Ejecutará el **Simulador de Carga** para verificar que todo responde en milisegundos.
+2. Abre en tu navegador: `http://<EC2_PUBLIC_IP>:8080`
+3. Pega la contraseña, haz clic en **"Install suggested plugins"** y crea tu usuario.
+4. Haz clic en **New Item**, ponle `gtn-unal-sports-pipeline`, selecciona **Pipeline** y dale **OK**.
+5. En la sección **Pipeline**:
+   - **Definition:** `Pipeline script from SCM`
+   - **SCM:** `Git`
+   - **Repository URL:** `https://github.com/<TU_USUARIO>/<TU_REPO>.git`
+   - **Branch Specifier:** `*/main`
+   - **Script Path:** `Jenkinsfile`
+6. Haz clic en **Save** y luego en **Build Now**. Jenkins validará `iac/main.yaml`, construirá la imagen Docker y levantará todos los contenedores usando `/etc/gtn-app.env`.
 
 ---
 
-### Paso 4: ¡Probar la Plataforma en Vivo (Portal Aficionados vs. App Cabina del Periodista)!
-1. **Para los Aficionados y el Profesor:** Abran en el computador proyectado `http://<IP_PUBLICA_EC2>` (Puerto 80).
-   - Verán únicamente la vista limpia estilo **Apple Sports** de **Ingeniería FC vs. Ciencias Atlético**, sin ningún formulario de edición.
-2. **Para el Periodista (Desde tu celular o en otra pestaña):** Abre la aplicación independiente de la **Cabina del Periodista** en `http://<IP_PUBLICA_EC2>:8001` (o en `http://<IP_PUBLICA_EC2>/periodista`).
-   - Toca el botón **`⚽ GOL`** o **`🟨 AMARILLA`** y dale a **"🚀 Publicar en Vivo Ahora"**:
-   - Verás cómo el portal público de los aficionados se actualiza instantáneamente sin recargar la página (`HU-02`).
-   - En el portal de aficionados, alternen en el control estilo iOS entre **"⚡ En Vivo (Todo)"** y **"📋 Resumen Rápido (Entré tarde)"** para demostrar `HU-03` y el **Reto Extra**.
-3. **Simulador de 1,000 Lectores (`HU-04`):** Desde la Cabina del Periodista haz clic en **"⚡ Disparar Ráfaga de Final (1,000 Lectores + 5 Jugadas Clave)"** (o ejecuta por consola `python3 app/simulator/load_simulator.py --url http://localhost:8000 --readers 1000`) para demostrar `HU-04` con métricas `p50`, `p95` y `p99`.
+## Paso 4: ¿Cómo puede verlo cualquier persona desde su navegador o celular?
+
+Como el `SecurityGroupApp` de tu plantilla CloudFormation abre los puertos `80`, `8000`, `8001` y `8080` hacia internet (`0.0.0.0/0`), **cualquier persona en cualquier red Wi-Fi o datos móviles** puede entrar desde su navegador usando la IP pública de tu EC2 (`<EC2_PUBLIC_IP>`):
+
+| Quién entra | Qué URL debe abrir en su navegador | Qué verá |
+| :--- | :--- | :--- |
+| **Cualquier Espectador / Profesor / Compañeros** | **`http://<EC2_PUBLIC_IP>`** *(o `http://<EC2_PUBLIC_IP>:8000`)* | **Portal Público de Aficionados (Estilo FotMob):** Marcador en vivo, escudos de clubes/selecciones, estadísticas y cronología minuto a minuto que se actualiza sola sin recargar la página. |
+| **Tú (Periodista / Cabina de Transmisión)** | **`http://<EC2_PUBLIC_IP>:8001`** *(o `http://<EC2_PUBLIC_IP>/periodista`)* | **Consola de Prensa:** Donde subes y reproduces el video `.mp4` del partido (usando el botón **"Subir Video / Audio"**), narras por micrófono, publicas jugadas manuales o activas el **Simulador de 1,000 Lectores Concurrentes**. |
+| **Evaluador CI/CD** | **`http://<EC2_PUBLIC_IP>:8080`** | **Servidor Jenkins CI/CD** con el pipeline de validación y despliegue. |
+
+### Cómo subir tus videos de resumen una vez esté en AWS:
+1. Entra desde tu navegador a `http://<EC2_PUBLIC_IP>:8001`.
+2. En el **Modo 1**, haz clic en el botón **"Subir Video / Audio"** y selecciona tu video `.mp4` (por ejemplo `Bayern M. 4-3 Real Madrid.mp4` o `Manchester_CIty_Vs_Leipzig.mp4`).
+3. El video quedará guardado directamente en el servidor EC2 y al darle **Play** empezará a transmitir las jugadas y actualizar el marcador en los celulares y navegadores de todas las personas que estén viendo `http://<EC2_PUBLIC_IP>`.

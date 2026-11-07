@@ -59,7 +59,7 @@ flowchart LR
 
 | Requisito / Historia | Cómo lo resuelve nuestra arquitectura | Endpoint / Archivo clave |
 |---|---|---|
-| **`[HU-01]` Periodista reporta gol/tarjeta/cambio en segundos (+ Auto-Narrador IA con OpenRouter)** | Cabina dedicada con **2 modos**: **Modo 1 (IA Live)** que interpreta el video/audio o la voz del comentarista en vivo vía **OpenRouter LLM** (`POST /api/ai/narrate`) actualizando equipos, minuto y jugadas automáticamente; y **Modo 2 (Manual)** (`POST /api/events`). | [`app/src/app.py`](./app/src/app.py) y [`app/src/templates/periodista.html`](./app/src/templates/periodista.html) |
+| **`[HU-01]` Periodista reporta gol/tarjeta/cambio en segundos (+ Auto-Narrador IA con Groq)** | Cabina dedicada con **2 modos**: **Modo 1 (IA Live)** que interpreta el video/audio o la voz del comentarista en vivo vía **Groq (`Whisper Large v3 Turbo + GPT-OSS-120B`)** (`POST /api/ai/process-video-chunk` y `POST /api/ai/transcribe-mic`) actualizando equipos, minuto, escudos y jugadas automáticamente; y **Modo 2 (Manual)** (`POST /api/events`). | [`app/src/app.py`](./app/src/app.py) y [`app/src/templates/periodista.html`](./app/src/templates/periodista.html) |
 | **`[HU-02]` Aficionado ve eventos en vivo sin recargar la página** | Streaming unidireccional **Server-Sent Events (SSE)** sobre conexiones asíncronas `gevent` con `heartbeat` automático cada 15s. | `GET /api/stream/vivo` ([`app/src/templates/index.html`](./app/src/templates/index.html)) |
 | **`[HU-03]` Aficionado que entra tarde obtiene el resumen rápido** | Lectura en complejidad `O(1)` desde **Redis** con marcador, estadísticas de tarjetas/cambios y filtro de jugadas clave (`highlights`). | `GET /api/summary` ([`app/src/app.py`](./app/src/app.py)) |
 | **`[HU-04]` Soportar 1,000 lectores simultáneos en el partido final** | Simulador concurrente incluido + workers asíncronos `gevent` + caché en memoria que responde 1,000 lecturas con **0% error y p95 < 25 ms**. | [`app/simulator/load_simulator.py`](./app/simulator/load_simulator.py) y `POST /api/simulate-peak` |
@@ -104,4 +104,4 @@ python3 app/simulator/load_simulator.py --url http://localhost:8000 --readers 10
 ```
 
 ### 3. Desplegar en 1 Sola Cuenta de AWS Academy (CloudFormation + Jenkins + Docker)
-Revisa la guía paso a paso en **[`docs/guia_despliegue_aws.md`](./docs/guia_despliegue_aws.md)** y la documentación técnica de IaC en **[`iac/README.md`](./iac/README.md)**.
+Revisa la guía paso a paso en **[`docs/guia_despliegue_aws.md`](./docs/guia_despliegue_aws.md)**, la documentación técnica de IaC en **[`iac/README.md`](./iac/README.md)** y la bitácora completa del proceso de ingeniería con IA en **[`docs/bitacora_uso_ia.md`](./docs/bitacora_uso_ia.md)**.

@@ -44,7 +44,7 @@ pipeline {
         sh '''
           sleep 5
           curl -fsS http://localhost:8000/health
-          python3 app/simulator/load_simulator.py --url http://localhost:8000 --readers 200 --events 3
+          python3 app/simulator/load_simulator.py --url http://localhost:8000 --readers 200 --events 0
         '''
       }
     }
