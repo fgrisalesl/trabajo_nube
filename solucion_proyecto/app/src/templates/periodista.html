@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>UNAL Sports · Consola de Transmisión</title>
+  <link rel="icon" href="/api/icon/logo" />
+  <link rel="shortcut icon" href="/api/icon/logo" />
+  <link rel="apple-touch-icon" href="/api/icon/logo" />
   <link rel="stylesheet" href="/static/tailwind.min.css" />
   <style>
     :root {
@@ -166,9 +169,13 @@
           <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
           <span><strong id="header-live-readers" class="text-white font-mono">0</strong> en vivo</span>
         </span>
-        <button type="button" onclick="resetBlankBoard()"
-          class="px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold transition">
+        <button type="button" id="btn-reset-board" onclick="resetBlankBoard()"
+          class="hidden px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold transition">
           Reiniciar Marcador (0-0)
+        </button>
+        <button type="button" id="btn-logout-cabin" onclick="logoutJournalist()"
+          class="hidden px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-zinc-300 font-semibold transition">
+          Cerrar Cabina
         </button>
         <a href="/" target="_blank"
           class="px-3.5 py-1.5 rounded-lg bg-white text-black font-semibold hover:bg-zinc-200 transition">
@@ -178,7 +185,46 @@
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+  <!-- PANTALLA DE LOGIN DE PRENSA Y CONTROL DE SESIÓN ÚNICA (1 PERIODISTA A LA VEZ) -->
+  <section id="journalist-auth-gate" class="max-w-md mx-auto px-4 pt-16 pb-12">
+    <div class="fm-surface rounded-2xl p-7 space-y-5 shadow-2xl">
+      <div class="flex items-center gap-3.5">
+        <img src="/api/icon/logo" alt="Logo" class="w-11 h-11 object-contain rounded-xl bg-black/40 p-1.5 border border-white/10" />
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Acceso Exclusivo · 1 Sesión Activa</span>
+          <h1 class="text-lg font-bold text-white leading-tight mt-0.5">Cabina de Transmisión</h1>
+        </div>
+      </div>
+
+      <div id="cabin-lock-badge" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-300">
+        <span id="cabin-lock-dot" class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+        <span id="cabin-lock-text">Cabina disponible para iniciar transmisión en vivo</span>
+      </div>
+
+      <form onsubmit="submitJournalistLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wide text-zinc-300 mb-1.5">
+            Clave de Prensa Autorizada
+          </label>
+          <input type="password" id="login-press-key" placeholder="Ingresa la credencial del periodista..." required autocomplete="current-password"
+            class="fm-input w-full rounded-xl px-4 py-3 text-white text-sm font-mono" />
+        </div>
+
+        <div id="login-error-box" class="hidden rounded-xl p-3 text-xs font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30"></div>
+
+        <button type="submit" id="btn-login-submit"
+          class="w-full py-3.5 px-5 rounded-xl font-bold text-sm bg-emerald-400 text-black hover:bg-emerald-300 transition">
+          Desbloquear Cabina de Prensa
+        </button>
+      </form>
+
+      <p class="text-[11px] text-zinc-500 leading-relaxed text-center">
+        Solo puede haber <strong>un periodista conectado a la vez</strong> para proteger la integridad del marcador en tiempo real.
+      </p>
+    </div>
+  </section>
+
+  <main id="studio-main-content" class="hidden max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
     <!-- BARRA DE CONTROL DE MARCADOR Y EQUIPOS -->
     <section class="fm-surface rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
@@ -435,12 +481,6 @@
               class="fm-input w-full rounded-xl px-3.5 py-2.5 text-white text-sm"></textarea>
           </div>
 
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wide text-zinc-400 mb-1.5">Credencial de Prensa (`X-Journalist-Token`)</label>
-            <input type="password" id="ev-token" value="unal-periodista-2026"
-              class="fm-input w-full rounded-xl px-3.5 py-2 text-zinc-300 font-mono text-xs" />
-          </div>
-
           <button type="submit"
             class="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-emerald-400 text-black hover:bg-emerald-300 transition">
             Publicar Jugada en Vivo
@@ -519,6 +559,147 @@
     let micAudioChunks = [];
     let lastStudioHome = '';
     let lastStudioAway = '';
+    let isJournalistAuthenticated = false;
+    let pendingForceTakeover = false;
+    let journalistToken = sessionStorage.getItem('unal_journalist_token') || '';
+    let journalistSessionId = sessionStorage.getItem('unal_journalist_session') || '';
+
+    function getJournalistHeaders(includeJson = true) {
+      const h = {
+        'X-Journalist-Token': journalistToken,
+        'X-Journalist-Session': journalistSessionId
+      };
+      if (includeJson) {
+        h['Content-Type'] = 'application/json';
+      }
+      return h;
+    }
+
+    function updateLockBadgeUI(occupied, customMessage = '') {
+      const badge = document.getElementById('cabin-lock-badge');
+      const dot = document.getElementById('cabin-lock-dot');
+      const txt = document.getElementById('cabin-lock-text');
+      const btn = document.getElementById('btn-login-submit');
+      if (occupied) {
+        badge.className = 'flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs text-amber-300';
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 shrink-0';
+        txt.textContent = customMessage || 'Cabina en uso por otro periodista · Ingresa la clave para tomar el control';
+        btn.textContent = pendingForceTakeover ? 'Confirmar y Tomar Control Exclusivo' : 'Desbloquear Cabina de Prensa';
+      } else {
+        badge.className = 'flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-300';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 shrink-0';
+        txt.textContent = customMessage || 'Cabina disponible para iniciar transmisión en vivo';
+        btn.textContent = 'Desbloquear Cabina de Prensa';
+      }
+    }
+
+    function unlockCabinUI() {
+      isJournalistAuthenticated = true;
+      pendingForceTakeover = false;
+      document.getElementById('journalist-auth-gate').classList.add('hidden');
+      document.getElementById('studio-main-content').classList.remove('hidden');
+      document.getElementById('btn-reset-board').classList.remove('hidden');
+      document.getElementById('btn-logout-cabin').classList.remove('hidden');
+      loadMediaCatalog();
+      syncStudioStatus();
+    }
+
+    function lockCabinUI(reasonMsg = '', occupied = false) {
+      isJournalistAuthenticated = false;
+      const player = document.getElementById('match-media-player');
+      if (player && !player.paused) {
+        try { player.pause(); } catch (e) {}
+      }
+      document.getElementById('studio-main-content').classList.add('hidden');
+      document.getElementById('btn-reset-board').classList.add('hidden');
+      document.getElementById('btn-logout-cabin').classList.add('hidden');
+      document.getElementById('journalist-auth-gate').classList.remove('hidden');
+      updateLockBadgeUI(occupied);
+      const errBox = document.getElementById('login-error-box');
+      if (reasonMsg) {
+        errBox.textContent = reasonMsg;
+        errBox.classList.remove('hidden');
+      } else {
+        errBox.classList.add('hidden');
+      }
+    }
+
+    async function checkJournalistAuthStatus() {
+      try {
+        const res = await fetch('/api/auth/journalist-status', {
+          headers: getJournalistHeaders(false)
+        });
+        const data = await res.json();
+        if (data.authenticated && journalistToken) {
+          if (!isJournalistAuthenticated) {
+            unlockCabinUI();
+          }
+        } else {
+          if (isJournalistAuthenticated) {
+            sessionStorage.removeItem('unal_journalist_token');
+            sessionStorage.removeItem('unal_journalist_session');
+            journalistToken = '';
+            journalistSessionId = '';
+            lockCabinUI('Tu sesión se cerró porque otro periodista tomó el control de la cabina.', true);
+          } else {
+            updateLockBadgeUI(Boolean(data.cabin_occupied));
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function submitJournalistLogin(e) {
+      e.preventDefault();
+      const passInput = document.getElementById('login-press-key');
+      const errBox = document.getElementById('login-error-box');
+      const password = passInput.value.trim();
+      if (!password) return;
+
+      errBox.classList.add('hidden');
+      const res = await fetch('/api/auth/journalist-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password,
+          session_id: journalistSessionId,
+          force_takeover: pendingForceTakeover
+        })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.authenticated) {
+        journalistToken = data.token;
+        journalistSessionId = data.session_id;
+        sessionStorage.setItem('unal_journalist_token', journalistToken);
+        sessionStorage.setItem('unal_journalist_session', journalistSessionId);
+        passInput.value = '';
+        unlockCabinUI();
+      } else if (res.status === 409) {
+        pendingForceTakeover = true;
+        updateLockBadgeUI(true, 'Ya hay un periodista activo en la cabina');
+        errBox.textContent = data.error || 'Ya hay un periodista en cabina. Pulsa el botón de nuevo para tomar el control exclusivo.';
+        errBox.classList.remove('hidden');
+      } else {
+        pendingForceTakeover = false;
+        errBox.textContent = data.error || 'Credencial de prensa inválida.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    async function logoutJournalist() {
+      try {
+        await fetch('/api/auth/journalist-logout', {
+          method: 'POST',
+          headers: getJournalistHeaders(true),
+          body: JSON.stringify({ session_id: journalistSessionId })
+        });
+      } catch (e) {}
+      sessionStorage.removeItem('unal_journalist_token');
+      sessionStorage.removeItem('unal_journalist_session');
+      journalistToken = '';
+      journalistSessionId = '';
+      lockCabinUI('', false);
+    }
 
     function switchStudioTab(tab) {
       const pAi = document.getElementById('panel-ai');
@@ -548,12 +729,15 @@
     }
 
     async function resetBlankBoard() {
-      const token = document.getElementById('ev-token').value || 'unal-periodista-2026';
-      await fetch('/api/match/setup', {
+      const res = await fetch('/api/match/setup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Journalist-Token': token },
+        headers: getJournalistHeaders(true),
         body: JSON.stringify({ blank_reset: true })
       });
+      if (res.status === 401 || res.status === 403) {
+        await checkJournalistAuthStatus();
+        return;
+      }
       processedChunkBuckets.clear();
       document.getElementById('setup-home').value = '';
       document.getElementById('setup-away').value = '';
@@ -565,16 +749,19 @@
       const h = (homeOverride || document.getElementById('setup-home').value).trim();
       const a = (awayOverride || document.getElementById('setup-away').value).trim();
       if (!h && !a) return;
-      const token = document.getElementById('ev-token').value || 'unal-periodista-2026';
-      await fetch('/api/match/setup', {
+      const res = await fetch('/api/match/setup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Journalist-Token': token },
+        headers: getJournalistHeaders(true),
         body: JSON.stringify({
           home_team: h || undefined,
           away_team: a || undefined,
           reset_score: resetScore
         })
       });
+      if (res.status === 401 || res.status === 403) {
+        await checkJournalistAuthStatus();
+        return;
+      }
       appendAiLog(`<div class="text-sky-300">Equipos actualizados: <strong>${h || 'Local'} vs ${a || 'Visitante'}</strong></div>`);
       syncStudioStatus();
     }
@@ -671,10 +858,9 @@
       document.getElementById('ai-status-text').textContent = `Analizando audio (${startSec}s - ${startSec + durationSec}s)...`;
 
       try {
-        const token = document.getElementById('ev-token').value || 'unal-periodista-2026';
         const res = await fetch('/api/ai/process-video-chunk', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Journalist-Token': token },
+          headers: getJournalistHeaders(true),
           body: JSON.stringify({
             filename: currentSelectedFilename,
             start_sec: startSec,
@@ -682,6 +868,10 @@
             video_duration: totalDuration
           })
         });
+        if (res.status === 401 || res.status === 403) {
+          await checkJournalistAuthStatus();
+          return;
+        }
         const data = await res.json();
         if (res.status === 201 && data.event) {
           const ev = data.event;
@@ -709,12 +899,15 @@
       if (!phrase || !phrase.trim()) return;
       document.getElementById('ai-status-text').textContent = 'Procesando relato...';
 
-      const token = document.getElementById('ev-token').value || 'unal-periodista-2026';
       const res = await fetch('/api/ai/narrate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Journalist-Token': token },
+        headers: getJournalistHeaders(true),
         body: JSON.stringify({ transcript: phrase })
       });
+      if (res.status === 401 || res.status === 403) {
+        await checkJournalistAuthStatus();
+        return;
+      }
       const data = await res.json();
       if (res.ok) {
         const ev = data.event;
@@ -748,16 +941,21 @@
       document.getElementById('mic-interim-text').textContent = 'Procesando audio de voz...';
 
       try {
-        const token = document.getElementById('ev-token').value || 'unal-periodista-2026';
         const formData = new FormData();
         formData.append('file', blobOrFile, labelName);
-        formData.append('token', token);
+        formData.append('token', journalistToken);
+        formData.append('session_id', journalistSessionId);
 
         const res = await fetch('/api/ai/transcribe-mic', {
           method: 'POST',
-          headers: { 'X-Journalist-Token': token },
+          headers: getJournalistHeaders(false),
           body: formData
         });
+        if (res.status === 401 || res.status === 403) {
+          ind.classList.add('hidden');
+          await checkJournalistAuthStatus();
+          return;
+        }
         const data = await res.json();
         ind.classList.add('hidden');
 
@@ -904,12 +1102,15 @@
         player: document.getElementById('ev-player').value,
         description: document.getElementById('ev-desc').value
       };
-      const token = document.getElementById('ev-token').value;
       const res = await fetch('/api/events', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Journalist-Token': token },
+        headers: getJournalistHeaders(true),
         body: JSON.stringify(body)
       });
+      if (res.status === 401 || res.status === 403) {
+        await checkJournalistAuthStatus();
+        return;
+      }
       const data = await res.json();
       const fb = document.getElementById('publish-feedback');
       fb.classList.remove('hidden');
@@ -950,9 +1151,12 @@
       syncStudioStatus();
     }
 
-    loadMediaCatalog();
+    checkJournalistAuthStatus();
     syncStudioStatus();
-    setInterval(syncStudioStatus, 1500);
+    setInterval(() => {
+      checkJournalistAuthStatus();
+      syncStudioStatus();
+    }, 2000);
   </script>
 </body>
 </html>

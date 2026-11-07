@@ -1426,8 +1426,175 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
 
 
 # ==============================================================================
+# AUTENTICACIÓN DE PRENSA Y BLOQUEO DE CABINA DE SESIÓN ÚNICA (1 PERIODISTA ACTIVO)
+# ==============================================================================
+JOURNALIST_SESSION_TTL_SEC = 45
+journalist_session_lock = threading.Lock()
+local_journalist_session = {
+    "session_id": "",
+    "ip": "",
+    "expires_at": 0.0
+}
+
+
+def get_active_journalist_session() -> dict | None:
+    now = time.time()
+    if redis_client:
+        try:
+            raw = redis_client.get("match:journalist_session")
+            if raw:
+                data = json.loads(raw)
+                if float(data.get("expires_at", 0)) > now:
+                    return data
+        except Exception:
+            pass
+    with journalist_session_lock:
+        if local_journalist_session["session_id"] and local_journalist_session["expires_at"] > now:
+            return dict(local_journalist_session)
+    return None
+
+
+def set_active_journalist_session(session_id: str, client_ip: str, ttl_sec: int = JOURNALIST_SESSION_TTL_SEC) -> dict:
+    expires_at = time.time() + ttl_sec
+    payload = {
+        "session_id": session_id,
+        "ip": client_ip,
+        "expires_at": expires_at,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    with journalist_session_lock:
+        local_journalist_session["session_id"] = session_id
+        local_journalist_session["ip"] = client_ip
+        local_journalist_session["expires_at"] = expires_at
+    if redis_client:
+        try:
+            redis_client.setex("match:journalist_session", ttl_sec, json.dumps(payload))
+        except Exception:
+            pass
+    return payload
+
+
+def clear_active_journalist_session():
+    with journalist_session_lock:
+        local_journalist_session["session_id"] = ""
+        local_journalist_session["ip"] = ""
+        local_journalist_session["expires_at"] = 0.0
+    if redis_client:
+        try:
+            redis_client.delete("match:journalist_session")
+        except Exception:
+            pass
+
+
+def verify_journalist_request() -> tuple[bool, str, int]:
+    """
+    Verifica la credencial del periodista (`X-Journalist-Token`) y, si viene desde la consola web
+    con `X-Journalist-Session`, garantiza que ningún otro navegador haya tomado el control de la cabina.
+    """
+    json_body = request.get_json(silent=True) if request.is_json else {}
+    json_body = json_body or {}
+    token = (
+        request.headers.get("X-Journalist-Token")
+        or json_body.get("token")
+        or request.form.get("token")
+        or ""
+    )
+    if token != JOURNALIST_TOKEN:
+        return False, "No autorizado. Credencial de periodista inválida.", 401
+
+    session_id = (
+        request.headers.get("X-Journalist-Session")
+        or json_body.get("session_id")
+        or request.form.get("session_id")
+        or ""
+    ).strip()
+    if session_id:
+        active = get_active_journalist_session()
+        client_ip = request.headers.get("X-Real-IP") or request.remote_addr or "0.0.0.0"
+        if active and active.get("session_id") != session_id:
+            return False, "Otro periodista tomó el control activo de la cabina.", 403
+        set_active_journalist_session(session_id, client_ip)
+    return True, "", 200
+
+
+@app.get("/api/auth/journalist-status")
+def api_journalist_auth_status():
+    """Verifica el estado de la sesión del periodista y si la cabina ya está ocupada."""
+    session_id = (request.headers.get("X-Journalist-Session") or request.args.get("session_id") or "").strip()
+    token = (request.headers.get("X-Journalist-Token") or "").strip()
+    active = get_active_journalist_session()
+    client_ip = request.headers.get("X-Real-IP") or request.remote_addr or "0.0.0.0"
+
+    if active:
+        is_owner = bool(session_id and active.get("session_id") == session_id and token == JOURNALIST_TOKEN)
+        if is_owner:
+            set_active_journalist_session(session_id, client_ip)
+        return jsonify(
+            authenticated=is_owner,
+            cabin_occupied=not is_owner,
+            active_ip=active.get("ip", "activa")
+        )
+
+    return jsonify(
+        authenticated=False,
+        cabin_occupied=False,
+        active_ip=""
+    )
+
+
+@app.post("/api/auth/journalist-login")
+def api_journalist_login():
+    """
+    Inicia sesión en la Cabina del Periodista.
+    Garantiza sesión única activa (1 solo periodista transmitiendo a la vez).
+    """
+    body = request.get_json(silent=True) or {}
+    password = str(body.get("password") or body.get("token") or "").strip()
+    force_takeover = bool(body.get("force_takeover", False))
+    existing_session_id = str(body.get("session_id") or request.headers.get("X-Journalist-Session") or "").strip()
+
+    if password != JOURNALIST_TOKEN:
+        return jsonify(error="Clave de acceso incorrecta. Verifica tu credencial de prensa."), 401
+
+    active = get_active_journalist_session()
+    client_ip = request.headers.get("X-Real-IP") or request.remote_addr or "0.0.0.0"
+
+    if active and active.get("session_id") != existing_session_id and not force_takeover:
+        return jsonify(
+            status="occupied",
+            cabin_occupied=True,
+            active_ip=active.get("ip", "activa"),
+            error="Ya hay un periodista con la cabina abierta en este momento. Pulsa nuevamente para tomar el control exclusivo."
+        ), 409
+
+    new_session_id = existing_session_id or uuid.uuid4().hex
+    set_active_journalist_session(new_session_id, client_ip)
+    return jsonify(
+        status="authenticated",
+        authenticated=True,
+        session_id=new_session_id,
+        token=JOURNALIST_TOKEN
+    ), 200
+
+
+@app.post("/api/auth/journalist-logout")
+def api_journalist_logout():
+    """Cierra la sesión activa de la Cabina del Periodista y libera el candado."""
+    session_id = (request.headers.get("X-Journalist-Session") or (request.get_json(silent=True) or {}).get("session_id") or "").strip()
+    active = get_active_journalist_session()
+    if not active or active.get("session_id") == session_id:
+        clear_active_journalist_session()
+    return jsonify(status="logged_out", cabin_occupied=False), 200
+
+
+# ==============================================================================
 # VISTAS SEPARADAS: PORTAL PÚBLICO DE AFICIONADOS vs. CABINA DEL PERIODISTA
 # ==============================================================================
+@app.get("/favicon.ico")
+def favicon():
+    return api_ui_icon("logo")
+
+
 @app.get("/")
 def index():
     if SERVICE_ROLE == "journalist":
@@ -1658,9 +1825,9 @@ def api_transcribe_microphone_audio():
     lo convierte a WAV 16kHz con FFmpeg, lo transcribe con Whisper Large v3 Turbo (Groq)
     usando el vocabulario del partido y publica la jugada en el Portal de Espectadores.
     """
-    token = request.headers.get("X-Journalist-Token") or request.form.get("token") or JOURNALIST_TOKEN
-    if token != JOURNALIST_TOKEN:
-        return jsonify(error="No autorizado."), 401
+    ok, err_msg, code = verify_journalist_request()
+    if not ok:
+        return jsonify(error=err_msg), code
 
     if "file" not in request.files:
         return jsonify(error="No se recibió audio del micrófono"), 400
@@ -1759,9 +1926,9 @@ def api_process_video_chunk():
     Extrae el audio real del video con FFmpeg, lo transcribe a texto con SpeechRecognition
     y se lo envía a OpenRouter para publicar automáticamente la jugada en el Portal de Espectadores.
     """
-    token = request.headers.get("X-Journalist-Token") or (request.json or {}).get("token")
-    if token != JOURNALIST_TOKEN:
-        return jsonify(error="No autorizado."), 401
+    ok, err_msg, code = verify_journalist_request()
+    if not ok:
+        return jsonify(error=err_msg), code
 
     body = request.get_json(silent=True) or {}
     raw_filename = str(body.get("filename", ""))
@@ -1821,9 +1988,9 @@ def api_ai_narrate():
     Opción 2: Recibe una frase del micrófono en vivo o escrita por el comentarista,
     la envía a OpenRouter y publica la jugada en el Portal de Espectadores.
     """
-    token = request.headers.get("X-Journalist-Token") or (request.json or {}).get("token")
-    if token != JOURNALIST_TOKEN:
-        return jsonify(error="No autorizado. Token de periodista inválido."), 401
+    ok, err_msg, code = verify_journalist_request()
+    if not ok:
+        return jsonify(error=err_msg), code
 
     body = request.get_json(silent=True) or {}
     transcript = str(body.get("transcript", "")).strip()
@@ -1848,9 +2015,9 @@ def api_ai_narrate():
 def api_match_setup():
     """Configura equipos o reinicia el tablero completamente en blanco (0-0, 0 eventos)."""
     global current_seeded_match_pair
-    token = request.headers.get("X-Journalist-Token") or (request.json or {}).get("token")
-    if token != JOURNALIST_TOKEN:
-        return jsonify(error="No autorizado."), 401
+    ok, err_msg, code = verify_journalist_request()
+    if not ok:
+        return jsonify(error=err_msg), code
 
     body = request.get_json(silent=True) or {}
     if body.get("blank_reset"):
@@ -1926,9 +2093,9 @@ def api_summary():
 
 @app.post("/api/events")
 def api_create_event():
-    token = request.headers.get("X-Journalist-Token") or (request.json or {}).get("token")
-    if token != JOURNALIST_TOKEN:
-        return jsonify(error="No autorizado. Token de periodista inválido."), 401
+    ok, err_msg, code = verify_journalist_request()
+    if not ok:
+        return jsonify(error=err_msg), code
 
     data = request.get_json(silent=True) or {}
     if not data.get("description") and not data.get("type"):
