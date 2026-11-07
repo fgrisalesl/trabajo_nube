@@ -381,7 +381,7 @@ Resources:
           pip3 install cfn-lint || true
 
           # Instalar y arrancar Jenkins sobre la misma instancia EC2 (Lab 04)
-          wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+          curl -fsSL https://pkg.jenkins.io/redhat-stable/jenkins.repo -o /etc/yum.repos.d/jenkins.repo
           rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
           dnf install -y jenkins
           usermod -aG docker jenkins

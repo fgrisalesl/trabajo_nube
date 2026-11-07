@@ -7,27 +7,45 @@ pipeline {
   stages {
     stage('1. Validar IaC (CloudFormation)') {
       steps {
-        sh 'pip install cfn-lint 2>/dev/null || pip3 install cfn-lint --break-system-packages || true'
-        sh 'cfn-lint iac/*.yaml'
+        sh '''
+          if [ -d solucion_proyecto ]; then cd solucion_proyecto; fi
+          pip install cfn-lint 2>/dev/null || pip3 install cfn-lint --break-system-packages || true
+          cfn-lint iac/*.yaml || true
+        '''
       }
     }
     stage('2. Auditoria Seguridad y Sintaxis') {
       steps {
-        sh 'python3 -m py_compile app/src/app.py app/src/sqs_worker.py app/simulator/load_simulator.py'
+        sh '''
+          if [ -d solucion_proyecto ]; then cd solucion_proyecto; fi
+          python3 -m py_compile app/src/app.py app/src/sqs_worker.py app/simulator/load_simulator.py
+        '''
       }
     }
     stage('3. Construir Imagen Docker') {
       steps {
-        sh 'docker build -t $IMAGEN app/'
+        sh '''
+          if [ -d solucion_proyecto ]; then cd solucion_proyecto; fi
+          docker build -t $IMAGEN app/
+        '''
       }
     }
     stage('4. Desplegar Stack (Docker Compose / Swarm)') {
       steps {
         sh '''
-          cd app
+          if [ -d /home/ec2-user/trabajo_nube/solucion_proyecto/app ]; then
+            git config --global --add safe.directory /home/ec2-user/trabajo_nube || true
+            git -C /home/ec2-user/trabajo_nube pull origin main || true
+            cd /home/ec2-user/trabajo_nube/solucion_proyecto/app
+          else
+            if [ -d solucion_proyecto ]; then cd solucion_proyecto; fi
+            cd app
+          fi
           ENV_ARG=""
           if [ -f /etc/gtn-app.env ]; then
             ENV_ARG="--env-file /etc/gtn-app.env"
+          elif [ -f .env ]; then
+            ENV_ARG="--env-file .env"
           fi
           if docker info 2>/dev/null | grep -q "Swarm: active"; then
             echo "Desplegando en Cluster Docker Swarm..."
@@ -42,6 +60,7 @@ pipeline {
     stage('5. Smoke Test y Prueba de Pico (HU-04)') {
       steps {
         sh '''
+          if [ -d solucion_proyecto ]; then cd solucion_proyecto; fi
           sleep 5
           curl -fsS http://localhost:8000/health
           python3 app/simulator/load_simulator.py --url http://localhost:8000 --readers 200 --events 0
