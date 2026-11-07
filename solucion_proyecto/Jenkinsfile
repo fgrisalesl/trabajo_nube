@@ -1,6 +1,5 @@
 pipeline {
   agent any
-  tools { } // Jenkins sobre EC2: Docker, Docker Compose/Swarm y python3 disponibles
   environment {
     IMAGEN = "gtn-app:latest"
   }
@@ -33,12 +32,13 @@ pipeline {
     stage('4. Desplegar Stack (Docker Compose / Swarm)') {
       steps {
         sh '''
-          if [ -d /home/ec2-user/trabajo_nube/solucion_proyecto/app ]; then
-            git config --global --add safe.directory /home/ec2-user/trabajo_nube || true
-            git -C /home/ec2-user/trabajo_nube pull origin main || true
+          if [ -d solucion_proyecto ]; then cd solucion_proyecto; fi
+          if [ -w /home/ec2-user/trabajo_nube/solucion_proyecto/app ]; then
+            cp -rf app/src/* /home/ec2-user/trabajo_nube/solucion_proyecto/app/src/ || true
+            cp -rf app/nginx/* /home/ec2-user/trabajo_nube/solucion_proyecto/app/nginx/ || true
+            cp -f app/Dockerfile app/docker-compose.yml /home/ec2-user/trabajo_nube/solucion_proyecto/app/ || true
             cd /home/ec2-user/trabajo_nube/solucion_proyecto/app
           else
-            if [ -d solucion_proyecto ]; then cd solucion_proyecto; fi
             cd app
           fi
           ENV_ARG=""
