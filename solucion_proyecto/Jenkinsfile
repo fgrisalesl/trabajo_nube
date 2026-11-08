@@ -35,6 +35,8 @@ pipeline {
           if [ -d solucion_proyecto ]; then cd solucion_proyecto; fi
           if [ -w /home/ec2-user/trabajo_nube/solucion_proyecto/app ]; then
             cp -rf app/src/* /home/ec2-user/trabajo_nube/solucion_proyecto/app/src/ || true
+            cp -rf app/escudos/* /home/ec2-user/trabajo_nube/solucion_proyecto/app/escudos/ || true
+            cp -rf app/iconos/* /home/ec2-user/trabajo_nube/solucion_proyecto/app/iconos/ || true
             cp -rf app/nginx/* /home/ec2-user/trabajo_nube/solucion_proyecto/app/nginx/ || true
             cp -f app/Dockerfile app/docker-compose.yml /home/ec2-user/trabajo_nube/solucion_proyecto/app/ || true
             cd /home/ec2-user/trabajo_nube/solucion_proyecto/app

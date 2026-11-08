@@ -344,6 +344,25 @@
             <span id="mic-interim-text">Grabando audio... Pulsa "Enviar narración" al terminar.</span>
           </div>
 
+          <div id="mic-http-help-box" class="hidden rounded-xl bg-amber-500/10 border border-amber-500/30 p-3.5 text-xs text-amber-200 space-y-2.5">
+            <div class="font-bold text-amber-300">
+              Tu navegador bloqueó el micrófono porque entraste por HTTP con una IP nueva (<code id="mic-current-origin" class="text-white font-mono"></code>)
+            </div>
+            <div class="text-zinc-300 leading-relaxed">
+              Para activar el micrófono en vivo con la IP de hoy: abre <code class="text-amber-300 font-mono">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>, pega <strong id="mic-origin-inline" class="text-white font-mono"></strong>, ponlo en <strong>Enabled</strong> y dale <strong>Relaunch</strong>.
+            </div>
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              <button type="button" onclick="copyCurrentOriginForMic()"
+                class="px-3 py-1.5 rounded-lg bg-amber-400 text-black font-bold hover:bg-amber-300 transition">
+                Copiar URL de hoy
+              </button>
+              <button type="button" onclick="document.getElementById('mobile-mic-input').click()"
+                class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-zinc-200 font-semibold transition">
+                Subir archivo de voz grabado
+              </button>
+            </div>
+          </div>
+
           <div class="flex gap-2">
             <input type="text" id="ai-transcript-input"
               onkeydown="if(event.key==='Enter'){event.preventDefault();sendTranscriptToAI();}"
@@ -989,9 +1008,18 @@
       e.target.value = '';
     }
 
+    function copyCurrentOriginForMic() {
+      const orig = window.location.origin;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(orig);
+      }
+      appendAiLog(`<div class="text-emerald-400">Copiado al portapapeles: <code>${orig}</code> — Pégalo en <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code></div>`);
+    }
+
     async function toggleMicrophoneNarration() {
       const btnLabel = document.getElementById('btn-mic-label');
       const ind = document.getElementById('mic-listening-indicator');
+      const helpBox = document.getElementById('mic-http-help-box');
 
       if (isListeningMic && mediaRecorder && mediaRecorder.state !== 'inactive') {
         isListeningMic = false;
@@ -1000,10 +1028,20 @@
         return;
       }
 
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        document.getElementById('mobile-mic-input').click();
+        if (isMobile) {
+          document.getElementById('mobile-mic-input').click();
+        } else if (helpBox) {
+          document.getElementById('mic-current-origin').textContent = window.location.origin;
+          document.getElementById('mic-origin-inline').textContent = window.location.origin;
+          helpBox.classList.remove('hidden');
+        }
         return;
       }
+
+      if (helpBox) helpBox.classList.add('hidden');
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1026,7 +1064,7 @@
         ind.classList.remove('hidden');
         document.getElementById('mic-interim-text').textContent = 'Grabando tu narración en vivo... Habla y pulsa "Enviar narración" para publicar.';
       } catch (err) {
-        document.getElementById('mobile-mic-input').click();
+        appendAiLog(`<div class="text-rose-400">Permiso de micrófono denegado en el navegador: ${err.message || 'Verifica el candado de permisos arriba en la barra de direcciones.'}</div>`);
       }
     }
 

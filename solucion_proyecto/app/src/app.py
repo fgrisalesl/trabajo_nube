@@ -201,6 +201,18 @@ SPANISH_TEAM_SYNONYMS = {
     "tigres": "tigres autonoma nuevo leon",
     "america": "club america",
     "aguilas del america": "club america",
+    "nacional": "atletico nacional",
+    "atletico nacional": "atletico nacional",
+    "once caldas": "once caldas",
+    "millonarios": "millonarios",
+    "millonarios fc": "millonarios",
+    "america de cali": "america de cali",
+    "internacional de bogota": "internacional de bogota",
+    "albeiro": "albeiro",
+    "profe albeiro": "albeiro",
+    "profesor albeiro": "albeiro",
+    "albeiro caldas": "albeiro",
+    "fc albeiro": "albeiro",
 }
 
 
@@ -1750,7 +1762,7 @@ def api_ui_icon(icon_name: str):
             candidate_path = ICONOS_DIR / f"{stem}{ext}"
             if candidate_path.exists():
                 resp = send_from_directory(ICONOS_DIR, candidate_path.name)
-                resp.headers["Cache-Control"] = "no-cache"
+                resp.headers["Cache-Control"] = "public, max-age=3600"
                 return resp
     fallback = ICONOS_DIR / "balon.svg"
     if fallback.exists():
@@ -1769,7 +1781,7 @@ def api_team_badge(team_name: str = ""):
     badge_path = resolve_team_badge_file(q_team)
     if badge_path and badge_path.exists():
         resp = send_from_directory(ESCUDOS_DIR, badge_path.name)
-        resp.headers["Cache-Control"] = "no-cache"
+        resp.headers["Cache-Control"] = "public, max-age=3600"
         return resp
     return jsonify(error="Escudo default no encontrado"), 404
 
