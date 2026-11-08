@@ -1788,8 +1788,7 @@ def enforce_ai_football_consistency(parsed: dict, corrected_transcript: str, cur
             )
         if re.match(r"^(?:sin eventos relevantes|el partido arranca sin incidentes)", desc, re.IGNORECASE):
             if ev_type == "COMMENT":
-                parsed["type"] = "SKIP"
-                return parsed
+                desc = "¡RUEDA EL BALÓN! Comienza el partido con ambos equipos disputando la posesión."
         if desc:
             desc = desc[0].upper() + desc[1:]
         team_label = home_t if team == "HOME" else (away_t if team == "AWAY" else "")
@@ -1797,8 +1796,7 @@ def enforce_ai_football_consistency(parsed: dict, corrected_transcript: str, cur
         desc = stylize_live_description(desc, ev_type, team_label)
         parsed["description"] = desc
     elif ev_type == "COMMENT":
-        parsed["type"] = "SKIP"
-        return parsed
+        parsed["description"] = f"¡EN JUEGO! Acción disputada en terreno de {home_t}."
 
     parsed["team"] = team
     if ev_type == "GOAL":
@@ -1843,36 +1841,35 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
     ) or "Ninguna todavía."
     rosters_block = build_structured_rosters_prompt_section(home_t, away_t)
     skip_rule = (
-        "2. NO REPETIR JUGADAS: 'Contexto anterior' y 'Jugadas ya publicadas' YA SALIERON AL AIRE; úsalos solo para entender. "
-        "Narra únicamente lo NUEVO del fragmento actual. Si el fragmento solo repite algo ya publicado, es charla sin acción o no trae ningún hecho nuevo, "
-        "responde \"type\": \"SKIP\".\n"
+        "2. COBERTURA ACTIVA DEL MINUTO A MINUTO (NO SILENCIAR EL PARTIDO): "
+        "El minuto a minuto debe mantener informado al espectador de lo que ocurre en la cancha. "
+        "Narra como 'COMMENT' las acciones de juego: ataques, remates desviados, atajadas, centros, córners, presión defensiva, recuperaciones o salidas. "
+        "ÚNICAMENTE responde \"type\": \"SKIP\" si el fragmento es silencio total, pura charla de sobremesa sin ninguna jugada, o publicidad ajena al partido.\n"
         if allow_skip else
-        "2. NO REPETIR JUGADAS: 'Contexto anterior' y 'Jugadas ya publicadas' YA SALIERON AL AIRE; úsalos solo para entender y narra únicamente lo NUEVO del fragmento actual.\n"
+        "2. COBERTURA ACTIVA: Narra las acciones de juego de forma directa y ágil como 'COMMENT'.\n"
     )
 
     system_prompt = (
-        "Eres el redactor del MINUTO A MINUTO en vivo de ESPN/Marca. Escribes líneas CORTAS, directas y con pasión futbolera.\n"
+        "Eres el redactor oficial del MINUTO A MINUTO en vivo de ESPN / Marca. Tu misión es mantener al aficionado al borde del asiento con cada jugada.\n"
         "REGLAS OBLIGATORIAS:\n"
-        "1. FIDELIDAD AL AUDIO: narra SOLO hechos que el relator dice en el 'Fragmento actual en vivo'. PROHIBIDO inventar cabezazos, córners, "
-        "postes, pases filtrados, jugadores o detalles que no estén en el texto. Si dudas, escribe menos.\n"
+        "1. FIDELIDAD AL AUDIO: Narra hechos reales que el relator menciona en el 'Fragmento actual en vivo'. No inventes jugadas que no existieron.\n"
         f"{skip_rule}"
-        "3. ESTILO MINUTO A MINUTO (MUY IMPORTANTE): 'description' tiene MÁXIMO 25 PALABRAS en 1 o 2 frases cortas. "
-        "Empieza con una exclamación corta EN MAYÚSCULAS según la jugada: GOL -> '¡GOOOL DEL <EQUIPO>!'; peligro -> '¡UFF, CASI!' o '¡SUSTO EN EL ÁREA!'; "
-        "error -> '¡QUÉ BLOOPER!'/'¡REGALO EN LA SALIDA!'; atajada -> '¡QUÉ ATAJADA!'; tarjeta -> '¡AMARILLA!'/'¡ROJA!'; inicio -> '¡RUEDA EL BALÓN!'. "
-        "PROHIBIDO el relleno ('seguimos atentos', 'cualquier cosa puede pasar', 'el ambiente se vuelve electrizante', 'en el minuto X') "
-        "y PROHIBIDO hablar del relator ('El relator detalla...').\n"
-        "   Ejemplos: '¡GOOOL DEL BAYERN! Pavlović la empuja tras el córner de Kimmich.' | '¡REGALO EN LA SALIDA! Neuer falla y Vinícius casi lo castiga.' "
-        "| '¡RUEDA EL BALÓN! Neuer saca largo buscando a Gnabry.'\n"
-        "4. PROHIBIDO ESCRIBIR MARCADORES O RESULTADOS NUMÉRICOS (ej. '2-1', '1-0') en 'description': el sistema agrega el marcador real.\n"
-        "5. PLANTILLAS: revisa 'PLANTILLAS POR EQUIPO'. Un jugador solo combina con compañeros de SU club. Si un arquero saca largo y aparece un defensor rival, "
-        "ese defensor va al cruce para cortar; nunca son compañeros.\n"
-        "6. ERRORES: si un jugador se equivoca o pierde el balón, el peligro es EN CONTRA de su propio equipo y a favor del rival.\n"
-        "7. GOLEADOR: en 'GOAL', si el relator no nombra al autor pon \"player\": \"Autor por confirmar\"; si lo nombra ('lo hizo Pavlović'), pon ese nombre. "
-        "Si tu 'description' nombra al autor, 'player' DEBE ser ese mismo jugador. Nunca uses 'Autor por confirmar' fuera de un gol.\n"
-        "8. UN GOL SOLO SE CUENTA UNA VEZ: usa 'GOAL' únicamente cuando el relator canta un gol NUEVO en vivo. Si en 'Último GOL registrado' ya hay un gol reciente "
-        "y el fragmento es el festejo, la repetición o el análisis de ESE MISMO gol, NO uses 'GOAL': usa 'GOAL_CONFIRMATION' (con el autor correcto) "
-        + ("o 'SKIP' si no aporta nada.\n" if allow_skip else "o 'COMMENT'.\n") +
-        "9. EMPATES: un gol de empate ('lo empata', '1 a 1') es del equipo que iba abajo.\n"
+        "3. ESTILO MINUTO A MINUTO (CORTO, DIRECTO Y PERIODÍSTICO): 'description' tiene MÁXIMO 25 PALABRAS (1 o 2 frases contundentes). "
+        "Empieza SIEMPRE con una frase exclamativa corta EN MAYÚSCULAS según la jugada: "
+        "GOL -> '¡GOOOL DEL <EQUIPO>!'; llegada de peligro -> '¡AVISA EL <EQUIPO>!' o '¡CERCA DEL GOL!'; "
+        "atajada/despeje -> '¡QUÉ ATAJADA!' o '¡SEGURIDAD DE <ARQUERO>!'; error -> '¡QUÉ BLOOPER!' o '¡ERROR EN LA SALIDA!'; "
+        "córner -> '¡TIRO DE ESQUINA!'; arranque -> '¡RUEDA EL BALÓN!'; disputa -> '¡PRESIÓN ALTA!'. "
+        "PROHIBIDO el relleno ('seguimos atentos', 'cualquier cosa puede pasar') y PROHIBIDO hablar en tercera persona del relator ('El relator detalla...').\n"
+        "   Ejemplos de calidad:\n"
+        "   - '¡AVISA EL MADRID! Arda Güler presiona la salida y genera peligro.'\n"
+        "   - '¡SEGURIDAD DE LUNIN! El arquero descuelga el centro largo sin complicaciones.'\n"
+        "   - '¡TIRO DE ESQUINA! Kimmich prepara el centro peligroso al corazón del área.'\n"
+        "4. PROHIBIDO ESCRIBIR MARCADORES O RESULTADOS NUMÉRICOS (ej. '2-1', '1-0') en 'description': el sistema agrega el marcador oficial.\n"
+        "5. PLANTILLAS: Un jugador solo combina con compañeros de SU club (ver 'PLANTILLAS POR EQUIPO').\n"
+        "6. ERRORES: Si un jugador se equivoca, el peligro es EN CONTRA de su equipo y a favor del rival.\n"
+        "7. GOLEADOR: En 'GOAL', si el relator nombra al autor, pon su nombre exacto en 'player'. Si no lo nombra aún, pon 'Autor por confirmar'.\n"
+        "8. REPETICIONES DE GOL: Si ya se registró el gol hace segundos y este fragmento es solo el análisis o festejo repetido del MISMO gol, usa 'GOAL_CONFIRMATION' (con el autor) o 'COMMENT', pero NO sumes un nuevo 'GOAL'.\n"
+        "9. EMPATES: Un gol de empate ('lo empata', '1 a 1') es del equipo que iba abajo.\n"
         "Responde UNICAMENTE con un objeto JSON válido con estas claves:\n"
         "{\n"
         '  "type": "GOAL" | "GOAL_CONFIRMATION" | "PENALTY" | "RED_CARD" | "YELLOW_CARD" | "SUBSTITUTION" | "MATCH_START" | "MATCH_END" | "COMMENT"'
