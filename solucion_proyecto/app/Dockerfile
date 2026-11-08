@@ -25,5 +25,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-# Gunicorn con workers gevent para soportar +1000 conexiones SSE concurrentes por réplica
-CMD ["gunicorn", "--worker-class", "gevent", "--workers", "2", "--worker-connections", "1000", "--bind", "0.0.0.0:8000", "--timeout", "0", "app:app"]
+# Gunicorn con worker gevent único (comparte 100% la memoria en vivo igual que en local y soporta +2000 conexiones SSE concurrentes)
+CMD ["gunicorn", "--worker-class", "gevent", "--workers", "1", "--worker-connections", "2000", "--bind", "0.0.0.0:8000", "--timeout", "0", "app:app"]

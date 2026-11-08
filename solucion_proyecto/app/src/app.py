@@ -492,7 +492,6 @@ def save_match_state(state: dict, clear_events: bool = False):
             pipe.set("match:state", json.dumps(state))
             if clear_events:
                 pipe.delete("match:events")
-                pipe.delete("match:ai:recent_transcripts", "match:ai:discovered_players", "match:ai:seeded_pair")
                 pipe.set("match:metrics:events_published", 0)
                 pipe.set("match:metrics:fanout_deliveries", 0)
                 pipe.delete("match:peak:until", "match:peak:vivo", "match:peak:resumen")
@@ -603,50 +602,11 @@ def is_statistical_or_non_live_goal_mention(text: str) -> bool:
     return any(re.search(pat, low) for pat in false_goal_patterns)
 
 
-def get_shared_recent_transcripts(limit: int = 2) -> list[str]:
-    if redis_client:
-        try:
-            items = redis_client.lrange("match:ai:recent_transcripts", -limit, -1)
-            if items:
-                return [str(x) for x in items]
-        except Exception:
-            pass
-    return list(recent_transcripts_history)[-limit:]
-
-
-def append_shared_transcript(text: str):
-    recent_transcripts_history.append(text)
-    if redis_client:
-        try:
-            pipe = redis_client.pipeline()
-            pipe.rpush("match:ai:recent_transcripts", text)
-            pipe.ltrim("match:ai:recent_transcripts", -4, -1)
-            pipe.expire("match:ai:recent_transcripts", 7200)
-            pipe.execute()
-        except Exception:
-            pass
-
-
-def get_shared_discovered_players() -> list[str]:
-    if redis_client:
-        try:
-            items = redis_client.lrange("match:ai:discovered_players", 0, -1)
-            if items:
-                existing_lower = {p.lower() for p in discovered_match_players}
-                for x in items:
-                    sx = str(x).strip()
-                    if sx and sx.lower() not in existing_lower:
-                        discovered_match_players.append(sx)
-                        existing_lower.add(sx.lower())
-        except Exception:
-            pass
-    return list(discovered_match_players)
-
-
 def remember_discovered_players(players_list: list[str] | None, single_player: str = ""):
     """
     Guarda dinámicamente los nombres de jugadores que van apareciendo en la narración del partido actual
-    (compartido en Redis entre todos los workers de Gunicorn) para inyectarlos en el prompt de Whisper.
+    (funciona para cualquier partido: Liverpool vs Chelsea, Bayern vs Madrid, etc.) para inyectarlos
+    en el prompt de Whisper Large v3 Turbo en los siguientes fragmentos sin gastar recursos extra.
     """
     ignored = {
         "", "n/a", "na", "ninguno", "none", "null", "narración en vivo", "relato en vivo",
@@ -655,116 +615,20 @@ def remember_discovered_players(players_list: list[str] | None, single_player: s
     candidates = list(players_list or [])
     if single_player:
         candidates.append(single_player)
-    current_list = get_shared_discovered_players()
-    existing_lower = {p.lower() for p in current_list}
-    newly_added = []
+    existing_lower = {p.lower() for p in discovered_match_players}
     for raw_p in candidates:
         clean_p = str(raw_p).strip()
         if len(clean_p) >= 3 and clean_p.lower() not in ignored and clean_p.lower() not in existing_lower:
             discovered_match_players.append(clean_p)
             existing_lower.add(clean_p.lower())
-            newly_added.append(clean_p)
-    if newly_added and redis_client:
-        try:
-            pipe = redis_client.pipeline()
-            for np in newly_added:
-                pipe.rpush("match:ai:discovered_players", np)
-            pipe.ltrim("match:ai:discovered_players", -60, -1)
-            pipe.expire("match:ai:discovered_players", 7200)
-            pipe.execute()
-        except Exception:
-            pass
-
-
-STRUCTURED_CLUB_ROSTERS = {
-    "bayern": {
-        "display": "Bayern Múnich",
-        "goalkeepers": ["Manuel Neuer", "Jonas Urbig"],
-        "defenders": ["Dayot Upamecano", "Jonathan Tah", "Kim Min-jae", "Josip Stanišić", "Alphonso Davies", "Sacha Boey", "Raphaël Guerreiro", "Hiroki Ito"],
-        "midfielders_forwards": ["Joshua Kimmich", "Aleksandar Pavlović", "Leon Goretzka", "Konrad Laimer", "Jamal Musiala", "Michael Olise", "Luis Díaz", "Serge Gnabry", "Harry Kane", "Nicolas Jackson", "Lennart Karl", "Leroy Sané", "Thomas Müller"]
-    },
-    "madrid": {
-        "display": "Real Madrid",
-        "goalkeepers": ["Andriy Lunin", "Thibaut Courtois"],
-        "defenders": ["Antonio Rüdiger", "Éder Militão", "Dean Huijsen", "Dani Carvajal", "Trent Alexander-Arnold", "Álvaro Carreras", "Ferland Mendy", "Raúl Asencio", "Fran García"],
-        "midfielders_forwards": ["Federico Valverde", "Aurélien Tchouaméni", "Eduardo Camavinga", "Jude Bellingham", "Arda Güler", "Dani Ceballos", "Franco Mastantuono", "Vinícius Jr.", "Kylian Mbappé", "Rodrygo", "Brahim Díaz", "Gonzalo García"]
-    },
-    "city": {
-        "display": "Manchester City",
-        "goalkeepers": ["Ederson", "Stefan Ortega"],
-        "defenders": ["Josko Gvardiol", "Rúben Dias", "Manuel Akanji", "Rico Lewis", "Kyle Walker"],
-        "midfielders_forwards": ["Erling Haaland", "Nico O'Reilly", "Rayan Cherki", "Phil Foden", "Kevin De Bruyne", "Rodri", "Bernardo Silva", " İlkay Gündoğan", "Jeremy Doku", "Savinho", "Jack Grealish"]
-    },
-    "leipzig": {
-        "display": "RB Leipzig",
-        "goalkeepers": ["Péter Gulácsi"],
-        "defenders": ["Castello Lukeba", "Willi Orbán", "David Raum", "Benjamin Henrichs"],
-        "midfielders_forwards": ["Loïs Openda", "Xavi Simons", "Benjamin Šeško", "Dani Olmo", "Christoph Baumgartner", "Amadou Haidara", "Yussuf Poulsen"]
-    }
-}
-
-
-def _match_known_club_key(team_name: str) -> str | None:
-    low = (team_name or "").lower()
-    for kw in STRUCTURED_CLUB_ROSTERS:
-        if kw in low:
-            return kw
-    return None
-
-
-def _strip_accents_lower(text: str) -> str:
-    return "".join(
-        c for c in unicodedata.normalize("NFKD", str(text or "")) if not unicodedata.combining(c)
-    ).lower()
-
-
-def find_player_club_key(player_name: str) -> str | None:
-    """
-    Devuelve el club ('bayern', 'madrid', ...) al que pertenece un jugador según STRUCTURED_CLUB_ROSTERS,
-    comparando nombre completo o apellido (sin tildes). Fuente única de verdad para asignar equipos.
-    """
-    p_norm = _strip_accents_lower(player_name).strip()
-    if not p_norm or p_norm in {"autor por confirmar", "relato en vivo", "narracion en vivo", "transmision oficial"}:
-        return None
-    p_tokens = set(re.findall(r"[a-z0-9'-]+", p_norm))
-    for club_kw, info in STRUCTURED_CLUB_ROSTERS.items():
-        for full in info["goalkeepers"] + info["defenders"] + info["midfielders_forwards"]:
-            f_norm = _strip_accents_lower(full).strip()
-            surname = f_norm.split()[-1]
-            if f_norm == p_norm or (len(surname) >= 4 and surname in p_tokens):
-                return club_kw
-    return None
-
-
-def build_structured_rosters_prompt_section(home_team: str, away_team: str) -> str:
-    """
-    Construye el bloque de plantillas SEPARADAS por equipo (Local vs Visitante) y por posición
-    (Arquero, Defensas, Mediocampistas/Delanteros) para que el LLM jamás mezcle jugadores de equipos rivales.
-    """
-    lines = []
-    for side_label, t_name in [("LOCAL (HOME)", home_team), ("VISITANTE (AWAY)", away_team)]:
-        kw = _match_known_club_key(t_name)
-        if kw:
-            info = STRUCTURED_CLUB_ROSTERS[kw]
-            gks = ", ".join(info["goalkeepers"])
-            defs = ", ".join(info["defenders"])
-            mids = ", ".join(info["midfielders_forwards"])
-            lines.append(
-                f"- PLANTILLA EXCLUSIVA DE {t_name.upper()} [{side_label}]: "
-                f"Arquero(s): {gks} | Defensas: {defs} | Mediocampistas y Delanteros: {mids}."
-            )
-        else:
-            lines.append(f"- EQUIPO {side_label}: {t_name}")
-    shared = get_shared_discovered_players()
-    if shared:
-        lines.append(f"- Vocabulario fonético activo del partido: {', '.join(shared[:36])}")
-    return "\n".join(lines)
 
 
 def ensure_match_squad_seeded(home_team: str, away_team: str):
     """
-    Pre-carga automáticamente (1 sola vez por partido, sincronizado en Redis para todos los workers)
-    la plantilla de jugadores reales de los dos equipos en cancha (`home_team` y `away_team`).
+    Pre-carga automáticamente (1 sola vez por partido) la plantilla de jugadores reales de los
+    dos equipos en cancha (`home_team` y `away_team`) usando el conocimiento futbolístico de Groq LLM.
+    Funciona para CUALQUIER partido del mundo (clubes o selecciones) y alimenta tanto el prompt
+    de Whisper Large v3 Turbo como el corrector fonético dinámico.
     """
     global current_seeded_match_pair
     h = (home_team or "").strip()
@@ -772,67 +636,37 @@ def ensure_match_squad_seeded(home_team: str, away_team: str):
     generic_names = {"", "equipo local", "equipo visitante", "local", "visitante", "transmisión oficial", "transmision oficial"}
     if h.lower() in generic_names and a.lower() in generic_names:
         return
-
-    # Si alguno de los dos clubes está en STRUCTURED_CLUB_ROSTERS, inyectar sus jugadores de inmediato sin gastar llamada HTTP
-    pre_seeded = []
-    for t_name in (h, a):
-        kw = _match_known_club_key(t_name)
-        if kw:
-            info = STRUCTURED_CLUB_ROSTERS[kw]
-            pre_seeded.extend(info["goalkeepers"] + info["defenders"] + info["midfielders_forwards"])
-    if pre_seeded:
-        remember_discovered_players(pre_seeded)
-
-    pair_key = f"{h.lower()}|{a.lower()}"
-    shared_players = get_shared_discovered_players()
-    if _match_known_club_key(h) and _match_known_club_key(a):
-        current_seeded_match_pair = (h.lower(), a.lower())
-        return
-    if redis_client:
-        try:
-            seeded = redis_client.get("match:ai:seeded_pair")
-            if seeded == pair_key and len(shared_players) >= 10:
-                current_seeded_match_pair = (h.lower(), a.lower())
-                return
-        except Exception:
-            pass
-    if (h.lower(), a.lower()) == current_seeded_match_pair and len(shared_players) >= 10:
+    if (h.lower(), a.lower()) == current_seeded_match_pair and len(discovered_match_players) >= 10:
         return
 
     current_seeded_match_pair = (h.lower(), a.lower())
-    if redis_client:
-        try:
-            redis_client.setex("match:ai:seeded_pair", 7200, pair_key)
-        except Exception:
-            pass
     groq_key = os.environ.get("GROQ_API_KEY", GROQ_API_KEY).strip()
     if not groq_key or not http_requests:
         return
 
     seed_prompt = (
-        f"Lista los 28 jugadores más importantes (arqueros, defensas, mediocampistas y delanteros) "
-        f"de '{h}' y de '{a}'. Escribe sus nombres o apellidos exactamente como se les conoce en las transmisiones de fútbol. "
+        f"Lista los 30 jugadores más importantes (plantilla actual y reciente: arqueros, defensas, mediocampistas y delanteros) "
+        f"de '{h}' y de '{a}'. Escribe sus nombres o apellidos exactamente como se les conoce en las transmisiones de fútbol "
+        f"(ej. 'Manuel Neuer', 'Dayot Upamecano', 'Serge Gnabry', 'Jamal Musiala', 'Arda Güler', 'Kylian Mbappé'). "
         f"Responde UNICAMENTE con un objeto JSON válido con la clave: {{\"players\": [\"Jugador 1\", \"Jugador 2\", ...]}}"
     )
     for groq_model in ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]:
         try:
-            req_json = {
-                "model": groq_model,
-                "messages": [
-                    {"role": "system", "content": "Eres una base de datos oficial de plantillas de fútbol mundial (UEFA / FIFA / Opta)."},
-                    {"role": "user", "content": seed_prompt}
-                ],
-                "temperature": 0.0,
-                "max_tokens": 900,
-                "response_format": {"type": "json_object"}
-            }
-            if "gpt-oss" in groq_model:
-                req_json["reasoning_effort"] = "low"
             resp = http_requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
-                json=req_json,
-                timeout=4.5
+                json={
+                    "model": groq_model,
+                    "messages": [
+                        {"role": "system", "content": "Eres una base de datos oficial de plantillas de fútbol mundial (UEFA / FIFA / Opta)."},
+                        {"role": "user", "content": seed_prompt}
+                    ],
+                    "temperature": 0.0,
+                    "max_tokens": 500,
+                    "reasoning_effort": "low",
+                    "response_format": {"type": "json_object"}
+                },
+                timeout=4.0
             )
             if resp.status_code == 200:
                 data = json.loads(resp.json()["choices"][0]["message"]["content"].strip())
@@ -853,30 +687,23 @@ def get_recent_goal_event() -> dict | None:
     return None
 
 
-def update_latest_goal_in_place(confirmed_player: str, updated_desc: str, state: dict, t0: float, new_team: str | None = None) -> dict | None:
+def update_latest_goal_in_place(confirmed_player: str, updated_desc: str, state: dict, t0: float) -> dict | None:
     """
-    Actualiza el autor, equipo y comentario de la tarjeta del último GOL recién cantado (cuando el relator
+    Actualiza el autor y comentario de la tarjeta del último GOL recién cantado (cuando el relator
     confirma el nombre del goleador segundos después en el festejo o la repetición) SIN duplicar el gol en el marcador.
     """
     clean_player = (confirmed_player or "").strip()
-    is_valid_player = bool(clean_player and clean_player.lower() not in {"narración en vivo", "relato en vivo", "autor por confirmar", "por confirmar"})
-    if not is_valid_player and not new_team:
+    if not clean_player or clean_player.lower() in {"narración en vivo", "relato en vivo", "autor por confirmar", "por confirmar"}:
         return None
 
     target_event = None
-    old_team = None
     # 1. Actualizar en memoria local (buscando desde el más reciente en los últimos 3 eventos)
     for idx in range(len(local_events) - 1, max(-1, len(local_events) - 4), -1):
         if local_events[idx].get("type") == "GOAL":
-            old_team = local_events[idx].get("team")
-            if is_valid_player:
-                local_events[idx]["player"] = clean_player
-                local_events[idx]["scorer_confirmed"] = True
-            if new_team in {"HOME", "AWAY"} and new_team != old_team:
-                local_events[idx]["team"] = new_team
-                local_events[idx]["team_name"] = state["home_team"] if new_team == "HOME" else state["away_team"]
+            local_events[idx]["player"] = clean_player
             if updated_desc:
                 local_events[idx]["description"] = updated_desc
+            local_events[idx]["scorer_confirmed"] = True
             target_event = dict(local_events[idx])
             break
 
@@ -890,15 +717,10 @@ def update_latest_goal_in_place(confirmed_player: str, updated_desc: str, state:
                 if raw_item:
                     ev_obj = json.loads(raw_item)
                     if ev_obj.get("type") == "GOAL":
-                        old_team = ev_obj.get("team")
-                        if is_valid_player:
-                            ev_obj["player"] = clean_player
-                            ev_obj["scorer_confirmed"] = True
-                        if new_team in {"HOME", "AWAY"} and new_team != old_team:
-                            ev_obj["team"] = new_team
-                            ev_obj["team_name"] = state["home_team"] if new_team == "HOME" else state["away_team"]
+                        ev_obj["player"] = clean_player
                         if updated_desc:
                             ev_obj["description"] = updated_desc
+                        ev_obj["scorer_confirmed"] = True
                         redis_client.lset("match:events", raw_idx, json.dumps(ev_obj))
                         target_event = ev_obj
                         break
@@ -908,17 +730,7 @@ def update_latest_goal_in_place(confirmed_player: str, updated_desc: str, state:
     if not target_event:
         return None
 
-    # Si en el primer grito se había asignado al equipo contrario por error, corregir el marcador en vivo
-    if new_team in {"HOME", "AWAY"} and old_team in {"HOME", "AWAY"} and new_team != old_team:
-        if old_team == "HOME":
-            state["home_score"] = max(0, int(state.get("home_score", 0)) - 1)
-            state["away_score"] = int(state.get("away_score", 0)) + 1
-        else:
-            state["away_score"] = max(0, int(state.get("away_score", 0)) - 1)
-            state["home_score"] = int(state.get("home_score", 0)) + 1
-
     state["updated_at"] = datetime.now(timezone.utc).isoformat()
-    local_match.update(state)
     payload_str = json.dumps({"event": target_event, "match": state, "updated_event": True})
 
     if redis_client:
@@ -966,52 +778,18 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
     if team not in {"HOME", "AWAY", "NEUTRAL"}:
         team = "NEUTRAL"
 
-    # La IA indicó que este fragmento no trae nada nuevo (repetición/charla): no se publica nada
-    if ev_type == "SKIP":
-        return {"skipped": True, "event": None, "match": state, "latency_ms": 0.0}
-
     # Aprender dinámicamente los jugadores mencionados en este fragmento para enriquecer Whisper
     remember_discovered_players(event_data.get("detected_players"), str(event_data.get("player", "")))
 
     # ¿Es confirmación o corrección del autor del último gol cantado hace pocos segundos (ej. "Lo hizo Arda Güler")?
     recent_goal = get_recent_goal_event()
-    recent_goal_age_sec = (time.time() - float(recent_goal.get("timestamp", 0))) if recent_goal else 999.0
-
-    # Distancia al último gol medida en TIEMPO DE VIDEO (no en reloj del servidor, que incluye Whisper + IA + espera)
-    video_sec = event_data.get("video_sec")
-    recent_video_sec = recent_goal.get("video_sec") if recent_goal else None
-    if video_sec is not None and recent_video_sec is not None:
-        delta_video = float(video_sec) - float(recent_video_sec)
-        goal_gap_sec = delta_video if delta_video >= 0 else 999.0
-        replay_window_sec = 50.0
-    else:
-        goal_gap_sec = recent_goal_age_sec
-        replay_window_sec = 45.0
-
-    cur_h = int(state.get("home_score", 0))
-    cur_a = int(state.get("away_score", 0))
-
-    def _predict_score_after_team_fix(new_team_val: str | None) -> tuple[int, int]:
-        old_team_val = recent_goal.get("team") if recent_goal else None
-        if new_team_val in {"HOME", "AWAY"} and old_team_val in {"HOME", "AWAY"} and new_team_val != old_team_val:
-            if old_team_val == "HOME":
-                return max(0, cur_h - 1), cur_a + 1
-            return cur_h + 1, max(0, cur_a - 1)
-        return cur_h, cur_a
-
-    def _update_recent_goal(new_team_val: str | None):
-        p_h, p_a = _predict_score_after_team_fix(new_team_val)
-        final_desc = apply_real_score_to_text(str(event_data.get("description", "")), p_h, p_a, append_if_missing=True)
-        return update_latest_goal_in_place(
-            str(event_data.get("player", "")),
-            final_desc,
-            state,
-            t0,
-            new_team=new_team_val
-        )
-
     if ev_type == "GOAL_CONFIRMATION" and recent_goal:
-        updated_res = _update_recent_goal(team if team in {"HOME", "AWAY"} else None)
+        updated_res = update_latest_goal_in_place(
+            str(event_data.get("player", "")),
+            str(event_data.get("description", "")),
+            state,
+            t0
+        )
         if updated_res:
             return updated_res
         ev_type = "COMMENT"
@@ -1019,43 +797,30 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
     if ev_type not in {"GOAL", "PENALTY", "RED_CARD", "YELLOW_CARD", "SUBSTITUTION", "COMMENT", "MATCH_START", "MATCH_END"}:
         ev_type = "COMMENT"
 
-    # Barrera Anti-Falsas Alarmas y Anti-Duplicación de Goles (el marcador lo controla el servidor, no la IA):
+    # Barrera Anti-Falsas Alarmas de Gol y Anti-Duplicación en Festejos:
+    cur_h = int(state.get("home_score", 0))
+    cur_a = int(state.get("away_score", 0))
     ov_h = event_data.get("home_score_override")
     ov_a = event_data.get("away_score_override")
     if ev_type == "GOAL" and bool(event_data.get("ai_generated", False)):
         raw_desc = str(event_data.get("description", ""))
-        src_transcript = str(event_data.get("source_transcript") or event_data.get("corrected_transcript") or "")
-        spoken_total = extract_spoken_score_total(src_transcript)
-        cur_total = cur_h + cur_a
         override_changes_score = (
             ov_h is not None and ov_a is not None and (int(ov_h) > cur_h or int(ov_a) > cur_a)
         )
-        new_player = str(event_data.get("player", "")).strip()
-        recent_player = str(recent_goal.get("player", "")).strip() if recent_goal else ""
-        recent_confirmed = recent_player.lower() not in PLACEHOLDER_PLAYERS
-        different_scorer = bool(
-            recent_confirmed and new_player.lower() not in PLACEHOLDER_PLAYERS
-            and _strip_accents_lower(new_player).split()[-1:] != _strip_accents_lower(recent_player).split()[-1:]
-        )
-        explicit_new_goal = (
-            (spoken_total is not None and spoken_total == cur_total + 1)
-            or (bool(GOAL_SHOUT_RE.search(src_transcript)) and different_scorer)
-        )
-
-        if recent_goal and goal_gap_sec < replay_window_sec and not explicit_new_goal:
-            # Festejo / repetición / análisis del MISMO gol: actualizar autor/equipo sin sumar al marcador
-            updated_res = _update_recent_goal(team if team in {"HOME", "AWAY"} else None)
+        # Si hace instantes se cantó gol del mismo equipo y el marcador reportado sigue siendo el mismo, es la repetición confirmando el autor
+        if recent_goal and recent_goal.get("team") == team and ov_h is not None and ov_a is not None and int(ov_h) == cur_h and int(ov_a) == cur_a:
+            updated_res = update_latest_goal_in_place(
+                str(event_data.get("player", "")),
+                raw_desc,
+                state,
+                t0
+            )
             if updated_res:
                 return updated_res
             ev_type = "COMMENT"
-        elif spoken_total is not None and spoken_total <= cur_total:
-            # El relator menciona un marcador que ya está en el tablero: no es un gol nuevo
-            if recent_goal and goal_gap_sec < 120.0:
-                updated_res = _update_recent_goal(team if team in {"HOME", "AWAY"} else None)
-                if updated_res:
-                    return updated_res
-            ev_type = "COMMENT"
         elif team == "NEUTRAL" and not override_changes_score:
+            ev_type = "COMMENT"
+        elif ov_h is not None and ov_a is not None and int(ov_h) == cur_h and int(ov_a) == cur_a:
             ev_type = "COMMENT"
         elif is_statistical_or_non_live_goal_mention(raw_desc) and not override_changes_score:
             ev_type = "COMMENT"
@@ -1078,7 +843,6 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
         "ai_model": event_data.get("ai_model", ""),
         "timestamp": time.time(),
         "created_iso": datetime.now(timezone.utc).isoformat(),
-        "video_sec": float(video_sec) if video_sec is not None else None,
         "node": HOSTNAME
     }
 
@@ -1090,14 +854,7 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
         state["status"] = "EN VIVO · 2T"
 
     if ev_type == "GOAL":
-        is_ai_goal = bool(event_data.get("ai_generated", False))
-        if is_ai_goal and team in {"HOME", "AWAY"}:
-            # Goles de la IA: el servidor suma exactamente +1 al equipo anotador (nunca confía en el marcador del LLM)
-            if team == "HOME":
-                state["home_score"] = cur_h + 1
-            else:
-                state["away_score"] = cur_a + 1
-        elif event_data.get("home_score_override") is not None and event_data.get("away_score_override") is not None:
+        if event_data.get("home_score_override") is not None and event_data.get("away_score_override") is not None:
             state["home_score"] = int(event_data["home_score_override"])
             state["away_score"] = int(event_data["away_score_override"])
         elif team == "HOME":
@@ -1106,19 +863,6 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
             state["away_score"] = state.get("away_score", 0) + 1
     elif ev_type == "MATCH_END":
         state["status"] = "FINALIZADO"
-
-    # El texto publicado siempre muestra el marcador REAL del tablero (nunca el que haya escrito la IA)
-    if event["ai_generated"]:
-        desc_final = str(event["description"])
-        if ev_type != "GOAL" and re.match(r"^\W*go+l", _strip_accents_lower(desc_final)):
-            # Un 'GOAL' degradado a comentario no puede salir con el grito de gol
-            desc_final = re.sub(r"^¡?\s*GO+L[^!.]*[!.]\s*", "", desc_final, flags=re.IGNORECASE).strip() or desc_final
-        event["description"] = apply_real_score_to_text(
-            desc_final,
-            int(state.get("home_score", 0)),
-            int(state.get("away_score", 0)),
-            append_if_missing=(ev_type == "GOAL")
-        )
 
     state["updated_at"] = datetime.now(timezone.utc).isoformat()
     payload_str = json.dumps({"event": event, "match": state})
@@ -1201,17 +945,8 @@ FOOTBALL_PHONETIC_FIXES = [
     (r"\bNavy\b", "Gnabry"),
     (r"\bnavy\b", "Gnabry"),
     (r"\bdías\b", "Díaz"),
-    (r"\bLuz\s+Díaz\b", "Luis Díaz"),
-    (r"\b(?i:arda)\b(?!\s+g[üu]ler)", "Arda Güler"),
-    (r"\b(?i:golaar|guler)\b", "Güler"),
-    (r"\bArda\s+Güler\s+Güler\b", "Arda Güler"),
-    (r"\b(?i:luni|rolín|rolin)\b", "Lunin"),
-    (r"(?i:allí\s+buscando\s+(?:un\s+|a\s+)?upamecano)", "allí va al cruce defensivo Upamecano"),
-    (r"\b(?i:pavlovich|pavlovic|pablovic|pablovich|pavlovitch|pablovitch)\b", "Pavlović"),
-    (r"\b(?i:huisen|huijssen|huysen|juisen)\b", "Huijsen"),
-    (r"\b(?i:militao|militon)\b", "Militão"),
-    (r"\b(?i:stanisic|stanisich)\b", "Stanišić"),
-    (r"\b(?i:olisé|olisse)\b", "Olise"),
+    (r"\barda\b", "Arda Güler"),
+    (r"\bArda\b", "Arda Güler"),
     (r"\bTurco\b", "Arda Güler"),
     (r"\bvinicius\b", "Vinícius Jr."),
     (r"\bVinicius\b", "Vinícius Jr."),
@@ -1285,13 +1020,12 @@ def apply_football_phonetics(raw_text: str) -> str:
     for pattern, replacement in FOOTBALL_PHONETIC_FIXES:
         cleaned = re.sub(pattern, replacement, cleaned)
 
-    shared_players = get_shared_discovered_players()
-    if not shared_players:
+    if not discovered_match_players:
         return cleaned
 
     # Construir mapa de apellidos/nombres de la plantilla activa del partido
     surname_map = {}
-    for full_name in shared_players:
+    for full_name in discovered_match_players:
         parts = [p.strip(".,") for p in full_name.split() if len(p.strip(".,")) >= 5]
         for part in parts:
             norm_part = "".join(
@@ -1369,30 +1103,23 @@ def extract_and_transcribe_media_chunk(file_path: Path, start_sec: float, durati
         # Pre-cargar automáticamente la plantilla de los dos equipos activos (funciona para cualquier partido)
         ensure_match_squad_seeded(home_t, away_t)
 
-        # Construir lista corta de apellidos clave del partido (máx 16) para que Whisper nunca trunque ni alucine frases
-        short_surnames = []
-        for t_name in (home_t, away_t):
-            kw = _match_known_club_key(t_name)
-            if kw == "bayern":
-                short_surnames.extend(["Neuer", "Upamecano", "Tah", "Kimmich", "Pavlović", "Musiala", "Olise", "Gnabry", "Kane", "Luis Díaz"])
-            elif kw == "madrid":
-                short_surnames.extend(["Lunin", "Courtois", "Rüdiger", "Huijsen", "Valverde", "Bellingham", "Arda Güler", "Vinícius", "Mbappé", "Rodrygo"])
-            elif kw == "city":
-                short_surnames.extend(["Ederson", "Gvardiol", "Rodri", "De Bruyne", "Foden", "Cherki", "O'Reilly", "Haaland"])
-            elif kw == "leipzig":
-                short_surnames.extend(["Gulácsi", "Lukeba", "Raum", "Xavi Simons", "Dani Olmo", "Openda", "Šeško"])
-        if not short_surnames:
-            shared_players = get_shared_discovered_players()
-            short_surnames = [p.split()[-1] for p in shared_players[:12]] or [
-                "Neuer", "Upamecano", "Gnabry", "Musiala", "Sané", "Kane", "Lunin", "Rüdiger", "Arda Güler", "Vinícius", "Mbappé", "Haaland"
-            ]
-        roster_prompt_str = ", ".join(short_surnames[:20])
+        # Construir lista dinámica enfocada en los jugadores de este partido para no saturar el límite de 224 tokens de Whisper
+        learned_roster = ", ".join(list(discovered_match_players)[:36])
+        base_vocab = (
+            "Manuel Neuer, Dayot Upamecano, Joshua Kimmich, Jamal Musiala, Leroy Sané, Serge Gnabry, Harry Kane, Michael Olise, "
+            "Andriy Lunin, Thibaut Courtois, Dani Carvajal, Antonio Rüdiger, Aurélien Tchouaméni, Eduardo Camavinga, Toni Kroos, "
+            "Federico Valverde, Jude Bellingham, Arda Güler, Rodrygo, Vinícius Jr., Kylian Mbappé, "
+            "Erling Haaland, Nico O'Reilly, Rayan Cherki, Phil Foden, Kevin De Bruyne, Josko Gvardiol, Loïs Openda, Xavi Simons"
+        )
+        roster_prompt_str = learned_roster if len(discovered_match_players) >= 8 else f"{learned_roster}, {base_vocab}".strip(", ")
 
-        # 1. Usar Whisper Large v3 Turbo + Prompt Corto del Partido (Groq API)
+        # 1. Usar Whisper Large v3 Turbo + Prompt Dinámico del Partido (Groq API)
         if groq_key and http_requests:
             try:
                 football_context_prompt = (
-                    f"Relato de fútbol en vivo: {home_t} vs {away_t} ({roster_prompt_str})."
+                    f"Relato deportivo de fútbol en vivo en español (ESPN / Champions League / Premier League). "
+                    f"Partido entre {home_t} y {away_t}. "
+                    f"Jugadores en cancha: {roster_prompt_str}."
                 )
                 resp = http_requests.post(
                     "https://api.groq.com/openai/v1/audio/transcriptions",
@@ -1613,218 +1340,20 @@ def fallback_parse_narrator_text(transcript: str, current_state: dict, video_min
     }
 
 
-PLACEHOLDER_PLAYERS = {"", "autor por confirmar", "por confirmar", "relato en vivo", "narración en vivo", "narracion en vivo", "transmisión oficial", "transmision oficial", "n/a", "ninguno", "none", "sin autor"}
-SCORE_TOKEN_RE = re.compile(r"\b\d{1,2}\s*[-‑–—]\s*\d{1,2}\b")
-GOAL_SHOUT_RE = re.compile(r"go{3,}l|\bgol\b\W+\bgol\b", re.IGNORECASE)
-SPOKEN_SCORE_RE = re.compile(
-    r"\b(\d|cero|uno|dos|tres|cuatro|cinco|seis)\s+(?:a|-)\s+(\d|cero|uno|dos|tres|cuatro|cinco|seis)\b",
-    re.IGNORECASE
-)
-_SPOKEN_NUM = {"cero": 0, "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5, "seis": 6}
-LIVE_FILLER_PATTERNS = [
-    r"[^.!?]*seguimos atentos[^.!?]*[.!?]?",
-    r"[^.!?]*cualquier cosa puede (?:suceder|pasar)[^.!?]*[.!?]?",
-    r"[^.!?]*(?:el ambiente se vuelve|la afición vibra|al rojo vivo|deja sin aliento)[^.!?]*[.!?]?",
-    r"[^.!?]*(?:busca recomponerse|se mantiene con la ventaja)[^.!?]*[.!?]?",
-]
-
-
-def extract_spoken_score_total(text: str) -> int | None:
-    """Detecta marcadores dichos por el relator ('2 a 1', 'uno a uno') y devuelve la suma de goles mencionada."""
-    m = SPOKEN_SCORE_RE.search(text or "")
-    if not m:
-        return None
-    vals = []
-    for g in m.groups():
-        g_low = g.lower()
-        vals.append(int(g_low) if g_low.isdigit() else _SPOKEN_NUM.get(g_low, 0))
-    return sum(vals)
-
-
-def shorten_live_description(desc: str, max_words: int = 28) -> str:
-    """Recorta la crónica a 1-2 frases cortas (estilo minuto a minuto ESPN/Marca) y elimina frases de relleno."""
-    text = re.sub(r"\s+", " ", str(desc or "")).strip()
-    for pat in LIVE_FILLER_PATTERNS:
-        text = re.sub(pat, " ", text, flags=re.IGNORECASE)
-    text = re.sub(r"\s+", " ", text).strip()
-    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
-    if not sentences:
-        return text
-    out = []
-    count = 0
-    for s in sentences:
-        w = len(s.split())
-        if out and (count + w > max_words or len(out) >= 3):
-            break
-        out.append(s)
-        count += w
-    result = " ".join(out)
-    words = result.split()
-    if len(words) > max_words + 8:
-        result = " ".join(words[:max_words]).rstrip(",;:") + "…"
-    return result
-
-
-def stylize_live_description(desc: str, ev_type: str, team_label: str) -> str:
-    """Pone en MAYÚSCULAS la exclamación inicial y garantiza el grito de GOL con el nombre del equipo."""
-    text = str(desc or "").strip()
-    if not text:
-        return text
-    if ev_type in {"GOAL", "GOAL_CONFIRMATION"}:
-        if not re.match(r"^\W*go+l", _strip_accents_lower(text)):
-            shout = "¡GOOOL!" if (not team_label or "/" in team_label) else f"¡GOOOL DEL {team_label.upper()}!"
-            text = f"{shout} {text}"
-    # Exclamación inicial corta (¡...!) siempre en mayúsculas para dar el golpe periodístico
-    m = re.match(r"^(¡[^!]{1,45}!)", text)
-    if m:
-        text = m.group(1).upper() + text[len(m.group(1)):]
-    return text
-
-
-def apply_real_score_to_text(desc: str, home_score: int, away_score: int, append_if_missing: bool = False) -> str:
-    """Reemplaza cualquier marcador escrito por la IA con el marcador REAL del servidor (la IA nunca decide el marcador)."""
-    text = str(desc or "")
-    real = f"{home_score}-{away_score}"
-    if SCORE_TOKEN_RE.search(text):
-        text = SCORE_TOKEN_RE.sub(real, text)
-    elif append_if_missing:
-        text = f"{text.rstrip()} ({real})"
-    return text
-
-
-def extract_scorer_from_transcript(transcript: str, home_t: str, away_t: str) -> str | None:
-    """Si el relator dice 'lo hizo X', 'gol de X', 'anota X', devuelve el nombre completo de X según la plantilla."""
-    norm_t = _strip_accents_lower(transcript)
-    candidates = []
-    for t_name in (home_t, away_t):
-        kw = _match_known_club_key(t_name)
-        if kw:
-            info = STRUCTURED_CLUB_ROSTERS[kw]
-            candidates.extend(info["goalkeepers"] + info["defenders"] + info["midfielders_forwards"])
-    for full in candidates:
-        surname = _strip_accents_lower(full).split()[-1]
-        if len(surname) < 3:
-            continue
-        if re.search(
-            rf"(?:lo hizo|gol de|gol del|golazo de|anota|marca|la mete|la clava|remata|empata)\W+(?:\w+\W+){{0,2}}{re.escape(surname)}\b",
-            norm_t
-        ):
-            return full.strip()
-    return None
-
-
-def enforce_ai_football_consistency(parsed: dict, corrected_transcript: str, current_state: dict) -> dict:
+def interpret_narrator_with_openrouter(transcript: str, current_state: dict, video_minute: int | None = None) -> dict:
     """
-    Valida y corrige la consistencia futbolística y editorial del JSON devuelto por el LLM:
-    1. El equipo se asigna según la plantilla real del jugador (STRUCTURED_CLUB_ROSTERS), no según la IA.
-    2. Si el relato canta un empate ('lo empata', '1 a 1'), el gol es del equipo que iba abajo.
-    3. Un GOL suma exactamente +1 al equipo anotador (el marcador lo decide el servidor).
-    4. Estilo minuto a minuto: textos cortos (máx ~28 palabras), exclamación inicial en MAYÚSCULAS,
-       sin frases de relleno ni tercera persona del relator, y sin contradicciones tácticas.
-    """
-    home_t = str(current_state.get("home_team", "Equipo Local"))
-    away_t = str(current_state.get("away_team", "Equipo Visitante"))
-    cur_h = int(current_state.get("home_score", 0))
-    cur_a = int(current_state.get("away_score", 0))
-
-    ev_type = str(parsed.get("type", "COMMENT")).upper()
-    if ev_type == "SKIP":
-        parsed["type"] = "SKIP"
-        return parsed
-    team = str(parsed.get("team", "NEUTRAL")).upper()
-    if team not in {"HOME", "AWAY", "NEUTRAL"}:
-        team = "NEUTRAL"
-    player = str(parsed.get("player", "")).strip()
-    desc = str(parsed.get("description", "")).strip()
-    transcript_low = corrected_transcript.lower()
-
-    # Si es gol y la IA no puso autor pero el relator sí lo nombró ('lo hizo Pavlović'), tomarlo del audio
-    if ev_type in {"GOAL", "GOAL_CONFIRMATION"} and player.lower() in PLACEHOLDER_PLAYERS:
-        spoken_scorer = extract_scorer_from_transcript(corrected_transcript, home_t, away_t)
-        if spoken_scorer:
-            player = spoken_scorer
-            parsed["player"] = spoken_scorer
-
-    # 1. Asignar el equipo según la plantilla real del jugador protagonista
-    matched_club_kw = find_player_club_key(player)
-    if matched_club_kw:
-        if matched_club_kw in home_t.lower() and matched_club_kw not in away_t.lower():
-            if ev_type in {"GOAL", "GOAL_CONFIRMATION", "YELLOW_CARD", "RED_CARD"} or team == "NEUTRAL":
-                team = "HOME"
-        elif matched_club_kw in away_t.lower() and matched_club_kw not in home_t.lower():
-            if ev_type in {"GOAL", "GOAL_CONFIRMATION", "YELLOW_CARD", "RED_CARD"} or team == "NEUTRAL":
-                team = "AWAY"
-
-    # Evitar 'Autor por confirmar' en eventos que NO son GOL
-    if ev_type not in {"GOAL", "GOAL_CONFIRMATION"} and player.lower() in PLACEHOLDER_PLAYERS:
-        parsed["player"] = home_t if team == "HOME" else (away_t if team == "AWAY" else "Relato en Vivo")
-
-    # 2. Regla de Empates en Vivo
-    is_equalizer_mention = any(
-        w in transcript_low for w in ["empata", "el empate", "lo iguala", "igualdad", "1 a 1", "uno a uno", "2 a 2", "dos a dos", "3 a 3"]
-    )
-    if ev_type == "GOAL" and is_equalizer_mention and not matched_club_kw:
-        if cur_h + 1 == cur_a:
-            team = "HOME"
-        elif cur_a + 1 == cur_h:
-            team = "AWAY"
-
-    # 3. Saneamiento editorial
-    if desc:
-        desc = re.sub(
-            r"^(?:El relator (?:detalla|analiza|comenta|describe|menciona|narra|explica)(?: que)?\s*|Confirmación del tanto de\s*)",
-            "",
-            desc,
-            flags=re.IGNORECASE
-        ).strip()
-        if re.search(r"Neuer[^.!?]{0,60}(?:guardameta|arquero|portero)\s+del\s+Real\s+Madrid", desc, re.IGNORECASE):
-            desc = re.sub(r"(?:guardameta|arquero|portero)\s+del\s+Real\s+Madrid", "arquero del Bayern", desc, flags=re.IGNORECASE)
-        if re.search(r"peligro(?:\s+\w+)?\s+(?:para\s+el|a\s+favor\s+del)\s+Bayern", desc, re.IGNORECASE):
-            desc = re.sub(
-                r"peligro(?:\s+\w+)?\s+(?:para\s+el|a\s+favor\s+del)\s+Bayern(?:\s+M[úu]nich)?",
-                "peligro en el arco del Bayern",
-                desc,
-                flags=re.IGNORECASE
-            )
-        if re.match(r"^(?:sin eventos relevantes|el partido arranca sin incidentes)", desc, re.IGNORECASE):
-            if ev_type == "COMMENT":
-                desc = "¡RUEDA EL BALÓN! Comienza el partido con ambos equipos disputando la posesión."
-        if desc:
-            desc = desc[0].upper() + desc[1:]
-        team_label = home_t if team == "HOME" else (away_t if team == "AWAY" else "")
-        desc = shorten_live_description(desc, max_words=30 if ev_type in {"GOAL", "GOAL_CONFIRMATION"} else 26)
-        desc = stylize_live_description(desc, ev_type, team_label)
-        parsed["description"] = desc
-    elif ev_type == "COMMENT":
-        parsed["description"] = f"¡EN JUEGO! Acción disputada en terreno de {home_t}."
-
-    parsed["team"] = team
-    if ev_type == "GOAL":
-        if team == "HOME":
-            parsed["home_score_override"] = cur_h + 1
-            parsed["away_score_override"] = cur_a
-        elif team == "AWAY":
-            parsed["home_score_override"] = cur_h
-            parsed["away_score_override"] = cur_a + 1
-
-    return parsed
-
-
-def interpret_narrator_with_openrouter(transcript: str, current_state: dict, video_minute: int | None = None, allow_skip: bool = False) -> dict:
-    """
-    Envía el texto transcrito del narrador (junto con la memoria compartida en Redis de los fragmentos anteriores,
-    las jugadas ya publicadas, las plantillas separadas por equipo y el último gol registrado)
-    a Groq LLM (`openai/gpt-oss-120b` / `openai/gpt-oss-20b` con `reasoning_effort: low`)
-    para estructurar el JSON deportivo con estilo minuto a minuto corto, fiel al audio y sin repetir jugadas.
-    Si `allow_skip` es True (video), la IA puede responder 'SKIP' cuando el fragmento no trae nada nuevo.
+    Envía el texto transcrito del narrador (junto con la memoria de los fragmentos anteriores,
+    la lista de jugadores aprendidos dinámicamente y el último gol registrado)
+    a Groq LLM (openai/gpt-oss-120b / qwen3.8-27b) para estructurar el JSON deportivo sin adivinar goleadores
+    y reconstruyendo fonéticamente cualquier apellido distorsionado por el audio.
     """
     home_t = str(current_state.get("home_team", "Equipo Local"))
     away_t = str(current_state.get("away_team", "Equipo Visitante"))
     ensure_match_squad_seeded(home_t, away_t)
 
     corrected_transcript = apply_football_phonetics(transcript)
-    prev_context = " | ".join(get_shared_recent_transcripts(limit=2))
-    append_shared_transcript(corrected_transcript)
+    prev_context = " | ".join(list(recent_transcripts_history)[-2:])
+    recent_transcripts_history.append(corrected_transcript)
 
     groq_key = os.environ.get("GROQ_API_KEY", GROQ_API_KEY).strip()
     est_min = video_minute if video_minute is not None else max(1, int(current_state.get("minute", 0)) + 1)
@@ -1835,103 +1364,80 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
         f"Autor registrado='{recent_goal.get('player')}', Minuto={recent_goal.get('minute')}."
         if recent_goal else "Ningún gol registrado en los últimos instantes."
     )
-    published_recent = get_all_events(limit=3)
-    published_str = " | ".join(
-        f"[{e.get('minute')}' {e.get('type')}] {str(e.get('description', ''))[:140]}" for e in reversed(published_recent)
-    ) or "Ninguna todavía."
-    rosters_block = build_structured_rosters_prompt_section(home_t, away_t)
-    skip_rule = (
-        "2. COBERTURA ACTIVA DEL MINUTO A MINUTO (NO SILENCIAR EL PARTIDO): "
-        "El minuto a minuto debe mantener informado al espectador de lo que ocurre en la cancha. "
-        "Narra como 'COMMENT' las acciones de juego: ataques, remates desviados, atajadas, centros, córners, presión defensiva, recuperaciones o salidas. "
-        "ÚNICAMENTE responde \"type\": \"SKIP\" si el fragmento es silencio total, pura charla de sobremesa sin ninguna jugada, o publicidad ajena al partido.\n"
-        if allow_skip else
-        "2. COBERTURA ACTIVA: Narra las acciones de juego de forma directa y ágil como 'COMMENT'.\n"
-    )
+    known_roster_str = ", ".join(list(discovered_match_players)) if discovered_match_players else "En proceso de descubrimiento en el relato"
 
     system_prompt = (
-        "Eres el redactor oficial del MINUTO A MINUTO en vivo de ESPN / Marca. Tu misión es mantener al aficionado al borde del asiento con cada jugada.\n"
-        "REGLAS OBLIGATORIAS:\n"
-        "1. FIDELIDAD AL AUDIO: Narra hechos reales que el relator menciona en el 'Fragmento actual en vivo'. No inventes jugadas que no existieron.\n"
-        f"{skip_rule}"
-        "3. ESTILO MINUTO A MINUTO (CORTO, DIRECTO Y PERIODÍSTICO): 'description' tiene MÁXIMO 25 PALABRAS (1 o 2 frases contundentes). "
-        "Empieza SIEMPRE con una frase exclamativa corta EN MAYÚSCULAS según la jugada: "
-        "GOL -> '¡GOOOL DEL <EQUIPO>!'; llegada de peligro -> '¡AVISA EL <EQUIPO>!' o '¡CERCA DEL GOL!'; "
-        "atajada/despeje -> '¡QUÉ ATAJADA!' o '¡SEGURIDAD DE <ARQUERO>!'; error -> '¡QUÉ BLOOPER!' o '¡ERROR EN LA SALIDA!'; "
-        "córner -> '¡TIRO DE ESQUINA!'; arranque -> '¡RUEDA EL BALÓN!'; disputa -> '¡PRESIÓN ALTA!'. "
-        "PROHIBIDO el relleno ('seguimos atentos', 'cualquier cosa puede pasar') y PROHIBIDO hablar en tercera persona del relator ('El relator detalla...').\n"
-        "   Ejemplos de calidad:\n"
-        "   - '¡AVISA EL MADRID! Arda Güler presiona la salida y genera peligro.'\n"
-        "   - '¡SEGURIDAD DE LUNIN! El arquero descuelga el centro largo sin complicaciones.'\n"
-        "   - '¡TIRO DE ESQUINA! Kimmich prepara el centro peligroso al corazón del área.'\n"
-        "4. PROHIBIDO ESCRIBIR MARCADORES O RESULTADOS NUMÉRICOS (ej. '2-1', '1-0') en 'description': el sistema agrega el marcador oficial.\n"
-        "5. PLANTILLAS: Un jugador solo combina con compañeros de SU club (ver 'PLANTILLAS POR EQUIPO').\n"
-        "6. ERRORES: Si un jugador se equivoca, el peligro es EN CONTRA de su equipo y a favor del rival.\n"
-        "7. GOLEADOR: En 'GOAL', si el relator nombra al autor, pon su nombre exacto en 'player'. Si no lo nombra aún, pon 'Autor por confirmar'.\n"
-        "8. REPETICIONES DE GOL: Si ya se registró el gol hace segundos y este fragmento es solo el análisis o festejo repetido del MISMO gol, usa 'GOAL_CONFIRMATION' (con el autor) o 'COMMENT', pero NO sumes un nuevo 'GOAL'.\n"
-        "9. EMPATES: Un gol de empate ('lo empata', '1 a 1') es del equipo que iba abajo.\n"
+        "Eres un periodista deportivo senior de ESPN redactando el minuto a minuto en vivo. "
+        "Recibes la transcripción de voz del relator (con Whisper Large v3 Turbo) y el contexto previo.\n"
+        "REGLAS CRÍTICAS DE PRECISIÓN DEPORTIVA (FUNCIONA PARA CUALQUIER PARTIDO):\n"
+        "1. PROHIBIDO ADIVINAR EL GOLEADOR POR FAMA O PASE PREVIO: En un 'GOAL', JAMÁS pongas por defecto a la estrella del equipo "
+        "(ej. NO pongas a Mbappé, Haaland o Salah si el relator no dijo explícitamente que él metió el gol) ni confundas a quien dio un pase previo con el autor del gol. "
+        "Si el relator grita '¡Gol!' o '¡Gol del Real Madrid!' pero en este fragmento aún no dice claramente el nombre de quién remató al arco, "
+        "pon obligatoriamente \"player\": \"Autor por confirmar\". Si menciona explícitamente al autor (ej. 'gol de Arda Güler', 'lo hizo el turco Güler'), pon su nombre exacto.\n"
+        "2. CONFIRMACIÓN O CORRECCIÓN DEL AUTOR EN LA REPETICIÓN ('GOAL_CONFIRMATION'): Si en 'Último GOL registrado hace instantes' ya aparece un gol reciente "
+        "y en este fragmento el relator está festejando o repitiendo ESE MISMO GOL y confirma quién lo anotó (ej. '¡Qué golazo de Arda Güler para el 1-0!'), "
+        "NO sumes otro gol: usa \"type\": \"GOAL_CONFIRMATION\", pon en \"player\" el nombre verdadero del autor ('Arda Güler') y mantén 'home_score_override' y 'away_score_override' iguales al marcador actual.\n"
+        "3. REGLA ANTI-FALSOS GOLES POR ESTADÍSTICAS: Si el comentarista menciona cifras históricas o rachas ('lleva 30 goles', 'es el goleador', 'casi gol', 'buscando el gol', 'sin goles'), "
+        "PROHIBIDO usar 'GOAL': clasifícalo SIEMPRE como 'COMMENT'.\n"
+        "4. EMPATES EN VIVO: Si el relator canta un gol de empate ('1 a 1', 'lo empata'), asigna el GOL al equipo que iba abajo en el marcador.\n"
+        "5. RECONSTRUCCIÓN FONÉTICA INTELIGENTE DE JUGADORES (MUY IMPORTANTE): La transcripción proviene de audio rápido en español y a menudo escribe apellidos extranjeros "
+        "como suenan fonéticamente o comiéndose la primera letra (ej. 'Pamecano' por 'Upamecano', 'Noyer' por 'Neuer', 'Naby/Nabri' por 'Gnabry', 'Chomeni' por 'Tchouaméni', 'Chezni' por 'Szczęsny'). "
+        f"Usa tu conocimiento de las plantillas reales de '{home_t}' y '{away_t}' (más la lista de jugadores identificados) para reconstruir y corregir SIEMPRE cualquier apellido que suene parecido, "
+        "tanto en 'player' como en 'description', en 'detected_players' y en 'corrected_transcript'.\n"
         "Responde UNICAMENTE con un objeto JSON válido con estas claves:\n"
         "{\n"
-        '  "type": "GOAL" | "GOAL_CONFIRMATION" | "PENALTY" | "RED_CARD" | "YELLOW_CARD" | "SUBSTITUTION" | "MATCH_START" | "MATCH_END" | "COMMENT"'
-        + (' | "SKIP"' if allow_skip else "") + ",\n"
+        '  "type": "GOAL" | "GOAL_CONFIRMATION" | "PENALTY" | "RED_CARD" | "YELLOW_CARD" | "SUBSTITUTION" | "MATCH_START" | "MATCH_END" | "COMMENT",\n'
         '  "team": "HOME" | "AWAY" | "NEUTRAL",\n'
         '  "home_team": "Nombre del equipo local",\n'
         '  "away_team": "Nombre del equipo visitante",\n'
+        '  "home_score_override": numero_entero_goles_local_actualizado,\n'
+        '  "away_score_override": numero_entero_goles_visitante_actualizado,\n'
         '  "minute": numero_entero_del_minuto,\n'
-        '  "player": "Jugador protagonista bien escrito",\n'
-        '  "detected_players": ["Jugador 1", "Jugador 2"],\n'
-        '  "corrected_transcript": "Transcripción con nombres corregidos",\n'
-        '  "description": "Línea corta de minuto a minuto (máx 25 palabras) con exclamación inicial en MAYÚSCULAS y sin marcador numérico"\n'
+        '  "player": "Nombre confirmado y bien escrito del jugador protagonista o Autor por confirmar",\n'
+        '  "detected_players": ["Jugador 1 bien escrito", "Jugador 2 bien escrito"],\n'
+        '  "corrected_transcript": "Transcripción original del relator pero con todos los nombres de futbolistas y clubes corregidos ortográficamente",\n'
+        '  "description": "Comentario periodístico profesional con todos los nombres de jugadores perfectamente escritos"\n'
         "}"
     )
 
     user_prompt = (
-        f"Equipos: Local='{home_t}' vs Visitante='{away_t}'. Marcador actual (solo referencia, NO lo escribas): {current_state.get('home_score')}-{current_state.get('away_score')}. Minuto={est_min}.\n"
+        f"Estado actual del marcador: Local='{current_state.get('home_team')}' ({current_state.get('home_score')}) vs "
+        f"Visitante='{current_state.get('away_team')}' ({current_state.get('away_score')}), Minuto={est_min}.\n"
         f"{recent_goal_str}\n"
-        f"Jugadas ya publicadas (no repetir): {published_str}\n"
-        f"PLANTILLAS POR EQUIPO:\n{rosters_block}\n"
-        f"Contexto anterior (ya narrado): \"{prev_context}\"\n"
-        f"Fragmento actual en vivo: \"{corrected_transcript}\""
+        f"Jugadores ya identificados en este partido: {known_roster_str}\n"
+        f"Contexto inmediatamente anterior: \"{prev_context}\"\n"
+        f"Fragmento actual del relator: \"{corrected_transcript}\""
     )
 
     if groq_key and http_requests:
         for groq_model in ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]:
             try:
-                req_payload = {
-                    "model": groq_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    "temperature": 0.0,
-                    "max_tokens": 900,
-                    "reasoning_effort": "low",
-                    "response_format": {"type": "json_object"}
-                }
                 g_resp = http_requests.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
-                    json=req_payload,
-                    timeout=6.0
+                    json={
+                        "model": groq_model,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        "temperature": 0.05,
+                        "max_tokens": 500,
+                        "reasoning_effort": "low",
+                        "response_format": {"type": "json_object"}
+                    },
+                    timeout=5.0
                 )
                 if g_resp.status_code == 200:
                     content = g_resp.json()["choices"][0]["message"]["content"].strip()
                     parsed = json.loads(content)
                     parsed["ai_generated"] = True
                     parsed["ai_model"] = f"Groq ({groq_model} + Whisper v3 Turbo)"
-                    parsed["source_transcript"] = corrected_transcript
-                    parsed = enforce_ai_football_consistency(parsed, corrected_transcript, current_state)
-                    if parsed.get("type") == "SKIP" and not allow_skip:
-                        parsed["type"] = "COMMENT"
-                        if not parsed.get("description"):
-                            parsed["description"] = shorten_live_description(corrected_transcript.capitalize())
                     return parsed
             except Exception:
                 continue
 
-    fb = fallback_parse_narrator_text(corrected_transcript, current_state, est_min, context_text=prev_context)
-    fb["source_transcript"] = corrected_transcript
-    return fb
+    return fallback_parse_narrator_text(corrected_transcript, current_state, est_min, context_text=prev_context)
 
 
 # ==============================================================================
@@ -2574,22 +2080,12 @@ def api_process_video_chunk():
         est_minute = max(1, int(start_sec // 8) + 1)
 
     # 2. Interpretar la transcripción real con IA (Groq Llama 3.3 / OpenRouter / Motor Editorial Futbolístico)
-    ai_event = interpret_narrator_with_openrouter(transcript, current_state, video_minute=est_minute, allow_skip=True)
+    ai_event = interpret_narrator_with_openrouter(transcript, current_state, video_minute=est_minute)
     ai_event["stt_engine"] = stt_engine
-    ai_event["video_sec"] = round(start_sec, 1)
     clean_transcript_out = ai_event.get("corrected_transcript") or apply_football_phonetics(transcript)
 
     # 3. Publicar automáticamente al Portal de Espectadores (SNS -> SQS -> Redis -> SSE)
     result = publish_event_fanout(ai_event)
-    if result.get("skipped"):
-        return jsonify(
-            status="skipped",
-            message="Fragmento sin jugadas nuevas (repetición o charla); no se publicó nada",
-            chunk_start_sec=round(start_sec, 1),
-            stt_engine=stt_engine,
-            transcript_received=clean_transcript_out,
-            match=result.get("match")
-        ), 200
     return jsonify(
         status="ai_published",
         chunk_start_sec=round(start_sec, 1),
