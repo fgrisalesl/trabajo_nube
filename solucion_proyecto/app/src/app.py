@@ -812,6 +812,32 @@ def publish_event_fanout(event_data: dict, simulated_readers_override: int = 0) 
                 team = "AWAY"
             break
 
+    # Manejo de alineaciones y previa: publicar como máximo una sola vez al inicio
+    raw_desc = str(event_data.get("description", ""))
+    is_lineup_text = (
+        ev_type in {"PRE_MATCH", "LINEUPS"}
+        or bool(re.search(r"\b(?:alineaciones|formaciones|los once|entrega los once|once titular)\b", raw_desc, re.IGNORECASE))
+    )
+    if is_lineup_text:
+        existing_pre = any(
+            e.get("type") in {"PRE_MATCH", "LINEUPS", "MATCH_START"}
+            or "alineaciones confirmadas" in str(e.get("description", "")).lower()
+            for e in get_all_events(limit=10)
+        )
+        if existing_pre:
+            return {"skipped": True, "event": None, "match": state, "latency_ms": 0.0}
+        ev_type = "COMMENT"
+        event_data["description"] = f"¡ALINEACIONES CONFIRMADAS! {state['home_team']} y {state['away_team']} listos en el terreno de juego."
+
+    # Limpiar cualquier muletilla residual de "Relator menciona..."
+    raw_desc = str(event_data.get("description", ""))
+    if re.search(r"\b(?:relator|comentarista)\s+(?:menciona|habla|entrega|anuncia)\b", raw_desc, re.IGNORECASE):
+        raw_desc = re.sub(r"^[¡!]?[A-Z\s]+[!.]\s*", "", raw_desc).strip()
+        raw_desc = re.sub(r"\b(?:relator|comentarista)\s+(?:menciona|habla de|entrega|anuncia)\s+(?:a\s+)?", "", raw_desc, flags=re.IGNORECASE).strip()
+        if raw_desc:
+            raw_desc = raw_desc[0].upper() + raw_desc[1:]
+        event_data["description"] = f"¡EN JUEGO! {raw_desc}" if raw_desc else "¡BALÓN EN JUEGO! Posesión disputada en mediocampo."
+
     # ¿Es confirmación o corrección del autor del último gol cantado hace pocos segundos (ej. "Lo hizo Arda Güler")?
     recent_goal = get_recent_goal_event()
     if ev_type == "GOAL_CONFIRMATION" and recent_goal:
@@ -1400,26 +1426,29 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
     system_prompt = (
         "Eres un periodista deportivo de ESPN redactando el minuto a minuto en vivo de un partido de fútbol.\n"
         "REGLAS OBLIGATORIAS:\n"
-        "1. ESTILO PERIODÍSTICO CORTO: 'description' debe ser DIRECTA, EMOCIONANTE y tener MÁXIMO 22 PALABRAS (1 o 2 frases).\n"
-        "2. EXCLAMACIÓN EN MAYÚSCULAS: Empieza SIEMPRE con una frase corta en MAYÚSCULAS según la jugada:\n"
-        "   - GOL: '¡GOOOL DEL <EQUIPO>!'\n"
-        "   - Peligro/Llegada: '¡AVISA EL <EQUIPO>!' o '¡CERCA DEL GOL!'\n"
-        "   - Salida/Atajada: '¡SALIDA DE <JUGADOR>!' o '¡SEGURIDAD DE <ARQUERO>!'\n"
-        "   - Disputa/Presión: '¡PRESIÓN ALTA!' o '¡CRUCE DEFENSIVO!'\n"
+        "1. PREVIA Y ALINEACIONES: Si el audio solo menciona alineaciones, formaciones, banco de suplentes o previa y aún no hay juego en cancha, "
+        "responde: \"type\": \"PRE_MATCH\", \"description\": \"¡ALINEACIONES CONFIRMADAS! Equipos listos en el terreno de juego.\"\n"
+        "2. ACCIONES EN CANCHA: Narra jugadas reales (ataques, remates, atajadas, centros, córners, faltas, circulación). "
+        "PROHIBIDO decir 'Relator menciona...' o 'Comentarista habla de...'. Narra lo que pasa en el campo.\n"
+        "3. EXCLAMACIÓN EN MAYÚSCULAS: Empieza siempre con una frase corta en MAYÚSCULAS:\n"
+        "   - Gol: '¡GOOOL DEL <EQUIPO>!'\n"
+        "   - Peligro/Aproximación: '¡AVISA EL <EQUIPO>!' o '¡CERCA DEL GOL!'\n"
+        "   - Remate/Tiro: '¡REMATE AL ARCO!' o '¡DISPARO CRUZADO!'\n"
+        "   - Salida/Atajada: '¡SEGURIDAD DE <ARQUERO>!' o '¡SALIDA DE <ARQUERO>!'\n"
         "   - Tiro de esquina: '¡TIRO DE ESQUINA!'\n"
-        "   - Inicio: '¡RUEDA EL BALÓN!'\n"
-        "3. FIDELIDAD: Narra ÚNICAMENTE lo que dice el audio. PROHIBIDO inventar remates de cabeza o jugadas que no se dijeron. Sin frases de relleno.\n"
-        "4. GOLEADOR: En 'GOAL', si el relator no dice aún quién remató, pon 'Autor por confirmar'. Si dice el nombre, ponlo exacto.\n"
-        "5. EMPATES: Si cantan empate ('1 a 1', 'lo empata'), el gol es del equipo que iba perdiendo.\n"
+        "   - Posesión/Juego: '¡BALÓN EN JUEGO!' o '¡CIRCULACIÓN!'\n"
+        "4. ESTILO CORTO Y DIRECTO: 'description' tiene MÁXIMO 20 PALABRAS (1 o 2 frases contundentes). Sin relleno.\n"
+        "5. GOLEADOR: En 'GOAL', si el relator nombra al autor, ponlo exacto en 'player'. Si no lo nombra aún, pon 'Autor por confirmar'.\n"
+        "6. EMPATES: Si cantan empate ('1 a 1', 'lo empata'), el gol es del equipo que iba perdiendo.\n"
         "Responde UNICAMENTE con un objeto JSON con estas claves:\n"
         "{\n"
-        '  "type": "GOAL" | "GOAL_CONFIRMATION" | "PENALTY" | "RED_CARD" | "YELLOW_CARD" | "SUBSTITUTION" | "MATCH_START" | "COMMENT",\n'
+        '  "type": "GOAL" | "GOAL_CONFIRMATION" | "PENALTY" | "RED_CARD" | "YELLOW_CARD" | "SUBSTITUTION" | "MATCH_START" | "PRE_MATCH" | "COMMENT",\n'
         '  "team": "HOME" | "AWAY" | "NEUTRAL",\n'
         '  "home_team": "Nombre del equipo local",\n'
         '  "away_team": "Nombre del equipo visitante",\n'
         '  "minute": numero_entero_del_minuto,\n'
         '  "player": "Jugador protagonista o Autor por confirmar",\n'
-        '  "description": "Línea corta y vibrante (máx 22 palabras) iniciando con exclamación en MAYÚSCULAS"\n'
+        '  "description": "Línea corta y vibrante (máx 20 palabras) iniciando con exclamación en MAYÚSCULAS"\n'
         "}"
     )
 
