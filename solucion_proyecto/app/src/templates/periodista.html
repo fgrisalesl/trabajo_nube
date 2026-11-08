@@ -294,16 +294,33 @@
             <label class="text-xs font-bold text-zinc-200 uppercase tracking-wide">
               1. Fuente de Video o Audio del Partido
             </label>
-            <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white transition">
+            <label id="lbl-upload-media" class="cursor-pointer px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white transition">
               Subir Video / Audio
               <input type="file" id="media-upload-input" accept="video/*,audio/*" class="hidden" onchange="uploadMediaFile(event)" />
             </label>
           </div>
 
+          <!-- Medidor de Espacio Disponible para Videos (Límite 1000 MB) -->
+          <div class="rounded-lg bg-white/[0.03] border border-white/10 px-3 py-2 space-y-1.5">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-zinc-400 font-medium">Capacidad de Almacenamiento de Videos:</span>
+              <span id="media-storage-text" class="font-mono font-semibold text-emerald-400">Calculando...</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-black/60 overflow-hidden">
+              <div id="media-storage-bar" class="h-full bg-emerald-400 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div id="media-storage-warning" class="hidden rounded-lg bg-rose-500/15 border border-rose-500/30 px-3 py-2 text-xs text-rose-300 font-medium"></div>
+
           <div class="flex flex-wrap items-center gap-2">
             <select id="media-select" onchange="selectExistingMedia()" class="fm-input flex-1 rounded-lg px-3 py-2.5 text-xs text-zinc-200">
               <option value="">Seleccionar archivo de transmisión...</option>
             </select>
+            <button type="button" id="btn-delete-media" onclick="deleteSelectedMedia()" disabled
+              class="px-3 py-2.5 rounded-lg text-xs font-semibold border transition bg-rose-500/15 text-rose-300 border-rose-500/30 hover:bg-rose-500/25 disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
+              Borrar Video
+            </button>
           </div>
 
           <!-- Reproductor HTML5 -->
@@ -785,13 +802,42 @@
       syncStudioStatus();
     }
 
+    let currentMediaStorage = { used_mb: 0, limit_mb: 1000, remaining_mb: 1000, percent_used: 0 };
+
+    function renderMediaStorageBar(st) {
+      if (!st) return;
+      currentMediaStorage = st;
+      const txtEl = document.getElementById('media-storage-text');
+      const barEl = document.getElementById('media-storage-bar');
+      if (!txtEl || !barEl) return;
+
+      txtEl.textContent = `${st.used_mb} MB / ${st.limit_mb} MB (${st.remaining_mb} MB libres)`;
+      barEl.style.width = `${Math.min(100, st.percent_used)}%`;
+
+      if (st.percent_used >= 90) {
+        txtEl.className = 'font-mono font-semibold text-rose-400';
+        barEl.className = 'h-full bg-rose-500 transition-all duration-300';
+      } else if (st.percent_used >= 70) {
+        txtEl.className = 'font-mono font-semibold text-amber-400';
+        barEl.className = 'h-full bg-amber-400 transition-all duration-300';
+      } else {
+        txtEl.className = 'font-mono font-semibold text-emerald-400';
+        barEl.className = 'h-full bg-emerald-400 transition-all duration-300';
+      }
+    }
+
     async function loadMediaCatalog() {
       try {
         const res = await fetch('/api/media/list');
         const data = await res.json();
         mediaFilesMap = {};
 
+        if (data.storage) {
+          renderMediaStorageBar(data.storage);
+        }
+
         const sel = document.getElementById('media-select');
+        const prevVal = sel.value;
         sel.innerHTML = '<option value="">Seleccionar archivo de transmisión...</option>';
         (data.files || []).forEach(f => {
           mediaFilesMap[f.url] = f;
@@ -800,25 +846,99 @@
           opt.textContent = `${f.filename} (${f.size_mb} MB)`;
           sel.appendChild(opt);
         });
+        if (prevVal && mediaFilesMap[prevVal]) {
+          sel.value = prevVal;
+        }
+        const delBtn = document.getElementById('btn-delete-media');
+        if (delBtn) delBtn.disabled = !sel.value;
       } catch (e) {}
     }
 
     async function uploadMediaFile(e) {
       const file = e.target.files[0];
       if (!file) return;
+      const warnBox = document.getElementById('media-storage-warning');
+      if (warnBox) warnBox.classList.add('hidden');
+
+      const fileSizeMb = Math.round((file.size / (1024 * 1024)) * 100) / 100;
+      if (currentMediaStorage && fileSizeMb > currentMediaStorage.remaining_mb) {
+        const msg = `Límite de almacenamiento: "${file.name}" pesa ${fileSizeMb} MB y solo quedan ${currentMediaStorage.remaining_mb} MB libres (límite ${currentMediaStorage.limit_mb} MB). Borra un video primero.`;
+        if (warnBox) {
+          warnBox.textContent = msg;
+          warnBox.classList.remove('hidden');
+        }
+        appendAiLog(`<div class="text-rose-400 font-semibold">${msg}</div>`);
+        e.target.value = '';
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
-      document.getElementById('ai-status-text').textContent = 'Subiendo archivo...';
+      document.getElementById('ai-status-text').textContent = `Subiendo ${file.name} (${fileSizeMb} MB)...`;
 
-      const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
+      try {
+        const res = await fetch('/api/media/upload', {
+          method: 'POST',
+          headers: getJournalistHeaders(false),
+          body: formData
+        });
+        const data = await res.json();
+        if (res.ok) {
+          if (data.storage) renderMediaStorageBar(data.storage);
+          await loadMediaCatalog();
+          document.getElementById('media-select').value = data.url;
+          await selectExistingMedia();
+          document.getElementById('ai-status-text').textContent = 'Archivo listo';
+          appendAiLog(`<div class="text-emerald-400">Archivo <code>${data.filename}</code> (${data.size_mb || fileSizeMb} MB) cargado correctamente.</div>`);
+        } else {
+          if (data.storage) renderMediaStorageBar(data.storage);
+          document.getElementById('ai-status-text').textContent = 'En espera';
+          if (warnBox) {
+            warnBox.textContent = data.error || 'Error subiendo archivo';
+            warnBox.classList.remove('hidden');
+          }
+          appendAiLog(`<div class="text-rose-400">Error subiendo archivo: ${data.error}</div>`);
+        }
+      } catch (err) {
+        document.getElementById('ai-status-text').textContent = 'En espera';
+        appendAiLog(`<div class="text-rose-400">Error de red al subir archivo. Verifica permisos de la carpeta media.</div>`);
+      } finally {
+        e.target.value = '';
+      }
+    }
+
+    async function deleteSelectedMedia() {
+      const sel = document.getElementById('media-select');
+      const url = sel.value;
+      if (!url) return;
+      const meta = mediaFilesMap[url] || {};
+      const filename = meta.filename || decodeURIComponent(url.replace('/media/', ''));
+
+      const player = document.getElementById('match-media-player');
+      if (player) {
+        try { player.pause(); player.removeAttribute('src'); player.load(); } catch (e) {}
+      }
+
+      const res = await fetch('/api/media/delete', {
+        method: 'POST',
+        headers: getJournalistHeaders(true),
+        body: JSON.stringify({ filename })
+      });
+      if (res.status === 401 || res.status === 403) {
+        await checkJournalistAuthStatus();
+        return;
+      }
       const data = await res.json();
+      const warnBox = document.getElementById('media-storage-warning');
+      if (warnBox) warnBox.classList.add('hidden');
+
       if (res.ok) {
-        await loadMediaCatalog();
-        document.getElementById('media-select').value = data.url;
+        sel.value = '';
         await selectExistingMedia();
-        appendAiLog(`<div class="text-emerald-400">Archivo <code>${data.filename}</code> cargado correctamente.</div>`);
+        await loadMediaCatalog();
+        appendAiLog(`<div class="text-amber-300">Video eliminado: <code>${data.deleted}</code> (${data.freed_mb} MB liberados).</div>`);
       } else {
-        appendAiLog(`<div class="text-rose-400">Error subiendo archivo: ${data.error}</div>`);
+        appendAiLog(`<div class="text-rose-400">No se pudo eliminar: ${data.error}</div>`);
       }
     }
 
@@ -826,6 +946,8 @@
       const url = document.getElementById('media-select').value;
       const wrap = document.getElementById('player-wrapper');
       const player = document.getElementById('match-media-player');
+      const delBtn = document.getElementById('btn-delete-media');
+      if (delBtn) delBtn.disabled = !url;
       if (!url) {
         wrap.classList.add('hidden');
         currentSelectedFilename = '';

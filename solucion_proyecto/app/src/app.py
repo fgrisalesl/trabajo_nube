@@ -10,6 +10,7 @@ import re
 import json
 import time
 import uuid
+import shutil
 import socket
 import difflib
 import subprocess
@@ -1643,11 +1644,45 @@ def health():
 
 
 # ==============================================================================
-# ENDPOINTS DE ARCHIVOS MULTIMEDIA Y EXTRACCIÓN DE VOZ REAL DEL VIDEO
+# ENDPOINTS DE ARCHIVOS MULTIMEDIA, CUOTA DE DISCO Y EXTRACCIÓN DE VOZ DEL VIDEO
 # ==============================================================================
+MAX_MEDIA_STORAGE_MB = float(os.environ.get("MAX_MEDIA_STORAGE_MB", "1000.0"))
+
+
+def get_media_storage_stats() -> dict:
+    """Calcula el espacio ocupado en app/media y el límite seguro disponible (máx 1000 MB por defecto)."""
+    used_bytes = 0
+    file_count = 0
+    for p in MEDIA_DIR.iterdir():
+        if p.is_file() and p.suffix.lower() in ALLOWED_MEDIA_EXT:
+            used_bytes += p.stat().st_size
+            file_count += 1
+    used_mb = round(used_bytes / (1024 * 1024), 2)
+
+    try:
+        disk = shutil.disk_usage(MEDIA_DIR)
+        # Dejar siempre al menos 1,000 MB libres para el SO, Docker y Jenkins
+        os_safe_free_mb = max(0.0, (disk.free / (1024 * 1024)) - 1000.0)
+        limit_mb = round(min(MAX_MEDIA_STORAGE_MB, used_mb + os_safe_free_mb), 1)
+        if limit_mb < 100.0:
+            limit_mb = MAX_MEDIA_STORAGE_MB
+    except Exception:
+        limit_mb = MAX_MEDIA_STORAGE_MB
+
+    remaining_mb = round(max(0.0, limit_mb - used_mb), 2)
+    percent_used = round(min(100.0, (used_mb / limit_mb) * 100.0), 1) if limit_mb > 0 else 100.0
+    return {
+        "used_mb": used_mb,
+        "limit_mb": limit_mb,
+        "remaining_mb": remaining_mb,
+        "percent_used": percent_used,
+        "file_count": file_count
+    }
+
+
 @app.get("/api/media/list")
 def api_media_list():
-    """Lista los videos/audios reales colocados en solucion_proyecto/app/media/."""
+    """Lista los videos/audios reales colocados en solucion_proyecto/app/media/ y el espacio disponible."""
     files = []
     for p in sorted(MEDIA_DIR.iterdir()):
         if p.is_file() and p.suffix.lower() in ALLOWED_MEDIA_EXT:
@@ -1663,6 +1698,7 @@ def api_media_list():
     return jsonify(
         media_dir=str(MEDIA_DIR),
         files=files,
+        storage=get_media_storage_stats(),
         groq_ready=bool(os.environ.get("GROQ_API_KEY", GROQ_API_KEY))
     )
 
@@ -1680,16 +1716,80 @@ def api_media_upload():
 
     safe_name = secure_filename(f.filename)
     dest = MEDIA_DIR / safe_name
+
+    stats = get_media_storage_stats()
+    existing_mb = round(dest.stat().st_size / (1024 * 1024), 2) if dest.exists() else 0.0
+    available_for_upload_mb = round(stats["remaining_mb"] + existing_mb, 2)
+
+    content_len = request.content_length or 0
+    incoming_mb = round(content_len / (1024 * 1024), 2)
+    if incoming_mb > 0 and incoming_mb > available_for_upload_mb:
+        return jsonify(
+            error=(
+                f"Espacio insuficiente: el video pesa {incoming_mb} MB y solo quedan "
+                f"{available_for_upload_mb} MB disponibles (límite {stats['limit_mb']} MB). "
+                "Elimina un video anterior para poder subir este."
+            ),
+            storage=stats
+        ), 413
+
     f.save(dest)
+    saved_mb = round(dest.stat().st_size / (1024 * 1024), 2)
+    if saved_mb > available_for_upload_mb:
+        dest.unlink(missing_ok=True)
+        return jsonify(
+            error=(
+                f"Espacio insuficiente: el video pesa {saved_mb} MB y solo quedan "
+                f"{available_for_upload_mb} MB disponibles (límite {stats['limit_mb']} MB). "
+                "Elimina un video anterior para poder subir este."
+            ),
+            storage=get_media_storage_stats()
+        ), 413
+
     inferred = infer_teams_from_filename(f.filename)
     return jsonify(
         status="uploaded",
         filename=safe_name,
         url=f"/media/{safe_name}",
+        size_mb=saved_mb,
         inferred_home=inferred[0] if inferred else "",
         inferred_away=inferred[1] if inferred else "",
-        saved_in=str(dest)
+        saved_in=str(dest),
+        storage=get_media_storage_stats()
     ), 201
+
+
+@app.post("/api/media/delete")
+@app.delete("/api/media/delete")
+def api_media_delete():
+    """Elimina un video/audio de app/media/ para liberar espacio en el servidor."""
+    ok, err_msg, code = verify_journalist_request()
+    if not ok:
+        return jsonify(error=err_msg), code
+
+    body = request.get_json(silent=True) or {}
+    raw_filename = str(body.get("filename") or request.args.get("filename") or "").strip()
+    if not raw_filename:
+        return jsonify(error="Debes seleccionar un archivo para eliminar."), 400
+
+    # Si viene como URL '/media/archivo.mp4', extraer el nombre
+    if raw_filename.startswith("/media/"):
+        raw_filename = raw_filename[len("/media/"):]
+
+    target = resolve_media_file(raw_filename)
+    if not target or not target.exists():
+        return jsonify(error=f"El archivo '{raw_filename}' no existe."), 404
+
+    freed_mb = round(target.stat().st_size / (1024 * 1024), 2)
+    deleted_name = target.name
+    target.unlink(missing_ok=True)
+
+    return jsonify(
+        status="deleted",
+        deleted=deleted_name,
+        freed_mb=freed_mb,
+        storage=get_media_storage_stats()
+    ), 200
 
 
 def resolve_media_file(filename: str) -> Path | None:
@@ -2123,17 +2223,73 @@ def api_create_event():
     ), 201
 
 
+SSE_VIEWER_TTL_SEC = 7.0
+local_active_viewers = {"vivo": {}, "resumen": {}}
+
+
+def register_sse_viewer_heartbeat(channel: str, viewer_id: str):
+    now = time.time()
+    other_ch = "resumen" if channel == "vivo" else "vivo"
+    with metrics_lock:
+        local_active_viewers[other_ch].pop(viewer_id, None)
+        local_active_viewers[channel][viewer_id] = now
+    if redis_client:
+        try:
+            pipe = redis_client.pipeline()
+            pipe.zrem(f"match:sse_zset:{other_ch}", viewer_id)
+            pipe.zadd(f"match:sse_zset:{channel}", {viewer_id: now})
+            pipe.expire(f"match:sse_zset:{channel}", 30)
+            pipe.execute()
+        except Exception:
+            pass
+
+
+def unregister_sse_viewer(channel: str, viewer_id: str):
+    with metrics_lock:
+        local_active_viewers[channel].pop(viewer_id, None)
+    if redis_client:
+        try:
+            redis_client.zrem(f"match:sse_zset:{channel}", viewer_id)
+        except Exception:
+            pass
+
+
+def get_real_sse_counts() -> tuple[int, int]:
+    """Devuelve el conteo exacto de espectadores activos limpiando conexiones expiradas (>7s)."""
+    cutoff = time.time() - SSE_VIEWER_TTL_SEC
+    with metrics_lock:
+        for ch in ("vivo", "resumen"):
+            stale = [vid for vid, ts in local_active_viewers[ch].items() if ts < cutoff]
+            for vid in stale:
+                local_active_viewers[ch].pop(vid, None)
+        vivo_cnt = len(local_active_viewers["vivo"])
+        res_cnt = len(local_active_viewers["resumen"])
+
+    if redis_client:
+        try:
+            pipe = redis_client.pipeline()
+            pipe.zremrangebyscore("match:sse_zset:vivo", "-inf", cutoff)
+            pipe.zremrangebyscore("match:sse_zset:resumen", "-inf", cutoff)
+            pipe.zcard("match:sse_zset:vivo")
+            pipe.zcard("match:sse_zset:resumen")
+            _, _, r_vivo, r_res = pipe.execute()
+            vivo_cnt = max(vivo_cnt, int(r_vivo or 0))
+            res_cnt = max(res_cnt, int(r_res or 0))
+        except Exception:
+            pass
+
+    active_sse_clients["vivo"] = vivo_cnt
+    active_sse_clients["resumen"] = res_cnt
+    return vivo_cnt, res_cnt
+
+
 @app.get("/api/stream/<channel>")
 def api_stream(channel: str):
     channel = "resumen" if channel.lower() == "resumen" else "vivo"
+    viewer_id = (request.args.get("vid") or "").strip() or uuid.uuid4().hex
 
     def event_stream():
-        active_sse_clients[channel] += 1
-        if redis_client:
-            try:
-                redis_client.incr(f"match:sse:{channel}", 1)
-            except Exception:
-                pass
+        register_sse_viewer_heartbeat(channel, viewer_id)
         pubsub = None
         local_q = deque()
         try:
@@ -2177,19 +2333,17 @@ def api_stream(channel: str):
                     time.sleep(poll_interval)
 
                 now = time.time()
-                if not sent and (now - last_heartbeat) >= 15.0:
+                if sent:
+                    register_sse_viewer_heartbeat(channel, viewer_id)
+                elif (now - last_heartbeat) >= 3.0:
+                    register_sse_viewer_heartbeat(channel, viewer_id)
                     hb = json.dumps({"ts": now, "node": HOSTNAME, "channel": channel})
                     yield f"event: heartbeat\ndata: {hb}\n\n"
                     last_heartbeat = now
         except GeneratorExit:
             pass
         finally:
-            active_sse_clients[channel] = max(0, active_sse_clients[channel] - 1)
-            if redis_client:
-                try:
-                    redis_client.decr(f"match:sse:{channel}", 1)
-                except Exception:
-                    pass
+            unregister_sse_viewer(channel, viewer_id)
             if pubsub:
                 try:
                     pubsub.close()
@@ -2222,15 +2376,12 @@ def api_metrics():
 
     ev_pub = total_events_published
     fanout_del = total_fanout_deliveries
-    sse_vivo = active_sse_clients["vivo"]
-    sse_res = active_sse_clients["resumen"]
+    sse_vivo, sse_res = get_real_sse_counts()
 
     if redis_client:
         try:
             ev_pub = int(redis_client.get("match:metrics:events_published") or ev_pub)
             fanout_del = int(redis_client.get("match:metrics:fanout_deliveries") or fanout_del)
-            sse_vivo = max(sse_vivo, int(redis_client.get("match:sse:vivo") or 0))
-            sse_res = max(sse_res, int(redis_client.get("match:sse:resumen") or 0))
         except Exception:
             pass
 

@@ -43,6 +43,7 @@ pipeline {
           else
             cd app
           fi
+          mkdir -p media && chmod -R 777 media 2>/dev/null || true
           ENV_ARG=""
           if [ -f /etc/gtn-app.env ]; then
             ENV_ARG="--env-file /etc/gtn-app.env"

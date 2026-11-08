@@ -437,9 +437,21 @@
       }
     }
 
+    let viewerTabId = sessionStorage.getItem('unal_viewer_tab_id');
+    if (!viewerTabId) {
+      viewerTabId = 'v_' + Math.random().toString(36).slice(2) + '_' + Date.now().toString(36);
+      sessionStorage.setItem('unal_viewer_tab_id', viewerTabId);
+    }
+
+    window.addEventListener('beforeunload', () => {
+      if (evtSource) {
+        try { evtSource.close(); } catch (e) {}
+      }
+    });
+
     function connectSSE(channel) {
       if (evtSource) evtSource.close();
-      evtSource = new EventSource(`/api/stream/${channel}`);
+      evtSource = new EventSource(`/api/stream/${channel}?vid=${encodeURIComponent(viewerTabId)}`);
       evtSource.addEventListener('match_event', (e) => {
         const payload = JSON.parse(e.data);
         if (payload.reset) {
