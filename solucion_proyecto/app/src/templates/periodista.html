@@ -284,7 +284,7 @@
             <h2 class="text-lg font-bold text-white mt-0.5">Extracción Automática desde Video o Micrófono</h2>
           </div>
           <span class="text-[11px] px-2.5 py-1 rounded-md bg-white/[0.05] border border-white/10 text-zinc-300 font-mono">
-            Whisper v3 Turbo + GPT-OSS-120B
+            Whisper v3 Turbo + Qwen 3.8 27B
           </span>
         </div>
 
@@ -571,7 +571,7 @@
             </div>
             <div class="flex justify-between">
               <span>Motor IA Activo:</span>
-              <strong id="metric-ai" class="text-zinc-200 font-mono">Groq (Whisper v3 Turbo + GPT-OSS-120B)</strong>
+              <strong id="metric-ai" class="text-zinc-200 font-mono">Groq (Whisper v3 Turbo + Qwen 3.8 27B)</strong>
             </div>
             <div class="flex justify-between">
               <span>Caché de Resumen:</span>
@@ -596,7 +596,6 @@
     let lastStudioHome = '';
     let lastStudioAway = '';
     let isJournalistAuthenticated = false;
-    let pendingForceTakeover = false;
     let journalistToken = sessionStorage.getItem('unal_journalist_token') || '';
     let journalistSessionId = sessionStorage.getItem('unal_journalist_session') || '';
 
@@ -619,8 +618,8 @@
       if (occupied) {
         badge.className = 'flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs text-amber-300';
         dot.className = 'w-2 h-2 rounded-full bg-amber-400 shrink-0';
-        txt.textContent = customMessage || 'Cabina en uso por otro periodista · Ingresa la clave para tomar el control';
-        btn.textContent = pendingForceTakeover ? 'Confirmar y Tomar Control Exclusivo' : 'Desbloquear Cabina de Prensa';
+        txt.textContent = customMessage || 'Cabina en uso por una transmisión en vivo activa';
+        btn.textContent = 'Acceso Restringido (Cabina en Uso)';
       } else {
         badge.className = 'flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-300';
         dot.className = 'w-2 h-2 rounded-full bg-emerald-400 shrink-0';
@@ -631,7 +630,6 @@
 
     function unlockCabinUI() {
       isJournalistAuthenticated = true;
-      pendingForceTakeover = false;
       document.getElementById('journalist-auth-gate').classList.add('hidden');
       document.getElementById('studio-main-content').classList.remove('hidden');
       document.getElementById('btn-reset-board').classList.remove('hidden');
@@ -697,8 +695,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           password,
-          session_id: journalistSessionId,
-          force_takeover: pendingForceTakeover
+          session_id: journalistSessionId
         })
       });
       const data = await res.json();
@@ -711,12 +708,10 @@
         passInput.value = '';
         unlockCabinUI();
       } else if (res.status === 409) {
-        pendingForceTakeover = true;
-        updateLockBadgeUI(true, 'Ya hay un periodista activo en la cabina');
-        errBox.textContent = data.error || 'Ya hay un periodista en cabina. Pulsa el botón de nuevo para tomar el control exclusivo.';
+        updateLockBadgeUI(true, 'Cabina ocupada por una transmisión activa');
+        errBox.textContent = data.error || 'Cabina ocupada: Hay un periodista transmitiendo en vivo en este momento.';
         errBox.classList.remove('hidden');
       } else {
-        pendingForceTakeover = false;
         errBox.textContent = data.error || 'Credencial de prensa inválida.';
         errBox.classList.remove('hidden');
       }

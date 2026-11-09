@@ -1478,7 +1478,7 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
     """
     Envía el texto transcrito del narrador con una ventana deslizante de 30 segundos
     (fragmento anterior + fragmento actual), la lista de jugadores y el marcador actual
-    a Groq LLM (qwen/qwen3.8-27b o gpt-oss-120b) para estructurar el JSON deportivo con precisión táctica.
+    a Groq LLM (qwen/qwen3.8-27b) para estructurar el JSON deportivo con precisión táctica.
     """
     home_t = str(current_state.get("home_team", "Equipo Local"))
     away_t = str(current_state.get("away_team", "Equipo Visitante"))
@@ -1700,10 +1700,10 @@ def api_journalist_login():
     """
     Inicia sesión en la Cabina del Periodista.
     Garantiza sesión única activa (1 solo periodista transmitiendo a la vez).
+    Protege la transmisión: nadie puede expulsar al periodista activo mientras esté transmitiendo.
     """
     body = request.get_json(silent=True) or {}
     password = str(body.get("password") or body.get("token") or "").strip()
-    force_takeover = bool(body.get("force_takeover", False))
     existing_session_id = str(body.get("session_id") or request.headers.get("X-Journalist-Session") or "").strip()
 
     if password != JOURNALIST_TOKEN:
@@ -1712,12 +1712,13 @@ def api_journalist_login():
     active = get_active_journalist_session()
     client_ip = request.headers.get("X-Real-IP") or request.remote_addr or "0.0.0.0"
 
-    if active and active.get("session_id") != existing_session_id and not force_takeover:
+    # Si hay un periodista activo y el intento proviene de otra sesión/navegador, denegar acceso
+    if active and active.get("session_id") != existing_session_id:
         return jsonify(
             status="occupied",
             cabin_occupied=True,
             active_ip=active.get("ip", "activa"),
-            error="Ya hay un periodista con la cabina abierta en este momento. Pulsa nuevamente para tomar el control exclusivo."
+            error="Cabina ocupada: Hay una transmisión en vivo en curso. Por seguridad de la emisión, el acceso está restringido."
         ), 409
 
     new_session_id = existing_session_id or uuid.uuid4().hex
@@ -2550,7 +2551,7 @@ def api_metrics():
         architecture={
             "cache_engine": "Redis (ElastiCache / Docker)" if redis_client else "In-Memory Fallback",
             "fanout_broker": "AWS SNS + SQS + Redis Pub/Sub" if SNS_TOPIC_ARN else "Redis Pub/Sub + SSE Fan-Out",
-            "ai_engine": "Groq (Whisper Large v3 Turbo + GPT-OSS-120B)",
+            "ai_engine": "Groq (Whisper Large v3 Turbo + Qwen 3.8 27B)",
             "priority_channels": ["vivo (HIGH priority, 150ms poll)", "resumen (LOW priority / digest, 600ms poll)"]
         }
     )

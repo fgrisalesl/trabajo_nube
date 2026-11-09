@@ -50,7 +50,7 @@ Parameters:
     Type: String
     NoEcho: true
     Default: ""
-    Description: Llave de API de Groq (NoEcho) para Whisper Large v3 Turbo y GPT-OSS-120B en tiempo real
+    Description: Llave de API de Groq (NoEcho) para Whisper Large v3 Turbo y Qwen 3.8 27B en tiempo real
 
   DeployElastiCache:
     Type: String
