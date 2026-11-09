@@ -1502,108 +1502,78 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
     roster_summary = get_match_roster_summary(home_t, away_t)
 
     system_prompt = (
-        "Eres un analista táctico y periodista deportivo de ESPN redactando el minuto a minuto en vivo de un partido de fútbol.\n"
-        "Tu misión principal es analizar tácticamente la jugada para saber QUÉ EQUIPO ATACA/ANOTA y QUÉ EQUIPO DEFIENDE/RECIBE EL GOL.\n\n"
-        "REGLAS OBLIGATORIAS:\n"
-        "1. DETERMINAR EL EQUIPO ('HOME' o 'AWAY'):\n"
-        "   - Si el audio dice 'le convierten a X', 'error de X', 'contra el arco de X', 'no pudo el arquero de X': El equipo X RECIBIÓ el gol/ataque. Por lo tanto, el gol/ataque favorece al equipo RIVAL.\n"
-        "   - Si el audio dice 'gol de X', 'gana X', 'festeja X', 'ventaja para X': El gol favorece a X.\n"
-        "   - Si un equipo ya iba ganando y el audio dice 'segundo', 'otro más', 'doblete', 'estira la ventaja', 'amplía', el gol es del equipo que va ganando.\n"
-        "   - Si una jugada es una asistencia o centro de un jugador (ej. McGinn) y culmina en remate/gol de otro (ej. Jackson), ambos pertenecen al mismo equipo atacante.\n"
-        "   - Si el audio relata un gol donde le convirtieron al equipo local, el gol es del visitante (AWAY). NUNCA asumas por defecto que el gol es del equipo local.\n"
-        "   - Si el audio menciona un empate (ej. 'empata', 'lo iguala', '1 a 1', '2 a 2') y en el marcador actual un equipo iba abajo, el gol corresponde al equipo que estaba perdiendo.\n"
-        "   - Si solo se escucha un grito aislado '¡GOOOL!' o '¡Oh Gol!' sin nombrar equipo ni jugador en el audio actual ni en el anterior, asigna 'team': 'NEUTRAL' y 'type': 'COMMENT' para esperar la confirmación en el siguiente fragmento.\n"
-        "2. PROTAGONISTA ('player'):\n"
-        "   - Si el relator dice un nombre o apellido (ej: 'Pavlović', 'Alisson', 'Jackson', 'Arda Güler', 'Baku', 'Haaland'), ponlo literal en 'player'.\n"
-        "   - Si NO se nombra a nadie claro, pon su rol táctico general: 'El Delantero', 'El Portero', 'Defensa Central', 'Jugada Colectiva'. PROHIBIDO inventar jugadores ficticios.\n"
-        "3. EXCLAMACIÓN EN MAYÚSCULAS: Empieza siempre con una frase corta en MAYÚSCULAS según la jugada:\n"
-        f"   - Gol: '¡GOOOL DE {home_t.upper()}!' o '¡GOOOL DE {away_t.upper()}!' (USA SIEMPRE EL NOMBRE REAL DEL EQUIPO, NUNCA ESCRIBAS 'HOME' O 'AWAY').\n"
-        f"   - Peligro/Ataque: '¡REMATE AL ARCO!', '¡ZAPATAZO!', '¡AVISA {home_t.upper()}!', '¡AVISA {away_t.upper()}!', '¡DESBORDE PELIGROSO!', '¡BUENA ASOCIACIÓN!'.\n"
-        "   - Defensa/Arquero: '¡SEGURIDAD DEL PORTERO!' (solo si ataja tiro claro), '¡CIERRE DEFENSIVO!', '¡RECUPERACIÓN RÁPIDA!'.\n"
-        "   - Error: '¡ERROR EN LA SALIDA!', '¡FALLO DEFENSIVO!'. PROHIBIDO usar 'SEGURIDAD' si hubo error.\n"
-        "   - Córner/Falta: '¡TIRO DE ESQUINA!', '¡FALTA PELIGROSA!'.\n"
-        "   - Posesión/Juego: '¡CIRCULACIÓN!' o '¡BALÓN EN JUEGO!'. Evita repetir '¡BALÓN EN JUEGO!' si hay una acción más específica como regate o centro.\n"
-        "4. VOCABULARIO DE FÚTBOL: Palabras como 'pelotazo', 'zurdazo', 'derechazo', 'centro', 'cabezazo' son JUGADAS, NUNCA nombres de personas ni futbolistas.\n"
-        "5. REPETICIÓN O ANÁLISIS DE GOL RECIENTE: Si hace instantes ya se cantó un gol ('Último GOL registrado...') y el audio sigue repitiendo la misma jugada o analizándola, responde 'type': 'GOAL_CONFIRMATION' (si aclara autor) o 'type': 'COMMENT', NUNCA un gol nuevo.\n"
-        "6. FIDELIDAD ESTRICTA: Narra ÚNICAMENTE lo que dice el audio. NUNCA inventes jugadas que no ocurrieron.\n"
-        "7. ESTILO CORTO Y DIRECTO: 'description' tiene MÁXIMO 20 PALABRAS (1 o 2 frases contundentes). Sin relleno.\n"
-        "8. MARCADOR ANUNCIADO: Si el relator dice el marcador explícito en el relato (ej: '1 a 0', '1 a 1', '3 a 2', 'dos a uno', 'empató 1-1'), ponlo exacto en 'declared_score': [goles_local, goles_visitante]. Si no lo dice, pon 'declared_score': null.\n"
-        "Responde UNICAMENTE con un objeto json con estas claves:\n"
+        f"Periodista deportivo de ESPN redactando el minuto a minuto en vivo. Responde UNICAMENTE JSON válido con este formato:\n"
         "{\n"
-        '  "type": "GOAL" | "GOAL_CONFIRMATION" | "PENALTY" | "RED_CARD" | "YELLOW_CARD" | "SUBSTITUTION" | "MATCH_START" | "PRE_MATCH" | "COMMENT",\n'
+        '  "type": "GOAL" | "GOAL_CONFIRMATION" | "COMMENT" | "YELLOW_CARD" | "RED_CARD" | "SUBSTITUTION" | "MATCH_START",\n'
         '  "team": "HOME" | "AWAY" | "NEUTRAL",\n'
-        '  "home_team": "Nombre del equipo local",\n'
-        '  "away_team": "Nombre del equipo visitante",\n'
-        '  "minute": numero_entero_del_minuto,\n'
+        f'  "home_team": "{home_t}",\n'
+        f'  "away_team": "{away_t}",\n'
+        f'  "minute": {est_min},\n'
         '  "player": "Nombre escuchado o rol táctico (ej. El Delantero, El Portero)",\n'
-        '  "declared_score": [numero_local, numero_visitante] | null,\n'
-        '  "description": "Línea corta y vibrante (máx 20 palabras) iniciando con exclamación en MAYÚSCULAS"\n'
-        "}"
+        '  "declared_score": [goles_local, goles_visitante] | null,\n'
+        f'  "description": "Máximo 15 palabras iniciando con ¡GOOOL DE {home_t.upper()}!, ¡GOOOL DE {away_t.upper()}!, ¡REMATE AL ARCO!, ¡TIRO DE ESQUINA!, ¡ERROR EN LA SALIDA! o ¡CIRCULACIÓN!"\n'
+        "}\n"
+        "Reglas:\n"
+        "1. team: Es el equipo que anota o ataca. Si le convierten gol a HOME, el gol es de AWAY. Si el relator dice 'empata' y HOME iba perdiendo, el gol es de HOME.\n"
+        "2. Si solo se grita '¡GOOOL!' sin decir equipo ni jugador, pon 'team': 'NEUTRAL' y 'type': 'COMMENT' para esperar confirmación.\n"
+        "3. declared_score: Pon el marcador numérico exacto si el relator lo menciona (ej. [1, 1], [0, 2]), de lo contrario null."
     )
 
-    context_line = f"Contexto inmediato anterior (hace 15-30s): \"{prev_context}\"\n" if prev_context else ""
+    context_line = f"Contexto hace 15-30s: \"{prev_context}\"\n" if prev_context else ""
     user_prompt = (
-        f"Partido: {home_t} (HOME) vs {away_t} (AWAY), Minuto {est_min}.\n"
-        f"Marcador actual del tablero: {home_t} {cur_h} - {cur_a} {away_t}.\n"
-        f"{roster_summary}\n"
-        f"{recent_goal_str}\n"
+        f"Partido: {home_t} vs {away_t}, Minuto {est_min}. Marcador actual: {home_t} {cur_h} - {cur_a} {away_t}.\n"
         f"{context_line}"
-        f"Audio actual del relator (este momento): \"{corrected_transcript}\""
+        f"Audio actual del relator: \"{corrected_transcript}\""
     )
 
     if groq_key and http_requests:
-        for groq_model in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"]:
-            try:
-                max_tok = 340 if "gpt" in groq_model else 240
-                req_payload = {
-                    "model": groq_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    "temperature": 0.05,
-                    "max_tokens": max_tok,
-                    "response_format": {"type": "json_object"}
-                }
-                if "gpt" in groq_model:
-                    req_payload["reasoning_effort"] = "low"
+        groq_model = "qwen/qwen3.8-27b"
+        try:
+            req_payload = {
+                "model": groq_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.05,
+                "max_tokens": 160,
+                "response_format": {"type": "json_object"}
+            }
 
-                g_resp = http_requests.post(
+            g_resp = http_requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                json=req_payload,
+                timeout=5.5
+            )
+            sc = g_resp.status_code
+            groq_api_call_stats["llm"][sc] = groq_api_call_stats["llm"].get(sc, 0) + 1
+            if sc == 200:
+                content = g_resp.json()["choices"][0]["message"]["content"].strip()
+                parsed = json.loads(content)
+                parsed["ai_generated"] = True
+                parsed["ai_model"] = f"Groq ({groq_model} + Whisper v3 Turbo)"
+                return parsed
+            elif sc == 429:
+                # Si hay límite por ráfaga, esperar enfriamiento automático y reintentar una sola vez sin saltar a otros modelos
+                retry_sec = float(g_resp.headers.get("retry-after", 1.8))
+                time.sleep(min(3.0, max(1.2, retry_sec)))
+                g_resp_retry = http_requests.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
                     json=req_payload,
                     timeout=5.5
                 )
-                sc = g_resp.status_code
-                groq_api_call_stats["llm"][sc] = groq_api_call_stats["llm"].get(sc, 0) + 1
-                if sc == 200:
-                    content = g_resp.json()["choices"][0]["message"]["content"].strip()
+                sc2 = g_resp_retry.status_code
+                groq_api_call_stats["llm"][sc2] = groq_api_call_stats["llm"].get(sc2, 0) + 1
+                if sc2 == 200:
+                    content = g_resp_retry.json()["choices"][0]["message"]["content"].strip()
                     parsed = json.loads(content)
                     parsed["ai_generated"] = True
                     parsed["ai_model"] = f"Groq ({groq_model} + Whisper v3 Turbo)"
                     return parsed
-                elif sc == 429:
-                    retry_sec = float(g_resp.headers.get("retry-after", 1.8))
-                    time.sleep(min(3.0, max(1.2, retry_sec)))
-                    # Reintento directo tras el enfriamiento del rate limit
-                    g_resp_retry = http_requests.post(
-                        "https://api.groq.com/openai/v1/chat/completions",
-                        headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
-                        json=req_payload,
-                        timeout=5.5
-                    )
-                    sc2 = g_resp_retry.status_code
-                    groq_api_call_stats["llm"][sc2] = groq_api_call_stats["llm"].get(sc2, 0) + 1
-                    if sc2 == 200:
-                        content = g_resp_retry.json()["choices"][0]["message"]["content"].strip()
-                        parsed = json.loads(content)
-                        parsed["ai_generated"] = True
-                        parsed["ai_model"] = f"Groq ({groq_model} + Whisper v3 Turbo)"
-                        return parsed
-                elif sc == 400:
-                    continue
-            except Exception:
-                continue
+        except Exception:
+            pass
 
     return fallback_parse_narrator_text(corrected_transcript, current_state, est_min, context_text=prev_context)
 
