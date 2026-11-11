@@ -299,6 +299,43 @@
       border-radius: 999px;
       animation: wave 0.75s infinite ease-in-out;
     }
+
+    /* ==========================================================================
+       MODAL DE CÓDIGO QR PARA CONECTAR AFICIONADOS
+       ========================================================================== */
+    .qr-modal-backdrop {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 99999 !important;
+      background: rgba(0, 0, 0, 0.82) !important;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .qr-modal-backdrop.is-hidden {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    .qr-modal-card {
+      width: 100%;
+      max-width: 360px;
+      background: rgba(18, 20, 29, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 24px;
+      padding: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      position: relative;
+    }
   </style>
 </head>
 <body class="min-h-screen pb-14">
@@ -344,6 +381,17 @@
         <button type="button" id="btn-logout-cabin" onclick="logoutJournalist()"
           class="hidden px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-zinc-300 font-semibold transition">
           Cerrar Cabina
+        </button>
+        <button type="button" onclick="openQrModal()" id="btn-open-qr"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 font-semibold transition cursor-pointer"
+          title="Generar código QR dinámico para conectar a los aficionados en vivo">
+          <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span class="font-bold">📲 QR Aficionados</span>
         </button>
         <a href="/" target="_blank"
           class="px-3.5 py-1.5 rounded-lg bg-white/[0.1] hover:bg-white/[0.18] border border-white/25 text-white font-semibold transition">
@@ -1481,7 +1529,125 @@
       checkJournalistAuthStatus();
       syncStudioStatus();
     }, 2000);
+
+    // =========================================================================
+    // MODAL DE CÓDIGO QR PARA CONECTAR AFICIONADOS (DETECTA IP AUTOMÁTICA)
+    // =========================================================================
+    function openQrModal() {
+      const modal = document.getElementById('qr-modal');
+      const qrImg = document.getElementById('qr-code-img');
+      const urlInput = document.getElementById('qr-target-url');
+      const portalLink = document.getElementById('qr-open-portal-link');
+
+      // Toma dinámicamente la IP o dominio de la EC2 actual
+      const targetUrl = window.location.origin + '/';
+      urlInput.value = targetUrl;
+      portalLink.href = targetUrl;
+
+      // Generar código QR de alta resolución (260x260)
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(targetUrl)}`;
+      qrImg.src = qrApiUrl;
+
+      modal.classList.remove('is-hidden');
+    }
+
+    function closeQrModal() {
+      const modal = document.getElementById('qr-modal');
+      modal.classList.add('is-hidden');
+    }
+
+    function handleQrBackdropClick(e) {
+      if (e.target.id === 'qr-modal') {
+        closeQrModal();
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeQrModal();
+    });
+
+    async function copyFanPortalUrl() {
+      const input = document.getElementById('qr-target-url');
+      const btn = document.getElementById('btn-copy-url');
+      try {
+        await navigator.clipboard.writeText(input.value);
+        const originalText = btn.textContent;
+        btn.textContent = '¡Copiado! ✓';
+        btn.classList.add('bg-emerald-500/30', 'text-emerald-300', 'border-emerald-500/50');
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('bg-emerald-500/30', 'text-emerald-300', 'border-emerald-500/50');
+        }, 2000);
+      } catch (err) {
+        input.select();
+        document.execCommand('copy');
+        btn.textContent = '¡Copiado! ✓';
+        setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
+      }
+    }
   </script>
+
+  <!-- MODAL DE CÓDIGO QR PARA CONECTAR AFICIONADOS -->
+  <div id="qr-modal" class="qr-modal-backdrop is-hidden" onclick="handleQrBackdropClick(event)">
+    <div class="qr-modal-card" onclick="event.stopPropagation()">
+      <!-- Close Button -->
+      <button type="button" onclick="closeQrModal()" class="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition cursor-pointer" title="Cerrar ventana">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xl shrink-0">
+          📲
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white leading-snug">Conectar Aficionados</h3>
+          <p class="text-[11px] text-zinc-400">Escanea desde tu celular para unirte en vivo</p>
+        </div>
+      </div>
+
+      <!-- QR Card Box -->
+      <div class="flex flex-col items-center justify-center p-3.5 bg-white rounded-2xl shadow-xl mb-4">
+        <img id="qr-code-img" src="" alt="Código QR Portal Aficionados"
+             class="w-56 h-56 object-contain rounded-lg"
+             onerror="this.src='https://chart.googleapis.com/chart?chs=260x260&cht=qr&chl=' + encodeURIComponent(window.location.origin + '/')" />
+        <span class="text-[10px] text-zinc-700 font-bold mt-1.5 uppercase tracking-wider">UNAL Sports Live Portal</span>
+      </div>
+
+      <!-- Current URL Display Box -->
+      <div class="space-y-1.5 mb-4">
+        <div class="flex items-center justify-between">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Dirección IPv4 Detectada</label>
+          <span class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            En Vivo
+          </span>
+        </div>
+        <div class="flex items-center gap-2 p-2 rounded-xl bg-black/50 border border-white/15">
+          <input type="text" id="qr-target-url" readonly
+                 class="bg-transparent text-xs text-cyan-300 font-mono flex-1 outline-none truncate" />
+          <button type="button" id="btn-copy-url" onclick="copyFanPortalUrl()"
+                  class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-white/10 hover:bg-white/20 text-white transition border border-white/15 cursor-pointer">
+            Copiar
+          </button>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex gap-2">
+        <button type="button" onclick="closeQrModal()"
+                class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold text-zinc-300 bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition cursor-pointer">
+          Cerrar
+        </button>
+        <a id="qr-open-portal-link" href="/" target="_blank"
+           class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold text-center text-white bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 transition">
+          Abrir Portal ↗
+        </a>
+      </div>
+    </div>
+  </div>
   </div>
 </body>
 </html>
