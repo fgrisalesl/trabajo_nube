@@ -1,3 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-  <rect x="6" y="3" width="12" height="18" rx="2.5" fill="#EF4444" stroke="#FCA5A5" stroke-width="1.2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <!-- Gradiente de Tarjeta Roja 3D Brillante -->
+    <linearGradient id="redCardGrad" x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fda4af"/>
+      <stop offset="25%" stop-color="#f43f5e"/>
+      <stop offset="75%" stop-color="#e11d48"/>
+      <stop offset="100%" stop-color="#9f1239"/>
+    </linearGradient>
+
+    <!-- Bisel de Luz Superior -->
+    <linearGradient id="redCardBrim" x1="25" y1="12" x2="75" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="35%" stop-color="#ffe4e6" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#9f1239" stop-opacity="0.5"/>
+    </linearGradient>
+
+    <!-- Reflejo Especular Diagonal -->
+    <linearGradient id="redCardGlint" x1="25" y1="12" x2="70" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="redCardShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.6"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#e11d48" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#redCardShadow)">
+    <!-- Tarjeta Roja Inclinada con Perspectiva 3D -->
+    <rect x="26" y="14" width="48" height="72" rx="7"
+          transform="rotate(-8 50 50)"
+          fill="url(#redCardGrad)"
+          stroke="url(#redCardBrim)"
+          stroke-width="2"/>
+
+    <!-- Brillo Especular de Cristal Oficial -->
+    <path d="M28 17 L70 23 L62 55 L26 42 Z"
+          transform="rotate(-8 50 50)"
+          fill="url(#redCardGlint)"/>
+
+    <!-- Detalle de Borde de Relieve -->
+    <rect x="30" y="18" width="40" height="64" rx="4"
+          transform="rotate(-8 50 50)"
+          stroke="#ffffff" stroke-opacity="0.4" stroke-width="1.2" fill="none"/>
+  </g>
 </svg>

@@ -1,17 +1,116 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
   <defs>
-    <linearGradient id="shieldGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#27272a"/>
+    <!-- Gradiente de Bisel de Luz Plateado / Platino Especular -->
+    <linearGradient id="shieldRim" x1="10" y1="5" x2="110" y2="115" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="30%" stop-color="#e4e4e7" stop-opacity="0.85"/>
+      <stop offset="70%" stop-color="#71717a" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.8"/>
+    </linearGradient>
+
+    <!-- Gradiente del Cuerpo de Cristal Ahumado Neutro -->
+    <linearGradient id="shieldBody" x1="20" y1="10" x2="100" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="35%" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="75%" stop-color="#18181b" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#09090b" stop-opacity="0.65"/>
+    </linearGradient>
+
+    <!-- Reflejo Superior en Arco -->
+    <linearGradient id="specularGlint" x1="60" y1="12" x2="60" y2="65" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <!-- Sombreado Esférico Neutro del Balón Central -->
+    <radialGradient id="ballSphereShield" cx="38%" cy="32%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#f4f4f5"/>
+      <stop offset="75%" stop-color="#d4d4d8"/>
+      <stop offset="100%" stop-color="#52525b"/>
+    </radialGradient>
+
+    <!-- Parches del Balón -->
+    <radialGradient id="patchCenterShield" cx="42%" cy="38%" r="60%">
+      <stop offset="0%" stop-color="#3f3f46"/>
+      <stop offset="70%" stop-color="#18181b"/>
       <stop offset="100%" stop-color="#09090b"/>
-    </linearGradient>
-    <linearGradient id="rimGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#a1a1aa"/>
-      <stop offset="100%" stop-color="#3f3f46"/>
-    </linearGradient>
+    </radialGradient>
+
+    <!-- Halo Radiante de Luz Blanca / Plateada -->
+    <radialGradient id="coreGlow" cx="60" cy="58" r="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="glassGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#000000" flood-opacity="0.65"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#ffffff" flood-opacity="0.15"/>
+    </filter>
   </defs>
-  <path d="M60 8L18 24V58C18 85.5 35.8 106.8 60 114C84.2 106.8 102 85.5 102 58V24L60 8Z" fill="url(#shieldGrad)" stroke="url(#rimGrad)" stroke-width="5"/>
-  <path d="M60 16L25 29V57C25 80.2 40 98.4 60 105C80 98.4 95 80.2 95 57V29L60 16Z" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"/>
-  <circle cx="60" cy="60" r="22" fill="#18181b" stroke="#e4e4e7" stroke-width="2.5"/>
-  <polygon points="60,46 66,54 63,63 57,63 54,54" fill="#10b981"/>
-  <circle cx="60" cy="60" r="14" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Sombra y Base del Escudo -->
+  <g filter="url(#glassGlow)">
+    <path d="M60 10 C86 10 102 24 102 44 C102 78 78 102 60 110 C42 102 18 78 18 44 C18 24 34 10 60 10 Z"
+          fill="url(#shieldBody)"
+          stroke="url(#shieldRim)"
+          stroke-width="2.5"
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- Reflejo Especular Superior -->
+  <path d="M60 13 C82 13 97 24 98 42 C78 46 42 42 22 42 C23 24 38 13 60 13 Z"
+        fill="url(#specularGlint)"/>
+
+  <!-- Borde Interno de Resonancia -->
+  <path d="M60 18 C80 18 94 28 94 45 C94 72 74 93 60 101 C46 93 26 72 26 45 C26 28 40 18 60 18 Z"
+        stroke="#ffffff"
+        stroke-opacity="0.25"
+        stroke-width="1.2"
+        fill="none"/>
+
+  <!-- Halo de Luz Central Neutro -->
+  <circle cx="60" cy="58" r="30" fill="url(#coreGlow)"/>
+
+  <!-- BALÓN DE FÚTBOL REAL 3D EN EL CENTRO (100% Neutro) -->
+  <g transform="translate(60, 58) scale(0.48)">
+    <circle cx="0" cy="0" r="44" fill="url(#ballSphereShield)" stroke="#ffffff" stroke-width="2.5" filter="drop-shadow(0 4px 8px rgba(0,0,0,0.6))"/>
+
+    <!-- Costuras del Balón -->
+    <path d="M0 -16 L0 -32
+             M15.2 -4.9 L29 -12
+             M9.4 12.9 L24 26
+             M-9.4 12.9 L-24 26
+             M-15.2 -4.9 L-29 -12"
+          stroke="#18181b" stroke-width="2.8" stroke-linecap="round"/>
+
+    <path d="M-17 -37 L0 -32 L17 -37
+             M37 -23 L29 -12 L42 3
+             M36 20 L24 26 L18 41
+             M-18 41 L-24 26 L-36 20
+             M-42 3 L-29 -12 L-37 -23"
+          stroke="#18181b" stroke-width="2.8" stroke-linecap="round"/>
+
+    <!-- Pentágono Central Real -->
+    <polygon points="0,-16 15.2,-4.9 9.4,12.9 -9.4,12.9 -15.2,-4.9"
+             fill="url(#patchCenterShield)"
+             stroke="#27272a"
+             stroke-width="1.8"/>
+
+    <!-- Parches Laterales -->
+    <path d="M-17 -37 C-6 -43 6 -43 17 -37 L0 -32 Z" fill="#18181b" stroke="#27272a" stroke-width="1.2"/>
+    <path d="M37 -23 C43 -15 45 -6 42 3 L29 -12 Z" fill="#18181b" stroke="#27272a" stroke-width="1.2"/>
+    <path d="M36 20 C30 30 23 37 18 41 L24 26 Z" fill="#18181b" stroke="#27272a" stroke-width="1.2"/>
+    <path d="M-18 41 C-23 37 -30 30 -36 20 L-24 26 Z" fill="#18181b" stroke="#27272a" stroke-width="1.2"/>
+    <path d="M-42 3 C-45 -6 -43 -15 -37 -23 L-29 -12 Z" fill="#18181b" stroke="#27272a" stroke-width="1.2"/>
+
+    <!-- Reflejo Superior de Luz -->
+    <ellipse cx="-12" cy="-24" rx="14" ry="8" transform="rotate(-30 -12 -24)" fill="#ffffff" opacity="0.65"/>
+  </g>
+
+  <!-- Destellos y Estrellas Plateadas -->
+  <circle cx="36" cy="30" r="1.5" fill="#ffffff" opacity="0.95"/>
+  <circle cx="84" cy="30" r="1.5" fill="#ffffff" opacity="0.95"/>
+  <circle cx="60" cy="98" r="2" fill="#ffffff" opacity="0.85"/>
 </svg>

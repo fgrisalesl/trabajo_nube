@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UNAL SPORTS · Mini Marcador</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-deep: #090a0d;
+      --glass-surface: rgba(255, 255, 255, 0.04);
+      --glass-border: rgba(255, 255, 255, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-deep);
+      color: #ffffff;
+      font-family: 'Outfit', -apple-system, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100vh;
+      padding: 12px 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Fondo de Vidrio Ahumado con sutil brillo */
+    .popup-glass-card {
+      background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.08) 0%, rgba(15, 17, 23, 0.75) 100%);
+      border: 1px solid var(--glass-border);
+      border-radius: 18px;
+      padding: 12px 14px;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 16px 36px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Barra Superior */
+    .popup-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-logo {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+    }
+
+    .brand-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 11px;
+      letter-spacing: -0.01em;
+      color: #ffffff;
+    }
+
+    .live-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #6ee7b7;
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .live-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 6px #10b981;
+    }
+
+    .minute-tag {
+      font-family: 'Orbitron', monospace;
+      font-weight: 800;
+      font-size: 11px;
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 2px 8px;
+      border-radius: 9999px;
+    }
+
+    /* Marcador Principal */
+    .scoreboard-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .team-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .team-badge-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      margin-bottom: 4px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .team-badge {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .team-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      color: #f4f4f5;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100px;
+    }
+
+    /* Números de Marcador en Orbitron */
+    .score-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 6px 14px;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    }
+
+    .score-digit {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+      font-size: 30px;
+      color: #ffffff;
+      line-height: 1;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .score-colon {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.4);
+      line-height: 1;
+      font-weight: 300;
+    }
+
+    .score-pop {
+      transform: scale(1.35) !important;
+      color: #34d399 !important;
+    }
+
+    /* Barra Inferior */
+    .popup-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 10px;
+      color: #a1a1aa;
+    }
+
+    .latest-action {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .btn-focus {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 9px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-focus:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+  </style>
+</head>
+<body>
+  <div class="popup-glass-card">
+    <!-- Top Bar -->
+    <div class="popup-top">
+      <div class="brand-box">
+        <img src="/api/icon/logo" alt="" class="brand-logo" />
+        <span class="brand-title">UNAL SPORTS</span>
+        <span class="live-tag">
+          <span class="live-dot"></span>
+          EN VIVO
+        </span>
+      </div>
+      <div class="minute-tag">
+        <span id="pop-minute">0</span>'
+      </div>
+    </div>
+
+    <!-- Center Scoreboard -->
+    <div class="scoreboard-row">
+      <!-- Local Team -->
+      <div class="team-col">
+        <div class="team-badge-box">
+          <img id="pop-home-badge" src="/api/badge?team=Equipo%20Local" alt="" class="team-badge" onerror="this.src='/escudos/default.svg'" />
+        </div>
+        <span id="pop-home-team" class="team-name">Equipo Local</span>
+      </div>
+
+      <!-- Score Display -->
+      <div class="score-center">
+        <span id="pop-home-score" class="score-digit">0</span>
+        <span class="score-colon">:</span>
+        <span id="pop-away-score" class="score-digit">0</span>
+      </div>
+
+      <!-- Away Team -->
+      <div class="team-col">
+        <div class="team-badge-box">
+          <img id="pop-away-badge" src="/api/badge?team=Equipo%20Visitante" alt="" class="team-badge" onerror="this.src='/escudos/default.svg'" />
+        </div>
+        <span id="pop-away-team" class="team-name">Equipo Visitante</span>
+      </div>
+    </div>
+
+    <!-- Bottom Action Pill -->
+    <div class="popup-footer">
+      <div id="pop-status-text" class="latest-action">
+        ⚡ Conectado · Esperando inicio del encuentro
+      </div>
+      <button type="button" class="btn-focus" onclick="focusMainApp()" title="Volver a la pestaña principal">
+        Expandir ↗
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let currentHome = '';
+    let currentAway = '';
+
+    function animateScore(id, val) {
+      const el = document.getElementById(id);
+      if (el && el.textContent !== String(val)) {
+        el.textContent = val;
+        el.classList.add('score-pop');
+        setTimeout(() => el.classList.remove('score-pop'), 450);
+      }
+    }
+
+    function updateMatch(match) {
+      if (!match) return;
+      if (match.home_team && match.home_team !== currentHome) {
+        currentHome = match.home_team;
+        document.getElementById('pop-home-team').textContent = match.home_team;
+        document.getElementById('pop-home-badge').src = `/api/badge?team=${encodeURIComponent(match.home_team)}&t=${Date.now()}`;
+      }
+      if (match.away_team && match.away_team !== currentAway) {
+        currentAway = match.away_team;
+        document.getElementById('pop-away-team').textContent = match.away_team;
+        document.getElementById('pop-away-badge').src = `/api/badge?team=${encodeURIComponent(match.away_team)}&t=${Date.now()}`;
+      }
+      animateScore('pop-home-score', match.home_score);
+      animateScore('pop-away-score', match.away_score);
+      document.getElementById('pop-minute').textContent = match.minute;
+    }
+
+    function updateActionText(ev) {
+      const el = document.getElementById('pop-status-text');
+      if (!el || !ev) return;
+      let icon = '⚡';
+      if (ev.type === 'GOAL') icon = '⚽';
+      else if (ev.type === 'PENALTY') icon = '🥅';
+      else if (ev.type === 'YELLOW_CARD') icon = '🟨';
+      else if (ev.type === 'RED_CARD') icon = '🟥';
+      else if (ev.type === 'SUBSTITUTION') icon = '🔄';
+
+      const player = ev.player ? ` (${ev.player})` : '';
+      el.textContent = `${icon} ${ev.minute}' ${ev.type} ${player} - ${ev.description || ''}`;
+    }
+
+    function focusMainApp() {
+      if (window.opener && !window.opener.closed) {
+        window.opener.focus();
+      } else {
+        window.open('/', '_blank');
+      }
+    }
+
+    async function pollSummary() {
+      try {
+        const res = await fetch('/api/summary');
+        const data = await res.json();
+        updateMatch(data.match);
+        if (data.events && data.events.length > 0) {
+          updateActionText(data.events[0]);
+        }
+      } catch (e) {}
+    }
+
+    // Conexión SSE
+    let evtSource = null;
+    function connectSSE() {
+      if (evtSource) evtSource.close();
+      evtSource = new EventSource('/api/stream/vivo?vid=popup_' + Date.now().toString(36));
+      evtSource.addEventListener('match_event', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.match) updateMatch(payload.match);
+          if (payload.event) updateActionText(payload.event);
+        } catch(err) {}
+      });
+      evtSource.addEventListener('connected', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.match) updateMatch(payload.match);
+        } catch(err) {}
+      });
+      evtSource.onerror = () => {
+        setTimeout(connectSSE, 2000);
+      };
+    }
+
+    pollSummary();
+    connectSSE();
+    setInterval(pollSummary, 1200);
+  </script>
+</body>
+</html>

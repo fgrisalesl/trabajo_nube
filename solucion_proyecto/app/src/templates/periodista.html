@@ -8,6 +8,12 @@
   <link rel="shortcut icon" href="/api/icon/logo" />
   <link rel="apple-touch-icon" href="/api/icon/logo" />
   <link rel="stylesheet" href="/static/tailwind.min.css" />
+
+  <!-- TIPOGRAFÍA FUTURISTA LUXURY: Syne + Outfit + Orbitron -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+
   <style>
     /* ==========================================================================
        ULTRA-CLEAR 3D GLASSMORPHISM & FLOATING 3D BUBBLES · UNAL SPORTS STUDIO
@@ -15,14 +21,15 @@
        ========================================================================== */
 
     :root {
-      --bg-deep: #050b16;
-      --sky-bright: #38bdf8;
-      --cyan-electric: #00e5ff;
-      --ice-white: #f8fafc;
+      --bg-deep: #090a0d;
+      --silver-bright: #ffffff;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.85);
+      --text-muted: rgba(255, 255, 255, 0.55);
       
-      --glass-clear: linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.02) 100%), rgba(12, 20, 38, 0.22);
-      --bevel-light: inset 0 1.5px 1px rgba(255, 255, 255, 0.8), inset 1px 0 1px rgba(255, 255, 255, 0.45), inset 0 -1px 1.5px rgba(255, 255, 255, 0.15);
-      --glass-shadow: 0 25px 60px -12px rgba(0, 8, 22, 0.55), 0 0 30px rgba(56, 189, 248, 0.1);
+      --glass-clear: rgba(255, 255, 255, 0.05);
+      --bevel-light: inset 0 1.5px 1px rgba(255, 255, 255, 0.35), inset 1px 0 1px rgba(255, 255, 255, 0.15), inset 0 -1px 1px rgba(0, 0, 0, 0.4);
+      --glass-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.7);
       
       --spring-apple: cubic-bezier(0.16, 1, 0.3, 1);
       --spring-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -35,8 +42,8 @@
       padding: 0;
       min-height: 100vh;
       background-color: var(--bg-deep);
-      color: var(--ice-white);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Plus Jakarta Sans", system-ui, sans-serif;
+      color: var(--text-primary);
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       font-variant-numeric: tabular-nums;
@@ -44,7 +51,19 @@
       position: relative;
     }
 
-    /* Ecosistema de Burbujas 3D Flotantes (GPU) */
+    /* Tipografía Escultórica de Vanguardia para Títulos, Equipos y Cabecera */
+    h1, h2, h3, h4, .font-display, #studio-home-name, #studio-away-name, .brand-logo-text {
+      font-family: 'Syne', -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.015em;
+    }
+
+    /* Tipografía Digital HUD Futurista para Marcador y Contadores: Orbitron */
+    .font-mono, #studio-min, #header-live-readers, #studio-home, #studio-away, .stat-num {
+      font-family: 'Orbitron', 'Space Mono', SFMono-Regular, Menlo, monospace !important;
+      letter-spacing: 0.03em;
+    }
+
+    /* Ecosistema de Burbujas 3D Totalmente Transparentes (Cero Color / Cero Azul) */
     .liquid-background {
       position: fixed;
       inset: 0;
@@ -52,29 +71,33 @@
       pointer-events: none;
       z-index: 0;
       background: 
-        radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.28) 0%, transparent 45%),
-        radial-gradient(circle at 80% 30%, rgba(0, 229, 255, 0.22) 0%, transparent 45%),
-        radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.25) 0%, transparent 50%),
-        #050b16;
+        radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
+        radial-gradient(circle at 82% 28%, rgba(255, 255, 255, 0.04) 0%, transparent 45%),
+        radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+        #090a0d;
     }
 
     .bubble-3d {
       position: absolute;
       border-radius: 50%;
+      overflow: hidden;
       background: radial-gradient(
         circle at 32% 30%,
-        rgba(255, 255, 255, 0.85) 0%,
-        rgba(186, 230, 253, 0.55) 18%,
-        rgba(56, 189, 248, 0.28) 45%,
-        rgba(2, 132, 199, 0.12) 72%,
-        rgba(255, 255, 255, 0.35) 100%
+        rgba(255, 255, 255, 0.35) 0%,
+        rgba(255, 255, 255, 0.08) 22%,
+        rgba(255, 255, 255, 0.02) 55%,
+        rgba(0, 0, 0, 0.30) 78%,
+        rgba(255, 255, 255, 0.20) 100%
       );
-      border: 1px solid rgba(255, 255, 255, 0.55);
       box-shadow: 
-        inset -10px -10px 24px rgba(2, 80, 150, 0.4),
-        inset 6px 6px 16px rgba(255, 255, 255, 0.9),
-        inset 0 0 15px rgba(0, 229, 255, 0.45),
-        0 15px 35px rgba(14, 165, 233, 0.28);
+        inset 0 0 0 1.2px rgba(255, 255, 255, 0.35),
+        inset -8px -8px 20px rgba(0, 0, 0, 0.65),
+        inset 6px 6px 14px rgba(255, 255, 255, 0.35),
+        0 14px 35px rgba(0, 0, 0, 0.6);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+      outline: 1px solid transparent;
       will-change: transform;
     }
 
@@ -86,7 +109,7 @@
       width: 28%;
       height: 16%;
       border-radius: 50%;
-      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0) 75%);
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 75%);
       transform: rotate(-35deg);
     }
 
@@ -98,7 +121,9 @@
       width: 18%;
       height: 10%;
       border-radius: 50%;
-      background: radial-gradient(ellipse at center, rgba(103, 232, 249, 0.8) 0%, transparent 75%);
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.45) 0%, transparent 75%);
+      transform: rotate(-35deg);
+    }
       transform: rotate(-35deg);
     }
 
@@ -140,128 +165,127 @@
       z-index: 10;
     }
 
-    /* Barra Superior de Vidrio Transparente */
+    /* Barra Superior de Vidrio Ahumado Transparente */
     .fm-nav {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 100%), rgba(8, 15, 30, 0.35) !important;
-      backdrop-filter: blur(28px) saturate(220%) !important;
-      -webkit-backdrop-filter: blur(28px) saturate(220%) !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.32) !important;
-      box-shadow: 0 10px 35px -10px rgba(0, 8, 22, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+      background: rgba(14, 16, 22, 0.65) !important;
+      backdrop-filter: blur(28px) saturate(140%) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
     }
 
-    /* Placas Maestras de Vidrio Neutro Transparente */
+    /* Placas Maestras de Vidrio Neutro Ultra-Transparente */
     .fm-surface {
       background: var(--glass-clear) !important;
-      backdrop-filter: blur(26px) saturate(230%) !important;
-      -webkit-backdrop-filter: blur(26px) saturate(230%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.45) !important;
+      backdrop-filter: blur(28px) saturate(140%) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.14) !important;
       box-shadow: var(--glass-shadow), var(--bevel-light) !important;
     }
 
     /* Entradas de Texto en Vidrio Translúcido */
     .fm-input {
-      background: rgba(6, 14, 30, 0.42) !important;
+      background: rgba(255, 255, 255, 0.06) !important;
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.38) !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
       color: #ffffff !important;
-      box-shadow: inset 0 1px 2px rgba(0, 8, 20, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
       transition: all 0.2s var(--spring-apple) !important;
     }
     .fm-input:focus {
       border-color: #ffffff !important;
-      box-shadow: 0 0 20px rgba(56, 189, 248, 0.45), inset 0 1px 0 #ffffff !important;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2), inset 0 1px 0 #ffffff !important;
       outline: none !important;
     }
 
     /* Pestañas de Modo */
     .fm-mode-active {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.32) 0%, rgba(56, 189, 248, 0.35) 100%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.65) !important;
+      background: rgba(255, 255, 255, 0.18) !important;
+      border: 1px solid rgba(255, 255, 255, 0.35) !important;
       color: #ffffff !important;
       font-weight: 800 !important;
-      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35), inset 0 1px 0 #ffffff !important;
-      text-shadow: 0 1px 3px rgba(0, 10, 28, 0.5);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
     }
     .fm-mode-inactive {
       background: transparent !important;
-      color: rgba(255, 255, 255, 0.75) !important;
+      color: rgba(255, 255, 255, 0.65) !important;
       font-weight: 600 !important;
     }
     .fm-mode-inactive:hover {
       color: #ffffff !important;
-      background: rgba(255, 255, 255, 0.1) !important;
+      background: rgba(255, 255, 255, 0.08) !important;
     }
 
     /* Botones de Acción de Jugadas en Vidrio Transparente */
     .action-choice-btn {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 100%), rgba(8, 16, 32, 0.28) !important;
-      border: 1px solid rgba(255, 255, 255, 0.38) !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.14) !important;
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      color: #f1f5f9 !important;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 6px 16px rgba(0, 8, 22, 0.35) !important;
+      color: #e2e8f0 !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
       transition: all 0.22s var(--spring-apple) !important;
     }
     .action-choice-btn:hover {
       transform: translateY(-2px);
-      border-color: rgba(255, 255, 255, 0.65) !important;
+      border-color: rgba(255, 255, 255, 0.35) !important;
       color: #ffffff !important;
-      box-shadow: inset 0 1px 0 #ffffff, 0 10px 22px rgba(56, 189, 248, 0.28) !important;
+      background: rgba(255, 255, 255, 0.09) !important;
     }
     .action-choice-btn.is-selected {
       transform: translateY(-2px);
       color: #ffffff !important;
     }
     .action-choice-btn.is-selected[data-tone="emerald"] {
-      background: linear-gradient(135deg, rgba(0, 229, 255, 0.32) 0%, rgba(0, 229, 255, 0.1) 100%) !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 0 25px rgba(0, 229, 255, 0.45), inset 0 1px 0 #ffffff !important;
+      background: rgba(16, 185, 129, 0.22) !important;
+      border-color: #34d399 !important;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
     }
     .action-choice-btn.is-selected[data-tone="emerald"] .choice-dot {
-      background: #00e5ff !important;
+      background: #34d399 !important;
       border-color: #ffffff !important;
-      box-shadow: 0 0 12px #00e5ff !important;
+      box-shadow: 0 0 8px #34d399 !important;
     }
     .action-choice-btn.is-selected[data-tone="sky"] {
-      background: linear-gradient(135deg, rgba(56, 189, 248, 0.32) 0%, rgba(56, 189, 248, 0.1) 100%) !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 0 25px rgba(56, 189, 248, 0.45), inset 0 1px 0 #ffffff !important;
+      background: rgba(255, 255, 255, 0.18) !important;
+      border-color: rgba(255, 255, 255, 0.6) !important;
+      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
     }
     .action-choice-btn.is-selected[data-tone="sky"] .choice-dot {
-      background: #38bdf8 !important;
+      background: #ffffff !important;
       border-color: #ffffff !important;
-      box-shadow: 0 0 12px #38bdf8 !important;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.7) !important;
     }
     .action-choice-btn.is-selected[data-tone="rose"] {
-      background: linear-gradient(135deg, rgba(244, 63, 94, 0.32) 0%, rgba(244, 63, 94, 0.1) 100%) !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 0 25px rgba(244, 63, 94, 0.45), inset 0 1px 0 #ffffff !important;
+      background: rgba(244, 63, 94, 0.22) !important;
+      border-color: #fb7185 !important;
+      box-shadow: 0 4px 14px rgba(244, 63, 94, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
     }
     .action-choice-btn.is-selected[data-tone="rose"] .choice-dot {
-      background: #f43f5e !important;
+      background: #fb7185 !important;
       border-color: #ffffff !important;
-      box-shadow: 0 0 12px #f43f5e !important;
+      box-shadow: 0 0 8px #fb7185 !important;
     }
     .action-choice-btn.is-selected[data-tone="amber"] {
-      background: linear-gradient(135deg, rgba(251, 191, 36, 0.32) 0%, rgba(251, 191, 36, 0.1) 100%) !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 0 25px rgba(251, 191, 36, 0.45), inset 0 1px 0 #ffffff !important;
+      background: rgba(251, 191, 36, 0.22) !important;
+      border-color: #fbbf24 !important;
+      box-shadow: 0 4px 14px rgba(251, 191, 36, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
     }
     .action-choice-btn.is-selected[data-tone="amber"] .choice-dot {
       background: #fbbf24 !important;
       border-color: #ffffff !important;
-      box-shadow: 0 0 12px #fbbf24 !important;
+      box-shadow: 0 0 8px #fbbf24 !important;
     }
     .action-choice-btn.is-selected[data-tone="zinc"] {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.08) 100%) !important;
+      background: rgba(255, 255, 255, 0.16) !important;
       border-color: #ffffff !important;
-      box-shadow: 0 0 25px rgba(255, 255, 255, 0.35), inset 0 1px 0 #ffffff !important;
+      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
     }
     .action-choice-btn.is-selected[data-tone="zinc"] .choice-dot {
       background: #ffffff !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 0 12px #ffffff !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: 0 0 8px #ffffff !important;
     }
 
     @keyframes wave {
@@ -270,8 +294,8 @@
     }
     .voice-bar {
       width: 3.5px;
-      background: #38bdf8;
-      box-shadow: 0 0 8px #38bdf8;
+      background: #ffffff;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
       border-radius: 999px;
       animation: wave 0.75s infinite ease-in-out;
     }
@@ -301,8 +325,8 @@
       <div class="flex items-center gap-3">
         <img src="/api/icon/logo" alt="Logo" class="w-8 h-8 object-contain rounded-lg" />
         <div class="flex items-center gap-2.5">
-          <span class="font-bold text-sm sm:text-base text-white tracking-tight">UNAL SPORTS</span>
-          <span class="px-2 py-0.5 rounded bg-white/[0.06] border border-white/10 text-[11px] font-semibold text-zinc-300 uppercase tracking-wider">
+          <span class="brand-logo-text font-black text-sm sm:text-base text-white tracking-tight">UNAL SPORTS</span>
+          <span class="px-2 py-0.5 rounded bg-white/[0.08] border border-white/15 text-[11px] font-semibold text-zinc-300 uppercase tracking-wider">
             Consola de Prensa
           </span>
         </div>
@@ -311,7 +335,7 @@
       <div class="flex items-center gap-2.5 text-xs">
         <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold">
           <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span><strong id="header-live-readers" class="text-white font-mono">0</strong> en vivo</span>
+          <span><strong id="header-live-readers" class="text-white font-mono font-bold">0</strong> en vivo</span>
         </span>
         <button type="button" id="btn-reset-board" onclick="resetBlankBoard()"
           class="hidden px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold transition">
@@ -322,7 +346,7 @@
           Cerrar Cabina
         </button>
         <a href="/" target="_blank"
-          class="px-3.5 py-1.5 rounded-lg bg-white text-black font-semibold hover:bg-zinc-200 transition">
+          class="px-3.5 py-1.5 rounded-lg bg-white/[0.1] hover:bg-white/[0.18] border border-white/25 text-white font-semibold transition">
           Ver Portal Público ↗
         </a>
       </div>
@@ -333,7 +357,7 @@
   <section id="journalist-auth-gate" class="max-w-md mx-auto px-4 pt-16 pb-12">
     <div class="fm-surface rounded-2xl p-7 space-y-5 shadow-2xl">
       <div class="flex items-center gap-3.5">
-        <img src="/api/icon/logo" alt="Logo" class="w-11 h-11 object-contain rounded-xl bg-black/40 p-1.5 border border-white/10" />
+        <img src="/api/icon/logo" alt="Logo" class="w-11 h-11 object-contain rounded-xl bg-white/[0.08] border border-white/15 p-1.5 shadow-sm" />
         <div>
           <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Acceso Exclusivo · 1 Sesión Activa</span>
           <h1 class="text-lg font-bold text-white leading-tight mt-0.5">Cabina de Transmisión</h1>
@@ -357,12 +381,12 @@
         <div id="login-error-box" class="hidden rounded-xl p-3 text-xs font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30"></div>
 
         <button type="submit" id="btn-login-submit"
-          class="w-full py-3.5 px-5 rounded-xl font-bold text-sm bg-emerald-400 text-black hover:bg-emerald-300 transition">
+          class="w-full py-3.5 px-5 rounded-xl font-bold text-sm bg-white/[0.12] hover:bg-white/[0.2] border border-white/25 text-white transition shadow-md">
           Desbloquear Cabina de Prensa
         </button>
       </form>
 
-      <p class="text-[11px] text-zinc-500 leading-relaxed text-center">
+      <p class="text-[11px] text-zinc-400 leading-relaxed text-center">
         Solo puede haber <strong>un periodista conectado a la vez</strong> para proteger la integridad del marcador en tiempo real.
       </p>
     </div>
@@ -378,12 +402,12 @@
           <div class="flex items-center gap-2.5 text-sm text-zinc-300 mt-1.5">
             <img id="studio-home-badge" src="/api/badge?team=Equipo%20Local" alt="" class="w-6 h-6 object-contain" onerror="this.src='/escudos/default.svg'" />
             <span id="studio-home-name" class="font-bold text-white">Equipo Local</span>
-            <strong id="studio-home" class="text-emerald-400 font-extrabold text-xl mx-1 font-mono">0</strong>
+            <strong id="studio-home" class="text-white font-extrabold text-xl mx-1 font-mono">0</strong>
             <span class="text-zinc-600 font-bold">-</span>
-            <strong id="studio-away" class="text-emerald-400 font-extrabold text-xl mx-1 font-mono">0</strong>
+            <strong id="studio-away" class="text-white font-extrabold text-xl mx-1 font-mono">0</strong>
             <span id="studio-away-name" class="font-bold text-white">Equipo Visitante</span>
             <img id="studio-away-badge" src="/api/badge?team=Equipo%20Visitante" alt="" class="w-6 h-6 object-contain" onerror="this.src='/escudos/default.svg'" />
-            <span class="ml-1 px-2 py-0.5 rounded bg-black/40 border border-white/10 text-xs font-mono font-bold text-zinc-200"><span id="studio-min">0</span>'</span>
+            <span class="ml-1 px-2 py-0.5 rounded bg-white/[0.08] border border-white/15 text-xs font-mono font-bold text-white shadow-sm"><span id="studio-min">0</span>'</span>
           </div>
         </div>
       </div>
@@ -396,7 +420,7 @@
         <input type="text" id="setup-away" placeholder="Equipo Visitante"
           class="fm-input rounded-lg px-3 py-2 text-white w-36 sm:w-40" />
         <button type="button" onclick="applyMatchTeams()"
-          class="px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-white font-semibold transition">
+          class="px-3.5 py-2 rounded-lg bg-white/[0.1] hover:bg-white/[0.18] border border-white/20 text-white font-semibold transition shadow-sm">
           Fijar Equipos
         </button>
       </div>
@@ -433,24 +457,24 @@
         </div>
 
         <!-- 1. Fuente de Video o Audio del Partido -->
-        <div class="rounded-xl bg-black/30 border border-white/10 p-4 space-y-3">
+        <div class="rounded-xl bg-white/[0.04] border border-white/10 p-4 space-y-3 shadow-sm">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <label class="text-xs font-bold text-zinc-200 uppercase tracking-wide">
               1. Fuente de Video o Audio del Partido
             </label>
-            <label id="lbl-upload-media" class="cursor-pointer px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white transition">
+            <label id="lbl-upload-media" class="cursor-pointer px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white transition shadow-sm">
               Subir Video / Audio
               <input type="file" id="media-upload-input" accept="video/*,audio/*" class="hidden" onchange="uploadMediaFile(event)" />
             </label>
           </div>
 
           <!-- Medidor de Espacio Disponible para Videos (Límite 1000 MB) -->
-          <div class="rounded-lg bg-white/[0.03] border border-white/10 px-3 py-2 space-y-1.5">
+          <div class="rounded-lg bg-black/40 border border-white/10 px-3 py-2 space-y-1.5">
             <div class="flex items-center justify-between text-[11px]">
               <span class="text-zinc-400 font-medium">Capacidad de Almacenamiento de Videos:</span>
               <span id="media-storage-text" class="font-mono font-semibold text-emerald-400">Calculando...</span>
             </div>
-            <div class="w-full h-1.5 rounded-full bg-black/60 overflow-hidden">
+            <div class="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
               <div id="media-storage-bar" class="h-full bg-emerald-400 transition-all duration-300" style="width: 0%"></div>
             </div>
           </div>
@@ -481,14 +505,14 @@
         </div>
 
         <!-- 2. Micrófono en Vivo + Entrada de Relato -->
-        <div class="rounded-xl bg-black/30 border border-white/10 p-4 space-y-3">
+        <div class="rounded-xl bg-white/[0.04] border border-white/10 p-4 space-y-3 shadow-sm">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="text-xs font-bold text-zinc-200 uppercase tracking-wide">
               2. Narración en Vivo por Micrófono o Texto
             </span>
             <div class="flex items-center gap-2">
               <button type="button" id="btn-mic" onclick="toggleMicrophoneNarration()"
-                class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition">
+                class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition shadow-sm">
                 <img src="/api/icon/microfono" alt="" class="w-4 h-4 object-contain" />
                 <span id="btn-mic-label">Narrar por Micrófono</span>
               </button>
@@ -514,7 +538,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-2 pt-1">
               <button type="button" onclick="copyCurrentOriginForMic()"
-                class="px-3 py-1.5 rounded-lg bg-amber-400 text-black font-bold hover:bg-amber-300 transition">
+                class="px-3 py-1.5 rounded-lg bg-amber-400 text-black font-bold hover:bg-amber-300 transition shadow-sm">
                 Copiar URL de hoy
               </button>
               <button type="button" onclick="document.getElementById('mobile-mic-input').click()"
@@ -530,7 +554,7 @@
               placeholder='Escribe el relato (ej: "Minuto 53, gol de Leroy Sané para el Bayern Múnich")'
               class="fm-input flex-1 rounded-lg px-3.5 py-2.5 text-xs text-white" />
             <button type="button" onclick="sendTranscriptToAI()" id="btn-send-ai"
-              class="px-4 py-2.5 rounded-lg font-bold text-xs bg-emerald-400 text-black hover:bg-emerald-300 transition shrink-0">
+              class="px-4 py-2.5 rounded-lg font-bold text-xs bg-white/[0.12] hover:bg-white/[0.2] border border-white/25 text-white transition shrink-0 shadow-md">
               Procesar Relato
             </button>
           </div>
@@ -542,7 +566,7 @@
             <span class="font-bold text-zinc-300 uppercase tracking-wide text-[11px]">Registro de Actividad en Vivo</span>
             <span id="ai-status-text" class="text-zinc-500 font-mono text-[11px]">En espera</span>
           </div>
-          <div id="ai-log-container" class="rounded-xl bg-black/50 border border-white/10 p-3.5 h-56 overflow-y-auto space-y-2 font-mono text-xs">
+          <div id="ai-log-container" class="rounded-xl bg-black/50 border border-white/10 text-zinc-300 p-3.5 h-56 overflow-y-auto space-y-2 font-mono text-xs shadow-inner">
             <div class="text-zinc-500">
               Sistema listo en 0 - 0. Reproduce un video del partido o utiliza el micrófono para transmitir jugadas en tiempo real.
             </div>
@@ -662,7 +686,7 @@
           </div>
 
           <button type="submit"
-            class="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-emerald-400 text-black hover:bg-emerald-300 transition">
+            class="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-white/[0.12] hover:bg-white/[0.2] border border-white/25 text-white transition shadow-md">
             Publicar Jugada en Vivo
           </button>
 
@@ -685,7 +709,7 @@
           </div>
 
           <button onclick="triggerPeakSimulation()" id="btn-sim-peak"
-            class="w-full py-3 px-4 rounded-xl font-bold text-xs bg-amber-400 text-black hover:bg-amber-300 transition">
+            class="w-full py-3 px-4 rounded-xl font-bold text-xs bg-amber-400 text-black hover:bg-amber-300 transition shadow-md">
             Ejecutar Simulación de 1,000 Lectores Concurrentes
           </button>
 
@@ -719,9 +743,10 @@
             </div>
             <div class="flex justify-between">
               <span>Caché de Resumen:</span>
-              <strong id="metric-cache" class="text-sky-400">Redis</strong>
+              <strong id="metric-cache" class="text-white font-bold">Redis</strong>
             </div>
           </div>
+        </div>
         </div>
 
       </section>
@@ -937,7 +962,7 @@
         await checkJournalistAuthStatus();
         return;
       }
-      appendAiLog(`<div class="text-sky-300">Equipos actualizados: <strong>${h || 'Local'} vs ${a || 'Visitante'}</strong></div>`);
+      appendAiLog(`<div class="text-zinc-200">Equipos actualizados: <strong>${h || 'Local'} vs ${a || 'Visitante'}</strong></div>`);
       syncStudioStatus();
     }
 

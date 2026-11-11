@@ -1,5 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-  <path d="M3 19V6C3 5.44772 3.44772 5 4 5H20C20.5523 5 21 5.44772 21 6V19" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
-  <circle cx="12" cy="14" r="3.2" fill="#38BDF8"/>
-  <path d="M1 19H23" stroke="#64748B" stroke-width="1.8" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <!-- Gradiente de Portería de Platino / Cromo 3D -->
+    <linearGradient id="postGrad" x1="10" y1="15" x2="90" y2="75" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#e4e4e7"/>
+      <stop offset="70%" stop-color="#a1a1aa"/>
+      <stop offset="100%" stop-color="#52525b"/>
+    </linearGradient>
+
+    <!-- Red de Portería Translúcida Ahumada Neutra -->
+    <linearGradient id="netGrad" x1="20" y1="20" x2="80" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#18181b" stop-opacity="0.25"/>
+    </linearGradient>
+
+    <filter id="goalShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.55"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#ffffff" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#goalShadow)">
+    <!-- Red de Fondo de la Portería -->
+    <path d="M16 26 L26 14 L74 14 L84 26 L80 72 L20 72 Z"
+          fill="url(#netGrad)" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.35"/>
+    <!-- Malla de la Red Metálica Plateada -->
+    <path d="M26 14 L20 72 M38 14 L35 72 M50 14 L50 72 M62 14 L65 72 M74 14 L80 72
+             M23 32 L77 32 M21 46 L79 46 M20 60 L80 60"
+          stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.3"/>
+
+    <!-- Marcos de Portería 3D (Postes y Larguero) -->
+    <!-- Larguero -->
+    <rect x="12" y="24" width="76" height="6" rx="2.5" fill="url(#postGrad)" stroke="#ffffff" stroke-width="1.2"/>
+    <!-- Poste Izquierdo -->
+    <rect x="12" y="26" width="6" height="52" rx="2.5" fill="url(#postGrad)" stroke="#ffffff" stroke-width="1.2"/>
+    <!-- Poste Derecho -->
+    <rect x="82" y="26" width="6" height="52" rx="2.5" fill="url(#postGrad)" stroke="#ffffff" stroke-width="1.2"/>
+
+    <!-- Línea del Área de Gol -->
+    <line x1="6" y1="78" x2="94" y2="78" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Punto del Penal Radiante Blanco -->
+    <ellipse cx="50" cy="78" rx="8" ry="4" fill="#ffffff" opacity="0.3" filter="drop-shadow(0 0 3px #ffffff)"/>
+    <ellipse cx="50" cy="78" rx="5" ry="2.5" fill="#ffffff"/>
+
+    <!-- Balón de Penal en Primer Plano (Clásico 3D Neutro) -->
+    <g transform="translate(50, 68) scale(0.24)">
+      <circle cx="0" cy="0" r="44" fill="#ffffff" stroke="#71717a" stroke-width="2.5" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.5))"/>
+      <polygon points="0,-16 15.2,-4.9 9.4,12.9 -9.4,12.9 -15.2,-4.9" fill="#18181b"/>
+      <path d="M0 -16 L0 -32 M15.2 -4.9 L29 -12 M9.4 12.9 L24 26 M-9.4 12.9 L-24 26 M-15.2 -4.9 L-29 -12" stroke="#18181b" stroke-width="3"/>
+    </g>
+  </g>
 </svg>

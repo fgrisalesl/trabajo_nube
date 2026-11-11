@@ -1762,6 +1762,12 @@ def journalist_console():
     return render_template("periodista.html", hostname=HOSTNAME, service_role=SERVICE_ROLE)
 
 
+@app.get("/popup")
+@app.get("/mini")
+def mini_popup():
+    return render_template("popup.html", hostname=HOSTNAME, service_role="mini-hud")
+
+
 @app.get("/health")
 def health():
     redis_ok = False
@@ -1999,7 +2005,7 @@ def api_ui_icon(icon_name: str):
     }
     candidates = alias_map.get(raw, [raw])
     for stem in candidates:
-        for ext in [".png", ".webp", ".jpg", ".jpeg", ".svg"]:
+        for ext in [".svg", ".png", ".webp", ".jpg", ".jpeg"]:
             candidate_path = ICONOS_DIR / f"{stem}{ext}"
             if candidate_path.exists():
                 resp = send_from_directory(ICONOS_DIR, candidate_path.name)
