@@ -784,8 +784,48 @@
 
         </div>
 
+        <!-- Barra de Probabilidad de Victoria (Estilo Google) -->
+        <div id="win-prob-card" class="mt-6 max-w-xl mx-auto px-1 sm:px-3">
+          <div class="flex items-center justify-between text-xs font-bold mb-2 tracking-tight">
+            <!-- Local -->
+            <span class="flex items-center gap-1.5 text-cyan-400">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
+              <span id="prob-home-name" class="truncate max-w-[110px] sm:max-w-[160px] font-semibold">Equipo Local</span>
+              <span id="prob-home-val" class="font-mono text-white text-xs sm:text-sm font-extrabold ml-0.5">37%</span>
+            </span>
+            <!-- Empate -->
+            <span class="flex items-center gap-1.5 text-zinc-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+              <span class="font-semibold text-zinc-300">Empate</span>
+              <span id="prob-draw-val" class="font-mono text-zinc-200 text-xs sm:text-sm font-extrabold ml-0.5">30%</span>
+            </span>
+            <!-- Visitante -->
+            <span class="flex items-center gap-1.5 text-purple-400">
+              <span id="prob-away-val" class="font-mono text-white text-xs sm:text-sm font-extrabold mr-0.5">33%</span>
+              <span id="prob-away-name" class="truncate max-w-[110px] sm:max-w-[160px] font-semibold">Equipo Visitante</span>
+              <span class="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc]"></span>
+            </span>
+          </div>
+
+          <!-- Pista tricolor de la barra -->
+          <div class="relative w-full h-3 sm:h-3.5 bg-black/60 rounded-full p-0.5 border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] overflow-hidden flex items-center">
+            <div id="prob-bar-home" style="width: 37%;"
+                 class="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-l-full shadow-[0_0_12px_rgba(34,211,238,0.5)] transition-all duration-700 ease-out"
+                 title="Probabilidad Victoria Local"></div>
+            <div id="prob-bar-draw" style="width: 30%;"
+                 class="h-full bg-gradient-to-r from-slate-500 via-zinc-400 to-slate-500 transition-all duration-700 ease-out border-x border-black/40"
+                 title="Probabilidad Empate"></div>
+            <div id="prob-bar-away" style="width: 33%;"
+                 class="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-r-full shadow-[0_0_12px_rgba(192,132,252,0.5)] transition-all duration-700 ease-out"
+                 title="Probabilidad Victoria Visitante"></div>
+          </div>
+          <div class="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-zinc-400 font-semibold tracking-wider uppercase">
+            <span>Probabilidad de Victoria · Tiempo Real</span>
+          </div>
+        </div>
+
         <!-- Barra Dock Redistribuida de Resumen Estadístico -->
-        <div class="stat-dock grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-8">
+        <div class="stat-dock grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-6">
           
           <div class="stat-ice-chip">
             <div class="flex items-center gap-2.5">
@@ -1496,6 +1536,100 @@
       }
     }
 
+    let homeRedCards = 0;
+    let awayRedCards = 0;
+
+    function calcWinProbability(hScore, aScore, minute, hRed = 0, aRed = 0) {
+      const m = Math.max(0, Math.min(95, Number(minute) || 0));
+      const p = m / 90.0;
+      const diff = (Number(hScore) || 0) - (Number(aScore) || 0);
+      
+      let hProb = 0, dProb = 0, aProb = 0;
+
+      if (diff === 0) {
+        dProb = 30 + 56 * Math.pow(p, 1.4);
+        const rem = 100 - dProb;
+        const homeShare = 0.53 - 0.03 * p;
+        hProb = rem * homeShare;
+        aProb = rem * (1 - homeShare);
+      } else if (diff > 0) {
+        if (diff === 1) {
+          hProb = 58 + 38 * Math.pow(p, 1.2);
+          dProb = (100 - hProb) * (0.68 - 0.18 * p);
+          aProb = 100 - hProb - dProb;
+        } else {
+          const extra = Math.min(3, diff - 2);
+          hProb = 74 + (8 * extra) + (24 - 8 * extra) * Math.pow(p, 0.9);
+          hProb = Math.min(99, hProb);
+          dProb = (100 - hProb) * (0.65 - 0.25 * p);
+          aProb = 100 - hProb - dProb;
+        }
+      } else {
+        const absDiff = Math.abs(diff);
+        if (absDiff === 1) {
+          aProb = 55 + 40 * Math.pow(p, 1.2);
+          dProb = (100 - aProb) * (0.64 - 0.14 * p);
+          hProb = 100 - aProb - dProb;
+        } else {
+          const extra = Math.min(3, absDiff - 2);
+          aProb = 72 + (8 * extra) + (26 - 8 * extra) * Math.pow(p, 0.9);
+          aProb = Math.min(99, aProb);
+          dProb = (100 - aProb) * (0.65 - 0.25 * p);
+          hProb = 100 - aProb - dProb;
+        }
+      }
+
+      if (hRed > aRed) {
+        const penalty = Math.min(25, (hRed - aRed) * 12);
+        hProb = Math.max(1, hProb - penalty);
+        aProb += penalty * 0.75;
+        dProb += penalty * 0.25;
+      } else if (aRed > hRed) {
+        const penalty = Math.min(25, (aRed - hRed) * 12);
+        aProb = Math.max(1, aProb - penalty);
+        hProb += penalty * 0.75;
+        dProb += penalty * 0.25;
+      }
+
+      let rH = Math.round(hProb);
+      let rA = Math.round(aProb);
+      rH = Math.max(1, Math.min(98, rH));
+      rA = Math.max(1, Math.min(98, rA));
+      let rD = 100 - rH - rA;
+      if (rD < 1) {
+        rD = 1;
+        if (rH >= rA) rH = 100 - rA - rD;
+        else rA = 100 - rH - rD;
+      }
+      return { home: rH, draw: rD, away: rA };
+    }
+
+    function updateWinProbability(match) {
+      if (!match) return;
+      const probs = calcWinProbability(match.home_score, match.away_score, match.minute, homeRedCards, awayRedCards);
+
+      const barH = document.getElementById('prob-bar-home');
+      const barD = document.getElementById('prob-bar-draw');
+      const barA = document.getElementById('prob-bar-away');
+
+      if (barH) barH.style.width = `${probs.home}%`;
+      if (barD) barD.style.width = `${probs.draw}%`;
+      if (barA) barA.style.width = `${probs.away}%`;
+
+      const valH = document.getElementById('prob-home-val');
+      const valD = document.getElementById('prob-draw-val');
+      const valA = document.getElementById('prob-away-val');
+
+      if (valH) valH.textContent = `${probs.home}%`;
+      if (valD) valD.textContent = `${probs.draw}%`;
+      if (valA) valA.textContent = `${probs.away}%`;
+
+      const nameH = document.getElementById('prob-home-name');
+      const nameA = document.getElementById('prob-away-name');
+      if (nameH && match.home_team) nameH.textContent = match.home_team;
+      if (nameA && match.away_team) nameA.textContent = match.away_team;
+    }
+
     function updateMatchHeader(match) {
       if (!match) return;
       if (match.home_team) {
@@ -1532,6 +1666,9 @@
       animateScoreUpdate('away-score', match.away_score);
       document.getElementById('match-minute').textContent = match.minute;
 
+      // Sincronizar Probabilidad de Victoria (Estilo Google)
+      updateWinProbability(match);
+
       // Sincronizar Mini-HUD Flotante Móvil
       const hudHScore = document.getElementById('hud-home-score');
       if (hudHScore) hudHScore.textContent = match.home_score;
@@ -1556,6 +1693,9 @@
         document.getElementById('stat-subs').textContent = data.stats.substitutions;
 
         const list = currentChannel === 'resumen' ? data.highlights : data.events;
+        homeRedCards = (list || []).filter(e => e.type === 'RED_CARD' && e.team === 'HOME').length;
+        awayRedCards = (list || []).filter(e => e.type === 'RED_CARD' && e.team === 'AWAY').length;
+        updateWinProbability(data.match);
         if (fullRebuild || (data.stats.total_events === 0 && knownEventIds.size > 0)) {
           const container = document.getElementById('events-container');
           container.innerHTML = '';
@@ -1601,6 +1741,8 @@
         try {
           const payload = JSON.parse(e.data);
           if (payload.reset) {
+            homeRedCards = 0;
+            awayRedCards = 0;
             loadSummary(true);
             return;
           }
@@ -1669,8 +1811,8 @@
         toggleMobileMiniHud(true);
         return;
       }
-      const w = 380;
-      const h = 230;
+      const w = 390;
+      const h = 252;
       const left = Math.max(0, window.screen.width - w - 25);
       const top = 50;
       const pop = window.open('/popup', 'UnalSportsMiniHUD', `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=no,status=no,toolbar=no,menubar=no`);

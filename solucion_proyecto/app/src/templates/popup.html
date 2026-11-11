@@ -230,6 +230,50 @@
     .btn-focus:hover {
       background: rgba(255, 255, 255, 0.18);
     }
+
+    /* Micro Barra de Probabilidad Google-style */
+    .pop-prob-box {
+      margin: 4px 0 6px 0;
+      padding: 0 4px;
+    }
+    .pop-prob-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      letter-spacing: -0.01em;
+    }
+    .prob-l-home { color: #38bdf8; font-family: 'Orbitron', monospace; }
+    .prob-l-draw { color: #94a3b8; font-family: 'Outfit', sans-serif; font-size: 8.5px; }
+    .prob-l-away { color: #c084fc; font-family: 'Orbitron', monospace; }
+    .pop-prob-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      display: flex;
+    }
+    .pop-bar-seg {
+      height: 100%;
+      transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .pop-seg-h {
+      background: linear-gradient(90deg, #06b6d4, #38bdf8);
+      box-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
+    }
+    .pop-seg-d {
+      background: #64748b;
+      border-left: 1px solid rgba(0,0,0,0.3);
+      border-right: 1px solid rgba(0,0,0,0.3);
+    }
+    .pop-seg-a {
+      background: linear-gradient(90deg, #a855f7, #c084fc);
+      box-shadow: 0 0 6px rgba(192, 132, 252, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -275,6 +319,20 @@
       </div>
     </div>
 
+    <!-- Micro Barra de Probabilidad Google-style -->
+    <div class="pop-prob-box">
+      <div class="pop-prob-labels">
+        <span class="prob-l-home"><span id="pop-prob-h-val">37%</span> <span id="pop-prob-h-name">Local</span></span>
+        <span class="prob-l-draw">Empate <span id="pop-prob-d-val">30%</span></span>
+        <span class="prob-l-away"><span id="pop-prob-a-name">Visita</span> <span id="pop-prob-a-val">33%</span></span>
+      </div>
+      <div class="pop-prob-track">
+        <div id="pop-bar-h" class="pop-bar-seg pop-seg-h" style="width: 37%;"></div>
+        <div id="pop-bar-d" class="pop-bar-seg pop-seg-d" style="width: 30%;"></div>
+        <div id="pop-bar-a" class="pop-bar-seg pop-seg-a" style="width: 33%;"></div>
+      </div>
+    </div>
+
     <!-- Bottom Action Pill -->
     <div class="popup-footer">
       <div id="pop-status-text" class="latest-action">
@@ -299,6 +357,90 @@
       }
     }
 
+    function calcWinProbability(hScore, aScore, minute) {
+      const m = Math.max(0, Math.min(95, Number(minute) || 0));
+      const p = m / 90.0;
+      const diff = (Number(hScore) || 0) - (Number(aScore) || 0);
+      let hProb = 0, dProb = 0, aProb = 0;
+
+      if (diff === 0) {
+        dProb = 30 + 56 * Math.pow(p, 1.4);
+        const rem = 100 - dProb;
+        const homeShare = 0.53 - 0.03 * p;
+        hProb = rem * homeShare;
+        aProb = rem * (1 - homeShare);
+      } else if (diff > 0) {
+        if (diff === 1) {
+          hProb = 58 + 38 * Math.pow(p, 1.2);
+          dProb = (100 - hProb) * (0.68 - 0.18 * p);
+          aProb = 100 - hProb - dProb;
+        } else {
+          const extra = Math.min(3, diff - 2);
+          hProb = 74 + (8 * extra) + (24 - 8 * extra) * Math.pow(p, 0.9);
+          hProb = Math.min(99, hProb);
+          dProb = (100 - hProb) * (0.65 - 0.25 * p);
+          aProb = 100 - hProb - dProb;
+        }
+      } else {
+        const absDiff = Math.abs(diff);
+        if (absDiff === 1) {
+          aProb = 55 + 40 * Math.pow(p, 1.2);
+          dProb = (100 - aProb) * (0.64 - 0.14 * p);
+          hProb = 100 - aProb - dProb;
+        } else {
+          const extra = Math.min(3, absDiff - 2);
+          aProb = 72 + (8 * extra) + (26 - 8 * extra) * Math.pow(p, 0.9);
+          aProb = Math.min(99, aProb);
+          dProb = (100 - aProb) * (0.65 - 0.25 * p);
+          hProb = 100 - aProb - dProb;
+        }
+      }
+
+      let rH = Math.round(hProb);
+      let rA = Math.round(aProb);
+      rH = Math.max(1, Math.min(98, rH));
+      rA = Math.max(1, Math.min(98, rA));
+      let rD = 100 - rH - rA;
+      if (rD < 1) {
+        rD = 1;
+        if (rH >= rA) rH = 100 - rA - rD;
+        else rA = 100 - rH - rD;
+      }
+      return { home: rH, draw: rD, away: rA };
+    }
+
+    function updatePopupWinProbability(match) {
+      if (!match) return;
+      const probs = calcWinProbability(match.home_score, match.away_score, match.minute);
+
+      const barH = document.getElementById('pop-bar-h');
+      const barD = document.getElementById('pop-bar-d');
+      const barA = document.getElementById('pop-bar-a');
+
+      if (barH) barH.style.width = `${probs.home}%`;
+      if (barD) barD.style.width = `${probs.draw}%`;
+      if (barA) barA.style.width = `${probs.away}%`;
+
+      const valH = document.getElementById('pop-prob-h-val');
+      const valD = document.getElementById('pop-prob-d-val');
+      const valA = document.getElementById('pop-prob-a-val');
+
+      if (valH) valH.textContent = `${probs.home}%`;
+      if (valD) valD.textContent = `${probs.draw}%`;
+      if (valA) valA.textContent = `${probs.away}%`;
+
+      const nameH = document.getElementById('pop-prob-h-name');
+      const nameA = document.getElementById('pop-prob-a-name');
+      if (nameH && match.home_team) {
+        const parts = match.home_team.trim().split(' ');
+        nameH.textContent = parts[parts.length - 1] || match.home_team;
+      }
+      if (nameA && match.away_team) {
+        const parts = match.away_team.trim().split(' ');
+        nameA.textContent = parts[parts.length - 1] || match.away_team;
+      }
+    }
+
     function updateMatch(match) {
       if (!match) return;
       if (match.home_team && match.home_team !== currentHome) {
@@ -314,6 +456,7 @@
       animateScore('pop-home-score', match.home_score);
       animateScore('pop-away-score', match.away_score);
       document.getElementById('pop-minute').textContent = match.minute;
+      updatePopupWinProbability(match);
     }
 
     function updateActionText(ev) {
