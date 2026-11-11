@@ -805,12 +805,22 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
+
+    #celebration-canvas {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      pointer-events: none !important;
+      z-index: 99999 !important;
+    }
   </style>
 </head>
 <body class="min-h-screen">
 
-  <!-- CANVAS DE CELEBRACIÓN DE GOL (CONFETI NEÓN FLUIDO · CERO CONSUMO CUANDO ESTÁ INACTIVO) -->
-  <canvas id="celebration-canvas" class="fixed inset-0 pointer-events-none z-[999] w-full h-full" style="display: none;"></canvas>
+  <!-- CANVAS DE CELEBRACIÓN DE GOL (100% FIXED INLINE · CERO DESPLAZAMIENTO DEL MARCADOR) -->
+  <canvas id="celebration-canvas" style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; pointer-events: none !important; z-index: 99999 !important; display: none;"></canvas>
 
   <!-- FONDO VIVO CON 10 BURBUJAS DE CRISTAL 3D FLOTANTES (CERO GLITCHES) -->
   <div class="liquid-background" aria-hidden="true">
@@ -912,7 +922,7 @@
 
           <!-- Resultado Tabular -->
           <div class="flex flex-col items-center justify-center">
-            <div id="score-hud" class="score-glass-hud flex items-center justify-center gap-3 sm:gap-6">
+            <div id="score-hud" class="score-glass-hud flex items-center justify-center gap-3 sm:gap-6 cursor-pointer" onclick="launchGoalConfetti('HOME')" title="Hacer clic para probar celebración de gol">
               <span id="home-score" class="score-num text-4xl sm:text-6xl">0</span>
               <span class="text-2xl sm:text-3xl font-light text-white/40">:</span>
               <span id="away-score" class="score-num text-4xl sm:text-6xl">0</span>
@@ -1677,6 +1687,14 @@
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+      // Asegurar posición fija e inmune a desplazamientos en el DOM
+      canvas.style.position = 'fixed';
+      canvas.style.top = '0';
+      canvas.style.left = '0';
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+      canvas.style.pointerEvents = 'none';
+      canvas.style.zIndex = '99999';
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       canvas.style.display = 'block';
@@ -1702,10 +1720,10 @@
       }
 
       confettiParticles = [];
-      const count = window.innerWidth < 640 ? 60 : 90;
+      const count = window.innerWidth < 640 ? 70 : 110;
       for (let i = 0; i < count; i++) {
         const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.65;
-        const speed = 9 + Math.random() * 13;
+        const speed = 10 + Math.random() * 14;
         const color = colors[Math.floor(Math.random() * colors.length)];
         const shape = Math.random() < 0.45 ? 'diamond' : (Math.random() < 0.75 ? 'ribbon' : 'spark');
         
@@ -1716,16 +1734,16 @@
           vy: Math.sin(angle) * speed,
           gravity: 0.32 + Math.random() * 0.12,
           drag: 0.982,
-          size: shape === 'spark' ? (3 + Math.random() * 3) : (6 + Math.random() * 8),
+          size: shape === 'spark' ? (4 + Math.random() * 4) : (8 + Math.random() * 9),
           color: color,
           shape: shape,
           rotation: Math.random() * Math.PI * 2,
-          rotSpeed: (Math.random() - 0.5) * 0.18,
+          rotSpeed: (Math.random() - 0.5) * 0.2,
           wobble: Math.random() * Math.PI * 2,
           wobbleSpeed: 0.08 + Math.random() * 0.08,
           alpha: 1.0,
-          decay: 0.009 + Math.random() * 0.008,
-          glow: Math.random() < 0.5 ? 8 : 0
+          decay: 0.008 + Math.random() * 0.007,
+          glow: 10
         });
       }
 
@@ -1753,10 +1771,8 @@
           ctx.translate(p.x, p.y);
           ctx.rotate(p.rotation);
           
-          if (p.glow > 0) {
-            ctx.shadowColor = p.color;
-            ctx.shadowBlur = p.glow;
-          }
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = p.glow;
           ctx.fillStyle = p.color;
 
           const scaleX = Math.cos(p.wobble);
@@ -1791,6 +1807,7 @@
 
       confettiAnimId = requestAnimationFrame(render);
     }
+    window.launchGoalConfetti = launchGoalConfetti;
 
     function animateScoreUpdate(elId, newValue) {
       const el = document.getElementById(elId);
