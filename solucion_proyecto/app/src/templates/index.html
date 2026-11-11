@@ -2,254 +2,832 @@
 <html lang="es" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>UNAL Sports · Minuto a Minuto en Vivo</title>
   <link rel="icon" href="/api/icon/logo" />
   <link rel="shortcut icon" href="/api/icon/logo" />
   <link rel="apple-touch-icon" href="/api/icon/logo" />
   <link rel="stylesheet" href="/static/tailwind.min.css" />
+
   <style>
+    /* ==========================================================================
+       ULTRA-CLEAR 3D GLASSMORPHISM & FLOATING 3D BUBBLES · UNAL SPORTS 2026
+       Vidrio Neutro Transparente + Esferas 3D con Reflejo Especular en Tiempo Real
+       ========================================================================== */
+
     :root {
-      --bg-base: #0b0e14;
-      --bg-surface: #151922;
-      --bg-elevated: #1c222e;
-      --border-subtle: #242b38;
-      --accent-green: #00e676;
-      --accent-live: #ff3b5c;
+      --bg-deep: #050b16;
+      --sky-bright: #38bdf8;
+      --cyan-electric: #00e5ff;
+      --ice-white: #f8fafc;
+      
+      /* Cristal Neutro Ultra-Transparente (Deja ver las burbujas pasando por detrás) */
+      --glass-clear: linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.02) 100%), rgba(12, 20, 38, 0.22);
+      --glass-card-clear: linear-gradient(135deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.015) 100%), rgba(10, 18, 34, 0.20);
+      
+      /* Biseles 3D de Luz Especular */
+      --bevel-light: inset 0 1.5px 1px rgba(255, 255, 255, 0.8), inset 1px 0 1px rgba(255, 255, 255, 0.45), inset 0 -1px 1.5px rgba(255, 255, 255, 0.15);
+      --glass-shadow: 0 25px 60px -12px rgba(0, 8, 22, 0.55), 0 0 30px rgba(56, 189, 248, 0.1);
+      
+      --spring-apple: cubic-bezier(0.16, 1, 0.3, 1);
+      --spring-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-base);
-      color: #f1f5f9;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: var(--bg-deep);
+      color: var(--ice-white);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Plus Jakarta Sans", system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       font-variant-numeric: tabular-nums;
+      overflow-x: hidden;
+      position: relative;
     }
-    .fm-nav {
-      background-color: rgba(15, 19, 26, 0.94);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border-subtle);
+
+    /* --------------------------------------------------------------------------
+       ECOSISTEMA DE BURBUJAS 3D Y LUZ EN MOVIMIENTO (GPU-ACCELERATED)
+       -------------------------------------------------------------------------- */
+    .liquid-background {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.28) 0%, transparent 45%),
+        radial-gradient(circle at 80% 30%, rgba(0, 229, 255, 0.22) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.25) 0%, transparent 50%),
+        #050b16;
     }
-    .fm-surface {
-      background-color: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+
+    /* Foco reactivo al movimiento del ratón */
+    .cursor-spotlight {
+      position: fixed;
+      width: 480px;
+      height: 480px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, rgba(0, 229, 255, 0.08) 40%, transparent 70%);
+      filter: blur(45px);
+      pointer-events: none;
+      transform: translate3d(calc(var(--mx, 50vw) - 240px), calc(var(--my, 30vh) - 240px), 0);
+      transition: transform 0.15s ease-out;
+      z-index: 1;
     }
-    .fm-card {
-      background-color: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      transition: border-color 0.18s ease, background-color 0.18s ease;
+
+    /* Burbujas Esféricas 3D Hiperrealistas con Destello de Luz */
+    .bubble-3d {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at 32% 30%,
+        rgba(255, 255, 255, 0.85) 0%,
+        rgba(186, 230, 253, 0.55) 18%,
+        rgba(56, 189, 248, 0.28) 45%,
+        rgba(2, 132, 199, 0.12) 72%,
+        rgba(255, 255, 255, 0.35) 100%
+      );
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 
+        inset -10px -10px 24px rgba(2, 80, 150, 0.4),
+        inset 6px 6px 16px rgba(255, 255, 255, 0.9),
+        inset 0 0 15px rgba(0, 229, 255, 0.45),
+        0 15px 35px rgba(14, 165, 233, 0.28);
+      will-change: transform;
     }
-    .fm-card:hover {
-      border-color: #333d4f;
-      background-color: #181d27;
+
+    /* Reflejo especular ovalado superior (El brillo de la burbuja) */
+    .bubble-3d::before {
+      content: '';
+      position: absolute;
+      top: 14%;
+      left: 18%;
+      width: 28%;
+      height: 16%;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0) 75%);
+      transform: rotate(-35deg);
     }
-    .fm-tab-active {
-      background-color: #00e676;
-      color: #08110c;
-      font-weight: 700;
+
+    /* Segundo reflejo inferior de rebote */
+    .bubble-3d::after {
+      content: '';
+      position: absolute;
+      bottom: 12%;
+      right: 15%;
+      width: 18%;
+      height: 10%;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(103, 232, 249, 0.8) 0%, transparent 75%);
+      transform: rotate(-35deg);
     }
-    .fm-tab-inactive {
-      background-color: transparent;
-      color: #94a3b8;
-      font-weight: 600;
+
+    /* Posiciones, Tamaños y Velocidades de las 10 Burbujas */
+    .b-1 { width: 190px; height: 190px; top: 8%; left: 14%; animation: floatPath1 12s infinite alternate ease-in-out; }
+    .b-2 { width: 120px; height: 120px; top: 22%; right: 16%; animation: floatPath2 10s infinite alternate ease-in-out; }
+    .b-3 { width: 240px; height: 240px; top: 45%; left: 8%; animation: floatPath3 15s infinite alternate ease-in-out; opacity: 0.85; }
+    .b-4 { width: 95px; height: 95px; top: 15%; left: 48%; animation: floatPath4 9s infinite alternate ease-in-out; }
+    .b-5 { width: 165px; height: 165px; top: 62%; right: 12%; animation: floatPath1 13s infinite alternate-reverse ease-in-out; }
+    .b-6 { width: 75px; height: 75px; top: 38%; right: 32%; animation: floatPath2 8s infinite alternate ease-in-out; }
+    .b-7 { width: 140px; height: 140px; bottom: 8%; left: 32%; animation: floatPath3 11s infinite alternate ease-in-out; }
+    .b-8 { width: 60px; height: 60px; top: 72%; left: 22%; animation: floatPath4 7.5s infinite alternate ease-in-out; }
+    .b-9 { width: 210px; height: 210px; top: 28%; left: 68%; animation: floatPath1 14s infinite alternate ease-in-out; opacity: 0.8; }
+    .b-10 { width: 85px; height: 85px; bottom: 18%; right: 42%; animation: floatPath2 9.5s infinite alternate-reverse ease-in-out; }
+
+    @keyframes floatPath1 {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(110px, -90px, 0) scale(1.06); }
+      100% { transform: translate3d(-70px, 100px, 0) scale(0.95); }
     }
-    .fm-tab-inactive:hover {
-      color: #f8fafc;
-      background-color: rgba(255, 255, 255, 0.04);
+
+    @keyframes floatPath2 {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-120px, 85px, 0) scale(1.08); }
+      100% { transform: translate3d(80px, -95px, 0) scale(0.94); }
     }
-    @keyframes pulse-live {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.35; transform: scale(1.15); }
+
+    @keyframes floatPath3 {
+      0% { transform: translate3d(0, 0, 0) scale(0.96); }
+      50% { transform: translate3d(130px, 75px, 0) scale(1.05); }
+      100% { transform: translate3d(-90px, -110px, 0) scale(1.02); }
     }
-    .live-dot { animation: pulse-live 1.5s infinite ease-in-out; }
-    @keyframes slide-in {
-      0% { opacity: 0; transform: translateY(-8px); }
-      100% { opacity: 1; transform: translateY(0); }
+
+    @keyframes floatPath4 {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-85px, -100px, 0) scale(1.1); }
+      100% { transform: translate3d(95px, 80px, 0) scale(0.92); }
     }
-    .event-enter { animation: slide-in 0.25s ease-out; }
+
+    /* --------------------------------------------------------------------------
+       VIEWPORT & BARRA SUPERIOR ULTRA-TRANSPARENTE
+       -------------------------------------------------------------------------- */
+    .app-viewport {
+      position: relative;
+      z-index: 10;
+    }
+
+    .frosted-glass-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 100%), rgba(8, 15, 30, 0.35);
+      backdrop-filter: blur(28px) saturate(220%);
+      -webkit-backdrop-filter: blur(28px) saturate(220%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.32);
+      box-shadow: 0 10px 35px -10px rgba(0, 8, 22, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    }
+
+    .nav-logo-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.08) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 6px 16px rgba(0, 15, 40, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      transition: transform 0.25s var(--spring-apple);
+    }
+    .nav-logo-box:hover {
+      transform: scale(1.06);
+    }
+
+    .ice-live-pill {
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.28) 0%, rgba(244, 63, 94, 0.1) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      color: #ffe4e6;
+      letter-spacing: 0.1em;
+    }
+
+    .ice-radar-dot {
+      position: relative;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #fb7185;
+      box-shadow: 0 0 10px #f43f5e;
+    }
+    .ice-radar-dot::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1.5px solid #fb7185;
+      animation: radarRing 1.8s infinite ease-out;
+    }
+
+    @keyframes radarRing {
+      0% { transform: scale(0.6); opacity: 1; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    .ice-viewers-pill {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    /* --------------------------------------------------------------------------
+       MARCADOR CENTRAL: CRISTAL ÓPTICO TRANSPARENTE
+       -------------------------------------------------------------------------- */
+    .stadium-glass-master {
+      position: relative;
+      background: var(--glass-clear);
+      backdrop-filter: blur(26px) saturate(230%) contrast(105%);
+      -webkit-backdrop-filter: blur(26px) saturate(230%) contrast(105%);
+      border: 1px solid rgba(255, 255, 255, 0.48);
+      border-radius: 32px;
+      box-shadow: var(--glass-shadow), var(--bevel-light);
+      overflow: hidden;
+    }
+
+    .stadium-glass-master::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 8%;
+      right: 8%;
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+      pointer-events: none;
+    }
+
+    /* Platillos de Escudo en Cristal Puro */
+    .crest-glass-dish {
+      position: relative;
+      width: 76px;
+      height: 76px;
+      border-radius: 26px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 
+        inset 0 2px 2px rgba(255, 255, 255, 0.9),
+        inset 0 -2px 4px rgba(0, 20, 50, 0.25),
+        0 14px 28px -6px rgba(0, 12, 32, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      margin-bottom: 12px;
+      transition: transform 0.35s var(--spring-bounce), box-shadow 0.35s ease, border-color 0.35s ease;
+      cursor: pointer;
+    }
+
+    .crest-glass-dish:hover {
+      transform: translateY(-4px) scale(1.07);
+      border-color: #ffffff;
+      box-shadow: 
+        inset 0 2px 3px #ffffff,
+        0 18px 35px -6px rgba(56, 189, 248, 0.4);
+    }
+
+    @media (min-width: 640px) {
+      .crest-glass-dish {
+        width: 86px;
+        height: 86px;
+        border-radius: 28px;
+        padding: 14px;
+      }
+    }
+
+    /* Cápsula del Marcador (Cristal Translúcido Luminoso) */
+    .score-glass-hud {
+      position: relative;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(8, 18, 38, 0.38);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 26px;
+      padding: 12px 26px;
+      box-shadow: 
+        inset 0 1.5px 1px rgba(255, 255, 255, 0.8),
+        0 16px 36px rgba(0, 10, 28, 0.45);
+      transition: transform 0.35s var(--spring-apple), box-shadow 0.35s ease;
+    }
+
+    @media (min-width: 640px) {
+      .score-glass-hud {
+        padding: 16px 38px;
+        border-radius: 30px;
+      }
+    }
+
     .score-num {
-      transition: transform 0.25s ease, color 0.25s ease;
+      display: inline-block;
+      font-feature-settings: "tnum" 1;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 4px 18px rgba(0, 15, 40, 0.5), 0 0 15px rgba(255, 255, 255, 0.35);
+      transition: transform 0.35s var(--spring-bounce), color 0.3s ease, text-shadow 0.3s ease;
+    }
+
+    .score-pop {
+      transform: scale(1.28) !important;
+      color: #67e8f9 !important;
+      text-shadow: 0 0 35px rgba(0, 229, 255, 0.85) !important;
+    }
+
+    .goal-shockwave {
+      animation: iceGoalShock 1.1s var(--spring-apple) forwards;
+    }
+
+    @keyframes iceGoalShock {
+      0% {
+        box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.85), inset 0 1px 0 #ffffff;
+      }
+      50% {
+        box-shadow: 0 0 50px 14px rgba(0, 229, 255, 0.55), inset 0 1px 0 #ffffff;
+      }
+      100% {
+        box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, 0.8), 0 16px 36px rgba(0, 10, 28, 0.45);
+      }
+    }
+
+    .status-ice-pill {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.06) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      border-radius: 14px;
+      padding: 6px 16px;
+    }
+
+    /* --------------------------------------------------------------------------
+       TARJETAS DE RESUMEN ESTADÍSTICO EN CRISTAL PURO
+       -------------------------------------------------------------------------- */
+    .stat-ice-chip {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.03) 100%), rgba(10, 20, 38, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 20px;
+      padding: 12px 18px;
+      box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.65),
+        0 10px 25px -6px rgba(0, 10, 28, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: transform 0.25s var(--spring-apple), border-color 0.25s ease, background 0.25s ease;
+    }
+
+    .stat-ice-chip:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.65);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.06) 100%), rgba(14, 28, 52, 0.25);
+    }
+
+    .stat-icon-frame {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.08) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    /* --------------------------------------------------------------------------
+       SELECTOR SEGMENTED CONTROL EN CRISTAL
+       -------------------------------------------------------------------------- */
+    .segmented-glass-dock {
+      background: rgba(6, 14, 28, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 16px;
+      padding: 4px;
+      display: inline-flex;
+      gap: 5px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: inset 0 1px 3px rgba(0, 8, 20, 0.4);
+    }
+
+    .fm-tab-active {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.32) 0%, rgba(56, 189, 248, 0.35) 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.65) !important;
+      color: #ffffff !important;
+      font-weight: 800 !important;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35), inset 0 1px 0 #ffffff !important;
+      text-shadow: 0 1px 3px rgba(0, 10, 28, 0.5);
+      transition: all 0.22s var(--spring-apple);
+    }
+
+    .fm-tab-inactive {
+      background: transparent !important;
+      border: 1px solid transparent !important;
+      color: rgba(255, 255, 255, 0.75) !important;
+      font-weight: 600 !important;
+      border-radius: 12px;
+      transition: all 0.22s var(--spring-apple);
+    }
+
+    .fm-tab-inactive:hover {
+      color: #ffffff !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       FEED DE EVENTOS: CRISTAL TRANSPARENTE
+       -------------------------------------------------------------------------- */
+    .fm-surface {
+      background: var(--glass-clear);
+      backdrop-filter: blur(26px) saturate(220%);
+      -webkit-backdrop-filter: blur(26px) saturate(220%);
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      border-radius: 28px;
+      box-shadow: var(--glass-shadow), var(--bevel-light);
+    }
+
+    .fm-card {
+      position: relative;
+      background: var(--glass-card-clear);
+      backdrop-filter: blur(22px) saturate(210%);
+      -webkit-backdrop-filter: blur(22px) saturate(210%);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 22px;
+      box-shadow: 
+        0 12px 30px -8px rgba(0, 8, 22, 0.4),
+        inset 0 1.5px 1px rgba(255, 255, 255, 0.65);
+      transition: transform 0.25s var(--spring-apple), border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+      overflow: hidden;
+    }
+
+    .fm-card:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 100%), rgba(12, 24, 46, 0.28);
+      border-color: rgba(255, 255, 255, 0.6);
+      box-shadow: 
+        0 18px 38px -8px rgba(0, 12, 32, 0.5),
+        inset 0 1.5px 1px rgba(255, 255, 255, 0.85);
+    }
+
+    /* Acentos Luminosos de Evento */
+    .ios-accent-goal {
+      border-left: 3.5px solid #00e5ff !important;
+    }
+    .ios-accent-penalty {
+      border-left: 3.5px solid #38bdf8 !important;
+    }
+    .ios-accent-red {
+      border-left: 3.5px solid #f43f5e !important;
+    }
+    .ios-accent-yellow {
+      border-left: 3.5px solid #fbbf24 !important;
+    }
+    .ios-accent-sub {
+      border-left: 3.5px solid #34d399 !important;
+    }
+    .ios-accent-start {
+      border-left: 3.5px solid rgba(255, 255, 255, 0.75) !important;
+    }
+    .ios-accent-comment {
+      border-left: 3.5px solid rgba(255, 255, 255, 0.35) !important;
+    }
+
+    /* Badges de Tipo de Evento */
+    .ios-badge-goal {
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.3) 0%, rgba(0, 229, 255, 0.1) 100%) !important;
+      color: #cffafe !important;
+      border-color: rgba(255, 255, 255, 0.55) !important;
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.35);
+    }
+    .ios-badge-penalty {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.3) 0%, rgba(56, 189, 248, 0.1) 100%) !important;
+      color: #e0f2fe !important;
+      border-color: rgba(255, 255, 255, 0.55) !important;
+    }
+    .ios-badge-red {
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.3) 0%, rgba(244, 63, 94, 0.1) 100%) !important;
+      color: #ffe4e6 !important;
+      border-color: rgba(255, 255, 255, 0.55) !important;
+    }
+    .ios-badge-yellow {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(251, 191, 36, 0.1) 100%) !important;
+      color: #fef3c7 !important;
+      border-color: rgba(255, 255, 255, 0.55) !important;
+    }
+    .ios-badge-sub {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.25) 0%, rgba(52, 211, 153, 0.08) 100%) !important;
+      color: #d1fae5 !important;
+      border-color: rgba(255, 255, 255, 0.45) !important;
+    }
+    .ios-badge-start {
+      background: rgba(255, 255, 255, 0.18) !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.45) !important;
+    }
+    .ios-badge-comment {
+      background: rgba(255, 255, 255, 0.12) !important;
+      color: #e0f2fe !important;
+      border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    @keyframes springGlassEnter {
+      0% { opacity: 0; transform: translateY(-16px) scale(0.96); }
+      60% { opacity: 1; transform: translateY(2px) scale(1.01); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .event-enter {
+      animation: springGlassEnter 0.42s var(--spring-bounce) forwards;
+    }
+
+    .minute-ice-tag {
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: 9px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    }
+
+    .event-icon-pedestal {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.06) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .filter-glass-banner {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(56, 189, 248, 0.1) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.48);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 10px 30px rgba(0, 10, 28, 0.35);
+      border-radius: 20px;
+    }
+
+    .empty-glass-canvas {
+      background: var(--glass-card-clear);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1.5px dashed rgba(255, 255, 255, 0.4);
+      border-radius: 28px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .footer-glass-dock {
+      background: var(--glass-card-clear);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 15px 35px rgba(0, 8, 22, 0.4);
     }
   </style>
 </head>
 <body class="min-h-screen">
 
-  <!-- Barra de Navegación Superior Estilo FotMob -->
-  <header class="sticky top-0 z-50 fm-nav">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <img src="/api/icon/logo" alt="Logo" class="w-8 h-8 object-contain rounded-lg" />
-        <div class="flex items-baseline gap-2.5">
-          <span class="font-bold tracking-tight text-white text-base">UNAL SPORTS</span>
-          <span id="header-tournament" class="hidden sm:inline-block text-xs text-zinc-400 font-medium">
-            Cobertura Oficial
+  <!-- FONDO VIVO CON 10 BURBUJAS DE CRISTAL 3D FLOTANTES EN TIEMPO REAL -->
+  <div class="liquid-background" aria-hidden="true">
+    <div class="cursor-spotlight" id="cursor-glow"></div>
+    <div class="bubble-3d b-1"></div>
+    <div class="bubble-3d b-2"></div>
+    <div class="bubble-3d b-3"></div>
+    <div class="bubble-3d b-4"></div>
+    <div class="bubble-3d b-5"></div>
+    <div class="bubble-3d b-6"></div>
+    <div class="bubble-3d b-7"></div>
+    <div class="bubble-3d b-8"></div>
+    <div class="bubble-3d b-9"></div>
+    <div class="bubble-3d b-10"></div>
+  </div>
+
+  <div class="app-viewport">
+
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR EN VIDRIO TRANSPARENTE -->
+    <header class="frosted-glass-nav">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        
+        <div class="flex items-center gap-3">
+          <div class="nav-logo-box">
+            <img src="/api/icon/logo" alt="UNAL Sports Logo" class="w-full h-full object-contain filter drop-shadow-sm" />
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold tracking-tight text-white text-base sm:text-lg drop-shadow">UNAL SPORTS</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-white/20 text-white border border-white/40">LIVE</span>
+            </div>
+            <span id="header-tournament" class="text-xs text-sky-100/90 font-medium tracking-wide">
+              Cobertura Oficial En Vivo
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5 sm:gap-3 text-xs">
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full ice-live-pill font-extrabold text-[11px]">
+            <span class="ice-radar-dot"></span>
+            <span>EN VIVO</span>
+          </div>
+          
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full ice-viewers-pill text-[11px] font-semibold text-white">
+            <svg class="w-3.5 h-3.5 text-sky-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <strong id="fan-readers-count" class="text-white font-mono font-bold">1</strong>
+            <span class="text-sky-100/80 hidden xs:inline">fans</span>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-7">
+
+      <!-- MARCADOR PRINCIPAL EN CRISTAL ÓPTICO ULTRA-TRANSPARENTE -->
+      <section class="stadium-glass-master p-6 sm:p-10">
+        
+        <div class="flex flex-col items-center text-center mb-8">
+          <span id="match-tournament-subtitle" class="text-[11px] uppercase tracking-[0.24em] text-sky-100 font-bold mb-3 drop-shadow">
+            Transmisión Oficial
           </span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2.5 text-xs">
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-500/15 text-rose-400 border border-rose-500/30 font-bold tracking-wider text-[11px]">
-          <span class="w-2 h-2 rounded-full bg-rose-500 live-dot"></span>
-          EN VIVO
-        </span>
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] text-zinc-300 border border-white/10 text-[11px] font-medium">
-          <svg class="w-3.5 h-3.5 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-          <strong id="fan-readers-count" class="text-white font-semibold">1</strong>
-          <span class="text-zinc-400">viendo</span>
-        </span>
-      </div>
-    </div>
-  </header>
-
-  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-    <!-- MARCADOR CENTRAL ESTILO FOTMOB MATCH CENTER -->
-    <section class="fm-surface rounded-2xl p-6 sm:p-8 shadow-xl">
-      <!-- Encabezado de Competición y Reloj -->
-      <div class="flex flex-col items-center text-center mb-6">
-        <span id="match-tournament-subtitle" class="text-[11px] uppercase tracking-[0.16em] text-zinc-400 font-semibold">
-          Transmisión Oficial
-        </span>
-        <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/[0.04] border border-white/10 text-xs font-semibold">
-          <span class="text-emerald-400 uppercase tracking-wide text-[11px]" id="match-status-label">EN ESPERA DE INICIO</span>
-          <span class="text-zinc-600">·</span>
-          <span class="font-mono font-bold text-white"><span id="match-minute">0</span>'</span>
-        </div>
-      </div>
-
-      <!-- Marcador Principal de 3 Columnas -->
-      <div class="grid grid-cols-3 items-center max-w-2xl mx-auto gap-2 sm:gap-6">
-        <!-- Equipo Local -->
-        <div class="flex flex-col items-center text-center">
-          <div class="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center p-1.5 mb-2.5">
-            <img id="home-badge" src="/api/badge?team=Equipo%20Local" alt="Escudo Local"
-              class="w-full h-full object-contain" onerror="this.src='/escudos/default.svg'" />
-          </div>
-          <h2 id="home-team" class="text-sm sm:text-lg font-bold tracking-tight text-white leading-snug">
-            Equipo Local
-          </h2>
-          <span class="text-[11px] text-zinc-500 font-medium mt-0.5 uppercase tracking-wider">Local</span>
-        </div>
-
-        <!-- Resultado Tabular -->
-        <div class="flex flex-col items-center justify-center">
-          <div class="flex items-center justify-center gap-3 sm:gap-5 py-2.5 px-5 sm:px-7 rounded-xl bg-black/40 border border-white/10">
-            <span id="home-score" class="score-num text-4xl sm:text-6xl font-extrabold tracking-tight text-white">0</span>
-            <span class="text-xl sm:text-2xl font-semibold text-zinc-600">-</span>
-            <span id="away-score" class="score-num text-4xl sm:text-6xl font-extrabold tracking-tight text-white">0</span>
+          <div class="status-ice-pill inline-flex items-center gap-2.5 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_10px_#00e5ff]"></span>
+            <span class="text-white uppercase tracking-wider text-[11px] font-extrabold" id="match-status-label">EN ESPERA DE INICIO</span>
+            <span class="text-white/50">·</span>
+            <span class="font-mono font-extrabold text-white tracking-wide"><span id="match-minute">0</span>'</span>
           </div>
         </div>
 
-        <!-- Equipo Visitante -->
-        <div class="flex flex-col items-center text-center">
-          <div class="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center p-1.5 mb-2.5">
-            <img id="away-badge" src="/api/badge?team=Equipo%20Visitante" alt="Escudo Visitante"
-              class="w-full h-full object-contain" onerror="this.src='/escudos/default.svg'" />
+        <div class="grid grid-cols-3 items-center max-w-2xl mx-auto gap-3 sm:gap-8">
+          
+          <!-- Equipo Local -->
+          <div class="flex flex-col items-center text-center">
+            <div class="crest-glass-dish">
+              <img id="home-badge" src="/api/badge?team=Equipo%20Local" alt="Escudo Local"
+                class="w-full h-full object-contain filter drop-shadow-[0_6px_12px_rgba(0,10,30,0.5)]" onerror="this.src='/escudos/default.svg'" />
+            </div>
+            <h2 id="home-team" class="text-sm sm:text-xl font-extrabold tracking-tight text-white leading-snug drop-shadow">
+              Equipo Local
+            </h2>
+            <span class="text-[10px] text-white/90 font-bold mt-1 uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/[0.14] border border-white/25">Local</span>
           </div>
-          <h2 id="away-team" class="text-sm sm:text-lg font-bold tracking-tight text-white leading-snug">
-            Equipo Visitante
-          </h2>
-          <span class="text-[11px] text-zinc-500 font-medium mt-0.5 uppercase tracking-wider">Visitante</span>
-        </div>
-      </div>
 
-      <!-- Barra de Resumen Estadístico con Íconos desde app/iconos/ -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-7 pt-5 border-t border-white/[0.07]">
-        <div class="rounded-xl bg-black/25 border border-white/[0.06] px-3.5 py-2.5 flex items-center justify-between">
-          <span class="inline-flex items-center gap-2 text-xs text-zinc-400 font-medium">
+          <!-- Resultado Tabular -->
+          <div class="flex flex-col items-center justify-center">
+            <div id="score-hud" class="score-glass-hud flex items-center justify-center gap-3 sm:gap-6">
+              <span id="home-score" class="score-num text-4xl sm:text-6xl">0</span>
+              <span class="text-2xl sm:text-3xl font-light text-white/70">:</span>
+              <span id="away-score" class="score-num text-4xl sm:text-6xl">0</span>
+            </div>
+          </div>
+
+          <!-- Equipo Visitante -->
+          <div class="flex flex-col items-center text-center">
+            <div class="crest-glass-dish">
+              <img id="away-badge" src="/api/badge?team=Equipo%20Visitante" alt="Escudo Visitante"
+                class="w-full h-full object-contain filter drop-shadow-[0_6px_12px_rgba(0,10,30,0.5)]" onerror="this.src='/escudos/default.svg'" />
+            </div>
+            <h2 id="away-team" class="text-sm sm:text-xl font-extrabold tracking-tight text-white leading-snug drop-shadow">
+              Equipo Visitante
+            </h2>
+            <span class="text-[10px] text-white/90 font-bold mt-1 uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/[0.14] border border-white/25">Visitante</span>
+          </div>
+
+        </div>
+
+        <!-- Barra de Resumen Estadístico -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 pt-6 border-t border-white/[0.22]">
+          
+          <div class="stat-ice-chip">
+            <div class="flex items-center gap-2.5">
+              <div class="stat-icon-frame">
+                <img src="/api/icon/balon" alt="" class="w-4 h-4 object-contain filter drop-shadow" />
+              </div>
+              <span class="text-xs text-white font-semibold">Acciones</span>
+            </div>
+            <strong id="stat-events" class="text-base font-extrabold text-white font-mono">0</strong>
+          </div>
+
+          <div class="stat-ice-chip">
+            <div class="flex items-center gap-2.5">
+              <div class="stat-icon-frame">
+                <img src="/api/icon/amarilla" alt="" class="w-4 h-4 object-contain filter drop-shadow" />
+              </div>
+              <span class="text-xs text-white font-semibold">Amarillas</span>
+            </div>
+            <strong id="stat-yellow" class="text-base font-extrabold text-amber-200 font-mono">0</strong>
+          </div>
+
+          <div class="stat-ice-chip">
+            <div class="flex items-center gap-2.5">
+              <div class="stat-icon-frame">
+                <img src="/api/icon/roja" alt="" class="w-4 h-4 object-contain filter drop-shadow" />
+              </div>
+              <span class="text-xs text-white font-semibold">Rojas</span>
+            </div>
+            <strong id="stat-red" class="text-base font-extrabold text-rose-200 font-mono">0</strong>
+          </div>
+
+          <div class="stat-ice-chip">
+            <div class="flex items-center gap-2.5">
+              <div class="stat-icon-frame">
+                <img src="/api/icon/cambio" alt="" class="w-4 h-4 object-contain filter drop-shadow" />
+              </div>
+              <span class="text-xs text-white font-semibold">Cambios</span>
+            </div>
+            <strong id="stat-subs" class="text-base font-extrabold text-emerald-200 font-mono">0</strong>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CRONOLOGÍA DEL PARTIDO -->
+      <section class="space-y-4">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 fm-surface p-4 sm:p-5">
+          <div>
+            <h3 class="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2.5 drop-shadow">
+              <span>Cronología del Encuentro</span>
+              <span class="w-2 h-2 rounded-full bg-cyan-300 animate-ping"></span>
+            </h3>
+            <p class="text-xs text-sky-100/90 mt-0.5 font-medium">
+              Actualización instantánea vía Redis Pub/Sub y Server-Sent Events
+            </p>
+          </div>
+
+          <div class="segmented-glass-dock self-start sm:self-auto">
+            <button id="btn-channel-vivo" onclick="switchChannel('vivo')"
+              class="px-4 py-2 rounded-xl text-xs fm-tab-active">
+              Minuto a Minuto
+            </button>
+            <button id="btn-channel-resumen" onclick="switchChannel('resumen')"
+              class="px-4 py-2 rounded-xl text-xs fm-tab-inactive">
+              Momentos Clave
+            </button>
+          </div>
+        </div>
+
+        <div id="late-joiner-banner" class="hidden filter-glass-banner p-4 text-xs text-white leading-relaxed flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white/20 border border-white/40 flex items-center justify-center shrink-0 shadow-md">
             <img src="/api/icon/balon" alt="" class="w-4 h-4 object-contain" />
-            <span>Acciones</span>
-          </span>
-          <strong id="stat-events" class="text-sm font-bold text-white font-mono">0</strong>
+          </div>
+          <div>
+            <strong class="font-bold text-white">Modo Momentos Clave Activo:</strong>
+            Filtrando incidencias críticas (Goles, Penales, Tarjetas y Sustituciones).
+          </div>
         </div>
-        <div class="rounded-xl bg-black/25 border border-white/[0.06] px-3.5 py-2.5 flex items-center justify-between">
-          <span class="inline-flex items-center gap-2 text-xs text-zinc-400 font-medium">
-            <img src="/api/icon/amarilla" alt="" class="w-4 h-4 object-contain" />
-            <span>Amarillas</span>
-          </span>
-          <strong id="stat-yellow" class="text-sm font-bold text-amber-400 font-mono">0</strong>
-        </div>
-        <div class="rounded-xl bg-black/25 border border-white/[0.06] px-3.5 py-2.5 flex items-center justify-between">
-          <span class="inline-flex items-center gap-2 text-xs text-zinc-400 font-medium">
-            <img src="/api/icon/roja" alt="" class="w-4 h-4 object-contain" />
-            <span>Rojas</span>
-          </span>
-          <strong id="stat-red" class="text-sm font-bold text-rose-400 font-mono">0</strong>
-        </div>
-        <div class="rounded-xl bg-black/25 border border-white/[0.06] px-3.5 py-2.5 flex items-center justify-between">
-          <span class="inline-flex items-center gap-2 text-xs text-zinc-400 font-medium">
-            <img src="/api/icon/cambio" alt="" class="w-4 h-4 object-contain" />
-            <span>Cambios</span>
-          </span>
-          <strong id="stat-subs" class="text-sm font-bold text-emerald-400 font-mono">0</strong>
-        </div>
-      </div>
-    </section>
 
-    <!-- CRONOLOGÍA DEL PARTIDO (TIMELINE ESTILO FOTMOB) -->
-    <section class="space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 fm-surface rounded-xl p-3.5">
-        <div class="px-1">
-          <h3 class="text-base font-bold tracking-tight text-white">Cronología del Partido</h3>
-          <p class="text-xs text-zinc-400">
-            Actualización automática en tiempo real
+        <div id="empty-board-placeholder" class="empty-glass-canvas p-12 text-center space-y-3">
+          <div class="w-14 h-14 rounded-2xl bg-white/[0.14] border border-white/35 flex items-center justify-center mx-auto mb-3 shadow-lg">
+            <img src="/api/icon/balon" alt="" class="w-7 h-7 object-contain opacity-90 animate-bounce" />
+          </div>
+          <h4 class="text-sm sm:text-base font-extrabold text-white tracking-wide uppercase drop-shadow">El encuentro está por iniciar</h4>
+          <p class="text-xs text-sky-100/90 max-w-md mx-auto leading-relaxed">
+            El marcador se encuentra 0 - 0. En cuanto el silbato dé la orden, las jugadas y narraciones aparecerán aquí en vivo.
           </p>
         </div>
 
-        <!-- Selector de Canal Estilo FotMob -->
-        <div class="inline-flex p-1 rounded-lg bg-black/40 border border-white/10 self-start sm:self-auto">
-          <button id="btn-channel-vivo" onclick="switchChannel('vivo')"
-            class="px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-active">
-            Minuto a Minuto
-          </button>
-          <button id="btn-channel-resumen" onclick="switchChannel('resumen')"
-            class="px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-inactive">
-            Momentos Clave
-          </button>
+        <div id="events-container" class="space-y-3">
         </div>
-      </div>
 
-      <!-- Aviso de Filtro de Momentos Clave -->
-      <div id="late-joiner-banner" class="hidden rounded-xl bg-emerald-500/10 border border-emerald-500/25 px-4 py-3 text-xs text-emerald-200 leading-relaxed">
-        <span class="font-bold text-emerald-400">Vista de Momentos Clave:</span>
-        Mostrando únicamente goles, penales, tarjetas y sustituciones del encuentro.
-      </div>
+      </section>
 
-      <!-- Estado inicial sin jugadas -->
-      <div id="empty-board-placeholder" class="fm-surface rounded-2xl p-10 text-center space-y-2">
-        <img src="/api/icon/balon" alt="" class="w-8 h-8 object-contain mx-auto mb-2 opacity-60" />
-        <h4 class="text-sm font-bold text-white uppercase tracking-wider">Sin incidencias registradas</h4>
-        <p class="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
-          El marcador se encuentra 0 - 0. Las jugadas aparecerán aquí automáticamente en cuanto inicie el partido.
-        </p>
-      </div>
+      <!-- PIE DE PÁGINA -->
+      <footer class="footer-glass-dock rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-sky-100/90">
+        <div class="flex items-center gap-3">
+          <div class="w-7 h-7 rounded-lg nav-logo-box p-1">
+            <img src="/api/icon/logo" alt="" class="w-full h-full object-contain" />
+          </div>
+          <span><strong>UNAL Sports Live</strong> · Plataforma Distribuida de Alta Concurrencia</span>
+        </div>
+        <div>
+          <a href="/periodista" target="_blank"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.15] hover:bg-white/[0.25] border border-white/40 text-white font-semibold transition-all hover:scale-105 active:scale-95 shadow-sm">
+            <span>Cabina del Periodista</span>
+            <span class="text-cyan-200">↗</span>
+          </a>
+        </div>
+      </footer>
 
-      <!-- Contenedor del Feed de Jugadas -->
-      <div id="events-container" class="space-y-2.5">
-      </div>
-    </section>
+    </main>
+  </div>
 
-    <!-- PIE DE PÁGINA -->
-    <footer class="pt-6 pb-10 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-      <div class="flex items-center gap-2.5">
-        <img src="/api/icon/logo" alt="" class="w-4 h-4 object-contain rounded" />
-        <span><strong>UNAL Sports</strong> · Centro de Partidos en Vivo</span>
-      </div>
-      <div>
-        <a href="/periodista" target="_blank"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-zinc-300 font-medium transition">
-          <span>Consola de Transmisión</span>
-          <span class="text-zinc-500">↗</span>
-        </a>
-      </div>
-    </footer>
-
-  </main>
-
+  <!-- LÓGICA JAVASCRIPT: SSE, REDIS PUBSUB, CACHÉ Y FOCO INTERACTIVO -->
   <script>
+    // Efecto ligero de refracción al mover el ratón
+    window.addEventListener('pointermove', (e) => {
+      document.documentElement.style.setProperty('--mx', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--my', `${e.clientY}px`);
+    }, { passive: true });
+
     let currentChannel = 'vivo';
     let evtSource = null;
     let knownEventIds = new Set();
@@ -261,44 +839,44 @@
         'GOAL': {
           label: 'GOL',
           icon: '/api/icon/balon',
-          pill: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-          accent: 'border-l-4 border-l-emerald-400'
+          pill: 'ios-badge-goal',
+          accent: 'ios-accent-goal'
         },
         'PENALTY': {
           label: 'PENAL',
           icon: '/api/icon/penal',
-          pill: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
-          accent: 'border-l-4 border-l-sky-400'
+          pill: 'ios-badge-penalty',
+          accent: 'ios-accent-penalty'
         },
         'RED_CARD': {
           label: 'TARJETA ROJA',
           icon: '/api/icon/roja',
-          pill: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-          accent: 'border-l-4 border-l-rose-500'
+          pill: 'ios-badge-red',
+          accent: 'ios-accent-red'
         },
         'YELLOW_CARD': {
           label: 'TARJETA AMARILLA',
           icon: '/api/icon/amarilla',
-          pill: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-          accent: 'border-l-4 border-l-amber-400'
+          pill: 'ios-badge-yellow',
+          accent: 'ios-accent-yellow'
         },
         'SUBSTITUTION': {
           label: 'CAMBIO',
           icon: '/api/icon/cambio',
-          pill: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25',
-          accent: 'border-l-4 border-l-emerald-500'
+          pill: 'ios-badge-sub',
+          accent: 'ios-accent-sub'
         },
         'MATCH_START': {
           label: 'INICIO',
           icon: '/api/icon/comentario',
-          pill: 'bg-white/10 text-zinc-200 border-white/15',
-          accent: 'border-l-4 border-l-zinc-400'
+          pill: 'ios-badge-start',
+          accent: 'ios-accent-start'
         },
         'COMMENT': {
           label: 'MINUTO A MINUTO',
           icon: '/api/icon/comentario',
-          pill: 'bg-white/[0.06] text-zinc-400 border-white/10',
-          accent: ''
+          pill: 'ios-badge-comment',
+          accent: 'ios-accent-comment'
         }
       };
       return styles[type] || styles['COMMENT'];
@@ -307,9 +885,9 @@
     function updateEmptyPlaceholder() {
       const ph = document.getElementById('empty-board-placeholder');
       const container = document.getElementById('events-container');
-      if (container.children.length > 0) {
+      if (container && container.children.length > 0) {
         ph.classList.add('hidden');
-      } else {
+      } else if (ph) {
         ph.classList.remove('hidden');
       }
     }
@@ -325,25 +903,24 @@
       const badgeUrl = `/api/badge?team=${encodeURIComponent(teamLabel)}`;
 
       const innerHtml = `
-        <div class="flex items-start gap-3.5">
-          <!-- Columna de Minuto e Ícono Estilo FotMob -->
-          <div class="flex flex-col items-center gap-1.5 pt-0.5 shrink-0 w-11">
-            <span class="px-2 py-0.5 rounded bg-black/40 border border-white/10 font-mono font-bold text-xs text-white">${ev.minute}'</span>
-            <img src="${st.icon}" alt="${st.label}" class="w-4 h-4 object-contain" />
+        <div class="flex items-start gap-4">
+          <div class="flex flex-col items-center gap-2 pt-0.5 shrink-0 w-12">
+            <span class="minute-ice-tag px-2 py-0.5 font-mono font-black text-xs text-white">${ev.minute}'</span>
+            <div class="event-icon-pedestal">
+              <img src="${st.icon}" alt="${st.label}" class="w-4 h-4 object-contain filter drop-shadow-sm" />
+            </div>
           </div>
 
-          <!-- Contenido de la Jugada -->
           <div class="flex-1 min-w-0">
             <div class="flex flex-wrap items-center gap-2 mb-1.5">
-              <span class="px-2 py-0.5 rounded text-[11px] font-bold tracking-wide border ${st.pill}">${st.label}</span>
-              <span class="text-sm font-bold text-white">${ev.player || ''}</span>
-              <span class="inline-flex items-center gap-1.5 text-xs text-zinc-400 font-medium">
-                <span>·</span>
-                <img src="${badgeUrl}" alt="" class="w-4 h-4 object-contain" onerror="this.src='/escudos/default.svg'" />
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wider border ${st.pill}">${st.label}</span>
+              ${ev.player ? `<span class="text-sm font-black text-white tracking-tight drop-shadow-sm">${ev.player}</span>` : ''}
+              <span class="inline-flex items-center gap-1.5 text-xs text-white font-semibold px-2 py-0.5 rounded-md bg-white/[0.14] border border-white/25">
+                <img src="${badgeUrl}" alt="" class="w-3.5 h-3.5 object-contain" onerror="this.src='/escudos/default.svg'" />
                 <span>${teamLabel}</span>
               </span>
             </div>
-            <p class="text-sm text-zinc-300 leading-relaxed">${ev.description}</p>
+            <p class="text-sm text-white/95 leading-relaxed font-normal drop-shadow-sm">${ev.description}</p>
           </div>
         </div>
       `;
@@ -358,7 +935,7 @@
 
       const card = document.createElement('article');
       card.id = `card-${ev.id}`;
-      card.className = `event-enter fm-card ${st.accent} rounded-xl p-4`;
+      card.className = `event-enter fm-card ${st.accent} p-4 sm:p-5`;
       card.innerHTML = innerHtml;
 
       if (prepend) {
@@ -371,14 +948,21 @@
 
     function animateScoreUpdate(elId, newValue) {
       const el = document.getElementById(elId);
-      if (el.textContent !== String(newValue)) {
+      if (el && el.textContent !== String(newValue)) {
         el.textContent = newValue;
-        el.style.transform = 'scale(1.18)';
-        el.style.color = '#00e676';
+        el.classList.add('score-pop');
+        
+        const hud = document.getElementById('score-hud');
+        if (hud) {
+          hud.classList.remove('goal-shockwave');
+          void hud.offsetWidth;
+          hud.classList.add('goal-shockwave');
+          setTimeout(() => hud.classList.remove('goal-shockwave'), 1200);
+        }
+
         setTimeout(() => {
-          el.style.transform = 'scale(1)';
-          el.style.color = '#ffffff';
-        }, 320);
+          el.classList.remove('score-pop');
+        }, 500);
       }
     }
 
@@ -415,25 +999,29 @@
     }
 
     async function loadSummary(fullRebuild = true) {
-      const res = await fetch('/api/summary');
-      const data = await res.json();
-      updateMatchHeader(data.match);
-      document.getElementById('stat-events').textContent = data.stats.total_events;
-      document.getElementById('stat-yellow').textContent = data.stats.yellow_cards;
-      document.getElementById('stat-red').textContent = data.stats.red_cards;
-      document.getElementById('stat-subs').textContent = data.stats.substitutions;
+      try {
+        const res = await fetch('/api/summary');
+        const data = await res.json();
+        updateMatchHeader(data.match);
+        document.getElementById('stat-events').textContent = data.stats.total_events;
+        document.getElementById('stat-yellow').textContent = data.stats.yellow_cards;
+        document.getElementById('stat-red').textContent = data.stats.red_cards;
+        document.getElementById('stat-subs').textContent = data.stats.substitutions;
 
-      const list = currentChannel === 'resumen' ? data.highlights : data.events;
-      if (fullRebuild || (data.stats.total_events === 0 && knownEventIds.size > 0)) {
-        const container = document.getElementById('events-container');
-        container.innerHTML = '';
-        knownEventIds.clear();
-        list.forEach(ev => renderEventCard(ev, false));
-        updateEmptyPlaceholder();
-      } else {
-        const newEvents = list.filter(ev => !knownEventIds.has(ev.id)).reverse();
-        newEvents.forEach(ev => renderEventCard(ev, true));
-        updateEmptyPlaceholder();
+        const list = currentChannel === 'resumen' ? data.highlights : data.events;
+        if (fullRebuild || (data.stats.total_events === 0 && knownEventIds.size > 0)) {
+          const container = document.getElementById('events-container');
+          container.innerHTML = '';
+          knownEventIds.clear();
+          list.forEach(ev => renderEventCard(ev, false));
+          updateEmptyPlaceholder();
+        } else {
+          const newEvents = list.filter(ev => !knownEventIds.has(ev.id)).reverse();
+          newEvents.forEach(ev => renderEventCard(ev, true));
+          updateEmptyPlaceholder();
+        }
+      } catch (err) {
+        console.error('Error cargando sumario:', err);
       }
     }
 
@@ -476,12 +1064,12 @@
       const banner = document.getElementById('late-joiner-banner');
 
       if (channel === 'vivo') {
-        btnVivo.className = 'px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-active';
-        btnRes.className = 'px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-inactive';
+        btnVivo.className = 'px-4 py-2 rounded-xl text-xs fm-tab-active';
+        btnRes.className = 'px-4 py-2 rounded-xl text-xs fm-tab-inactive';
         banner.classList.add('hidden');
       } else {
-        btnRes.className = 'px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-active';
-        btnVivo.className = 'px-3.5 py-1.5 rounded-md text-xs transition-all fm-tab-inactive';
+        btnRes.className = 'px-4 py-2 rounded-xl text-xs fm-tab-active';
+        btnVivo.className = 'px-4 py-2 rounded-xl text-xs fm-tab-inactive';
         banner.classList.remove('hidden');
       }
       loadSummary(true);

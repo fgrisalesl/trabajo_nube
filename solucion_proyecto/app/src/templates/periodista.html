@@ -9,147 +9,291 @@
   <link rel="apple-touch-icon" href="/api/icon/logo" />
   <link rel="stylesheet" href="/static/tailwind.min.css" />
   <style>
+    /* ==========================================================================
+       ULTRA-CLEAR 3D GLASSMORPHISM & FLOATING 3D BUBBLES · UNAL SPORTS STUDIO
+       Vidrio Neutro Transparente + Esferas 3D con Reflejo Especular en Tiempo Real
+       ========================================================================== */
+
     :root {
-      --bg-base: #0b0e14;
-      --bg-surface: #151922;
-      --bg-input: #0e1219;
-      --border-subtle: #242b38;
-      --accent-green: #00e676;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-base);
-      color: #f1f5f9;
-      -webkit-font-smoothing: antialiased;
-      font-variant-numeric: tabular-nums;
-    }
-    .fm-nav {
-      background-color: rgba(15, 19, 26, 0.95);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border-subtle);
-    }
-    .fm-surface {
-      background-color: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-    }
-    .fm-input {
-      background-color: var(--bg-input);
-      border: 1px solid #283040;
-      color: #f8fafc;
-      transition: border-color 0.18s ease, box-shadow 0.18s ease;
-    }
-    .fm-input:focus {
-      border-color: var(--accent-green);
-      box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.18);
-      outline: none;
-    }
-    .fm-mode-active {
-      background-color: #00e676;
-      color: #06120b;
-      font-weight: 700;
-    }
-    .fm-mode-inactive {
-      background-color: transparent;
-      color: #94a3b8;
-      font-weight: 600;
-    }
-    .fm-mode-inactive:hover {
-      color: #ffffff;
-      background-color: rgba(255, 255, 255, 0.04);
+      --bg-deep: #050b16;
+      --sky-bright: #38bdf8;
+      --cyan-electric: #00e5ff;
+      --ice-white: #f8fafc;
+      
+      --glass-clear: linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.02) 100%), rgba(12, 20, 38, 0.22);
+      --bevel-light: inset 0 1.5px 1px rgba(255, 255, 255, 0.8), inset 1px 0 1px rgba(255, 255, 255, 0.45), inset 0 -1px 1.5px rgba(255, 255, 255, 0.15);
+      --glass-shadow: 0 25px 60px -12px rgba(0, 8, 22, 0.55), 0 0 30px rgba(56, 189, 248, 0.1);
+      
+      --spring-apple: cubic-bezier(0.16, 1, 0.3, 1);
+      --spring-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    /* Botones de selección de jugada en Cabina Manual (Alto contraste) */
-    .action-choice-btn {
-      background-color: #0e1219;
-      border: 1.5px solid #222938;
-      color: #8b95a7;
-      opacity: 0.62;
-      transition: all 0.16s ease;
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: var(--bg-deep);
+      color: var(--ice-white);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Plus Jakarta Sans", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-variant-numeric: tabular-nums;
+      overflow-x: hidden;
       position: relative;
     }
-    .action-choice-btn:hover {
-      opacity: 0.9;
-      border-color: #384359;
-      color: #e2e8f0;
+
+    /* Ecosistema de Burbujas 3D Flotantes (GPU) */
+    .liquid-background {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.28) 0%, transparent 45%),
+        radial-gradient(circle at 80% 30%, rgba(0, 229, 255, 0.22) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.25) 0%, transparent 50%),
+        #050b16;
     }
-    .action-choice-btn .choice-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      border: 1.5px solid #475569;
-      background: transparent;
-      transition: all 0.16s ease;
+
+    .bubble-3d {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at 32% 30%,
+        rgba(255, 255, 255, 0.85) 0%,
+        rgba(186, 230, 253, 0.55) 18%,
+        rgba(56, 189, 248, 0.28) 45%,
+        rgba(2, 132, 199, 0.12) 72%,
+        rgba(255, 255, 255, 0.35) 100%
+      );
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 
+        inset -10px -10px 24px rgba(2, 80, 150, 0.4),
+        inset 6px 6px 16px rgba(255, 255, 255, 0.9),
+        inset 0 0 15px rgba(0, 229, 255, 0.45),
+        0 15px 35px rgba(14, 165, 233, 0.28);
+      will-change: transform;
+    }
+
+    .bubble-3d::before {
+      content: '';
+      position: absolute;
+      top: 14%;
+      left: 18%;
+      width: 28%;
+      height: 16%;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0) 75%);
+      transform: rotate(-35deg);
+    }
+
+    .bubble-3d::after {
+      content: '';
+      position: absolute;
+      bottom: 12%;
+      right: 15%;
+      width: 18%;
+      height: 10%;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(103, 232, 249, 0.8) 0%, transparent 75%);
+      transform: rotate(-35deg);
+    }
+
+    .b-1 { width: 190px; height: 190px; top: 8%; left: 14%; animation: floatPath1 12s infinite alternate ease-in-out; }
+    .b-2 { width: 120px; height: 120px; top: 22%; right: 16%; animation: floatPath2 10s infinite alternate ease-in-out; }
+    .b-3 { width: 240px; height: 240px; top: 45%; left: 8%; animation: floatPath3 15s infinite alternate ease-in-out; opacity: 0.85; }
+    .b-4 { width: 95px; height: 95px; top: 15%; left: 48%; animation: floatPath4 9s infinite alternate ease-in-out; }
+    .b-5 { width: 165px; height: 165px; top: 62%; right: 12%; animation: floatPath1 13s infinite alternate-reverse ease-in-out; }
+    .b-6 { width: 75px; height: 75px; top: 38%; right: 32%; animation: floatPath2 8s infinite alternate ease-in-out; }
+    .b-7 { width: 140px; height: 140px; bottom: 8%; left: 32%; animation: floatPath3 11s infinite alternate ease-in-out; }
+    .b-8 { width: 60px; height: 60px; top: 72%; left: 22%; animation: floatPath4 7.5s infinite alternate ease-in-out; }
+    .b-9 { width: 210px; height: 210px; top: 28%; left: 68%; animation: floatPath1 14s infinite alternate ease-in-out; opacity: 0.8; }
+    .b-10 { width: 85px; height: 85px; bottom: 18%; right: 42%; animation: floatPath2 9.5s infinite alternate-reverse ease-in-out; }
+
+    @keyframes floatPath1 {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(110px, -90px, 0) scale(1.06); }
+      100% { transform: translate3d(-70px, 100px, 0) scale(0.95); }
+    }
+    @keyframes floatPath2 {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-120px, 85px, 0) scale(1.08); }
+      100% { transform: translate3d(80px, -95px, 0) scale(0.94); }
+    }
+    @keyframes floatPath3 {
+      0% { transform: translate3d(0, 0, 0) scale(0.96); }
+      50% { transform: translate3d(130px, 75px, 0) scale(1.05); }
+      100% { transform: translate3d(-90px, -110px, 0) scale(1.02); }
+    }
+    @keyframes floatPath4 {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-85px, -100px, 0) scale(1.1); }
+      100% { transform: translate3d(95px, 80px, 0) scale(0.92); }
+    }
+
+    /* Capa de Contenido */
+    .studio-viewport {
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Barra Superior de Vidrio Transparente */
+    .fm-nav {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 100%), rgba(8, 15, 30, 0.35) !important;
+      backdrop-filter: blur(28px) saturate(220%) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(220%) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.32) !important;
+      box-shadow: 0 10px 35px -10px rgba(0, 8, 22, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+    }
+
+    /* Placas Maestras de Vidrio Neutro Transparente */
+    .fm-surface {
+      background: var(--glass-clear) !important;
+      backdrop-filter: blur(26px) saturate(230%) !important;
+      -webkit-backdrop-filter: blur(26px) saturate(230%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.45) !important;
+      box-shadow: var(--glass-shadow), var(--bevel-light) !important;
+    }
+
+    /* Entradas de Texto en Vidrio Translúcido */
+    .fm-input {
+      background: rgba(6, 14, 30, 0.42) !important;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.38) !important;
+      color: #ffffff !important;
+      box-shadow: inset 0 1px 2px rgba(0, 8, 20, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+      transition: all 0.2s var(--spring-apple) !important;
+    }
+    .fm-input:focus {
+      border-color: #ffffff !important;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.45), inset 0 1px 0 #ffffff !important;
+      outline: none !important;
+    }
+
+    /* Pestañas de Modo */
+    .fm-mode-active {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.32) 0%, rgba(56, 189, 248, 0.35) 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.65) !important;
+      color: #ffffff !important;
+      font-weight: 800 !important;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35), inset 0 1px 0 #ffffff !important;
+      text-shadow: 0 1px 3px rgba(0, 10, 28, 0.5);
+    }
+    .fm-mode-inactive {
+      background: transparent !important;
+      color: rgba(255, 255, 255, 0.75) !important;
+      font-weight: 600 !important;
+    }
+    .fm-mode-inactive:hover {
+      color: #ffffff !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* Botones de Acción de Jugadas en Vidrio Transparente */
+    .action-choice-btn {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 100%), rgba(8, 16, 32, 0.28) !important;
+      border: 1px solid rgba(255, 255, 255, 0.38) !important;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      color: #f1f5f9 !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 6px 16px rgba(0, 8, 22, 0.35) !important;
+      transition: all 0.22s var(--spring-apple) !important;
+    }
+    .action-choice-btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.65) !important;
+      color: #ffffff !important;
+      box-shadow: inset 0 1px 0 #ffffff, 0 10px 22px rgba(56, 189, 248, 0.28) !important;
     }
     .action-choice-btn.is-selected {
-      opacity: 1;
-      color: #ffffff;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      color: #ffffff !important;
     }
     .action-choice-btn.is-selected[data-tone="emerald"] {
-      background-color: rgba(0, 230, 118, 0.16);
-      border-color: #00e676;
-      box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.22);
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.32) 0%, rgba(0, 229, 255, 0.1) 100%) !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 25px rgba(0, 229, 255, 0.45), inset 0 1px 0 #ffffff !important;
     }
     .action-choice-btn.is-selected[data-tone="emerald"] .choice-dot {
-      background: #00e676;
-      border-color: #00e676;
-      box-shadow: 0 0 8px #00e676;
+      background: #00e5ff !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 12px #00e5ff !important;
     }
     .action-choice-btn.is-selected[data-tone="sky"] {
-      background-color: rgba(56, 189, 248, 0.16);
-      border-color: #38bdf8;
-      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.22);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.32) 0%, rgba(56, 189, 248, 0.1) 100%) !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.45), inset 0 1px 0 #ffffff !important;
     }
     .action-choice-btn.is-selected[data-tone="sky"] .choice-dot {
-      background: #38bdf8;
-      border-color: #38bdf8;
-      box-shadow: 0 0 8px #38bdf8;
+      background: #38bdf8 !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 12px #38bdf8 !important;
     }
     .action-choice-btn.is-selected[data-tone="rose"] {
-      background-color: rgba(244, 63, 94, 0.18);
-      border-color: #f43f5e;
-      box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.24);
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.32) 0%, rgba(244, 63, 94, 0.1) 100%) !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 25px rgba(244, 63, 94, 0.45), inset 0 1px 0 #ffffff !important;
     }
     .action-choice-btn.is-selected[data-tone="rose"] .choice-dot {
-      background: #f43f5e;
-      border-color: #f43f5e;
-      box-shadow: 0 0 8px #f43f5e;
+      background: #f43f5e !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 12px #f43f5e !important;
     }
     .action-choice-btn.is-selected[data-tone="amber"] {
-      background-color: rgba(250, 204, 21, 0.16);
-      border-color: #facc15;
-      box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.22);
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.32) 0%, rgba(251, 191, 36, 0.1) 100%) !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 25px rgba(251, 191, 36, 0.45), inset 0 1px 0 #ffffff !important;
     }
     .action-choice-btn.is-selected[data-tone="amber"] .choice-dot {
-      background: #facc15;
-      border-color: #facc15;
-      box-shadow: 0 0 8px #facc15;
+      background: #fbbf24 !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 12px #fbbf24 !important;
     }
     .action-choice-btn.is-selected[data-tone="zinc"] {
-      background-color: rgba(241, 245, 249, 0.14);
-      border-color: #f1f5f9;
-      box-shadow: 0 0 0 2px rgba(241, 245, 249, 0.2);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.08) 100%) !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.35), inset 0 1px 0 #ffffff !important;
     }
     .action-choice-btn.is-selected[data-tone="zinc"] .choice-dot {
-      background: #ffffff;
-      border-color: #ffffff;
-      box-shadow: 0 0 8px #ffffff;
+      background: #ffffff !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 12px #ffffff !important;
     }
 
     @keyframes wave {
       0%, 100% { height: 6px; }
-      50% { height: 20px; }
+      50% { height: 22px; }
     }
     .voice-bar {
-      width: 3px;
-      background: #f43f5e;
+      width: 3.5px;
+      background: #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
       border-radius: 999px;
       animation: wave 0.75s infinite ease-in-out;
     }
   </style>
 </head>
 <body class="min-h-screen pb-14">
+
+  <!-- FONDO VIVO CON 10 BURBUJAS DE CRISTAL 3D FLOTANTES EN TIEMPO REAL -->
+  <div class="liquid-background" aria-hidden="true">
+    <div class="bubble-3d b-1"></div>
+    <div class="bubble-3d b-2"></div>
+    <div class="bubble-3d b-3"></div>
+    <div class="bubble-3d b-4"></div>
+    <div class="bubble-3d b-5"></div>
+    <div class="bubble-3d b-6"></div>
+    <div class="bubble-3d b-7"></div>
+    <div class="bubble-3d b-8"></div>
+    <div class="bubble-3d b-9"></div>
+    <div class="bubble-3d b-10"></div>
+  </div>
+
+  <div class="studio-viewport">
 
   <!-- Barra Superior de la Consola de Transmisión -->
   <header class="sticky top-0 z-50 fm-nav">
@@ -1313,5 +1457,6 @@
       syncStudioStatus();
     }, 2000);
   </script>
+  </div>
 </body>
 </html>
