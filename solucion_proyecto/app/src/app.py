@@ -1049,6 +1049,7 @@ FOOTBALL_PHONETIC_FIXES = [
     (r"\bnavy\b", "Gnabry"),
     (r"\bdías\b", "Díaz"),
     (r"\b(?i:arda\s+g[uü]ler)\b", "Arda Güler"),
+    (r"\b(?i:svartagular|svartaguler|arda\s*guler)\b", "Arda Güler"),
     (r"\b(?i:arda)\b(?!\s+g[uü]ler)", "Arda Güler"),
     (r"\b(?i:el\s+turco)\b", "Arda Güler"),
     (r"\bvinicius\b", "Vinícius Jr."),
@@ -1072,7 +1073,8 @@ FOOTBALL_PHONETIC_FIXES = [
     (r"\b(?i:chomeni|chuameni|tchouameni|choameni)\b", "Tchouaméni"),
     (r"\b(?i:camabinga|kamavinga)\b", "Camavinga"),
     (r"\b(?i:rudiguer|rudiger)\b", "Rüdiger"),
-    (r"\b(?i:kimich|quimich)\b", "Kimmich"),
+    (r"\b(?i:kimich|quimich|kimi\s+cerrado|kimi)\b", "Kimmich"),
+    (r"\b(?i:jonathan\s+tan)\b", "Jonathan Tah"),
     (r"\b(?i:goretska|goretsca)\b", "Goretzka"),
     (r"\b(?i:chezni|szczesny)\b", "Szczęsny"),
     (r"\b(?i:undogan|gundogan)\b", "Gündoğan"),
@@ -1113,8 +1115,8 @@ KNOWN_TEAM_PLAYERS = {
     "madrid": ["lunin", "courtois", "rüdiger", "valverde", "camavinga", "bellingham", "vinícius", "arda güler", "mbappé", "rodrygo", "modric", "carvajal"],
     "city": ["haaland", "foden", "cherki", "o'reilly", "reilly", "mateus nunes", "enzo fernández", "donnarumma", "doku", "de bruyne", "rodri", "bernardo", "gvardiol"],
     "leipzig": ["lukeba", "riedel baku", "baku", "antonio nusa", "nusa", "baumgartner", "gruda", "vandevoordt", "willi orbán", "orban", "raum", "openda", "šeško", "xavi simons"],
-    "villa": ["allison", "jackson", "mcginn", "watkins", "martínez", "bailey", "tielemans", "rogers", "konsa", "digne", "kamara", "buendía"],
-    "united": ["dalot", "bruno fernandes", "rashford", "garnacho", "onana", "casemiro", "hojlund", "mainoo", "martínez", "de ligt", "shaw"],
+    "villa": ["allison", "jackson", "mcginn", "dendoncker", "watkins", "martínez", "bailey", "tielemans", "rogers", "konsa", "digne", "kamara", "buendía", "douglas luiz", "ramsey", "durán"],
+    "united": ["dalot", "bruno fernandes", "rashford", "garnacho", "onana", "casemiro", "hojlund", "mainoo", "eriksen", "martínez", "de ligt", "shaw", "antony", "wan-bissaka", "varane"],
     "barcelona": ["lewandowski", "lamine yamal", "yamal", "raphinha", "pedri", "gavi", "koundé", "cubarsí", "ter stegen", "de jong"],
     "arsenal": ["saka", "odegaard", "havertz", "saliba", "gabriel", "rice", "raya", "martinelli", "trossard"],
     "liverpool": ["salah", "van dijk", "alisson", "mac allister", "luis díaz", "szoboszlai", "gakpo", "alexander-arnold", "núñez"]
@@ -1130,7 +1132,7 @@ def get_match_roster_summary(home_team: str, away_team: str) -> str:
     for k, players in KNOWN_TEAM_PLAYERS.items():
         if k in h_lower:
             h_players = [p.title() for p in players[:9]]
-        elif k in a_lower:
+        if k in a_lower:
             a_players = [p.title() for p in players[:9]]
     h_str = f"{home_team}: [{', '.join(h_players)}]" if h_players else home_team
     a_str = f"{away_team}: [{', '.join(a_players)}]" if a_players else away_team
@@ -1514,14 +1516,17 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
         f'  "description": "Máximo 15 palabras iniciando con ¡GOOOL DE {home_t.upper()}!, ¡GOOOL DE {away_t.upper()}!, ¡REMATE AL ARCO!, ¡TIRO DE ESQUINA!, ¡ERROR EN LA SALIDA! o ¡CIRCULACIÓN!"\n'
         "}\n"
         "Reglas:\n"
-        "1. team: Es el equipo que anota o ataca. Si le convierten gol a HOME, el gol es de AWAY. Si el relator dice 'empata' y HOME iba perdiendo, el gol es de HOME.\n"
-        "2. Si solo se grita '¡GOOOL!' sin decir equipo ni jugador, pon 'team': 'NEUTRAL' y 'type': 'COMMENT' para esperar confirmación.\n"
-        "3. declared_score: Pon el marcador numérico exacto si el relator lo menciona (ej. [1, 1], [0, 2]), de lo contrario null."
+        "1. team: Es el equipo que anota o ataca. Consulta la lista de jugadores enviada: si el jugador pertenece a HOME es 'HOME', si pertenece a AWAY es 'AWAY'. Si le convierten gol a HOME, el gol es de AWAY. Si el relator dice 'empata' y HOME iba abajo, el gol es de HOME.\n"
+        "2. GOAL_CONFIRMATION: Si hubo un gol reciente y el audio actual menciona quién lo anotó (ej. 'lo hizo X', repetición, autor) o festeja el mismo gol, usa 'type': 'GOAL_CONFIRMATION' para actualizar el autor sin sumar goles falsos.\n"
+        "3. declared_score: Pon el marcador numérico exacto si el relator lo menciona (ej. [1, 1], [0, 2]), de lo contrario null.\n"
+        "4. Si solo se grita '¡GOOOL!' sin decir equipo ni jugador, pon 'team': 'NEUTRAL' y 'type': 'COMMENT' para esperar confirmación."
     )
 
     context_line = f"Contexto hace 15-30s: \"{prev_context}\"\n" if prev_context else ""
     user_prompt = (
-        f"Partido: {home_t} vs {away_t}, Minuto {est_min}. Marcador actual: {home_t} {cur_h} - {cur_a} {away_t}.\n"
+        f"Partido: {home_t} (HOME) vs {away_t} (AWAY), Minuto {est_min}. Marcador actual: {home_t} {cur_h} - {cur_a} {away_t}.\n"
+        f"{roster_summary}\n"
+        f"{recent_goal_str}\n"
         f"{context_line}"
         f"Audio actual del relator: \"{corrected_transcript}\""
     )
@@ -1536,7 +1541,7 @@ def interpret_narrator_with_openrouter(transcript: str, current_state: dict, vid
                     {"role": "user", "content": user_prompt}
                 ],
                 "temperature": 0.05,
-                "max_tokens": 160,
+                "max_tokens": 220,
                 "response_format": {"type": "json_object"}
             }
 
