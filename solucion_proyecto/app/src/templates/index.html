@@ -658,6 +658,152 @@
       border: 1px solid rgba(255, 255, 255, 0.14);
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
     }
+
+    /* ==========================================================================
+       BARRA DE PROBABILIDAD DE VICTORIA (ESTILO GOOGLE / STATSBOMB)
+       100% CSS NATIVO DE ALTA FIDELIDAD (INDEPENDIENTE DE TAILWIND)
+       ========================================================================== */
+    .win-prob-card-box {
+      margin-top: 1.5rem;
+      max-width: 38rem;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    .win-prob-labels {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .win-prob-label-home {
+      color: #38bdf8;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .win-prob-dot-home {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      background: #38bdf8;
+      box-shadow: 0 0 10px #06b6d4;
+      flex-shrink: 0;
+    }
+
+    .win-prob-val-home {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+      font-size: 0.9375rem;
+      color: #ffffff;
+      margin-left: 2px;
+    }
+
+    .win-prob-label-draw {
+      color: #94a3b8;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .win-prob-dot-draw {
+      width: 6px;
+      height: 6px;
+      border-radius: 9999px;
+      background: #94a3b8;
+      flex-shrink: 0;
+    }
+
+    .win-prob-val-draw {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+      font-size: 0.9375rem;
+      color: #cbd5e1;
+      margin-left: 2px;
+    }
+
+    .win-prob-label-away {
+      color: #c084fc;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .win-prob-dot-away {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      background: #c084fc;
+      box-shadow: 0 0 10px #a855f7;
+      flex-shrink: 0;
+    }
+
+    .win-prob-val-away {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+      font-size: 0.9375rem;
+      color: #ffffff;
+      margin-right: 2px;
+    }
+
+    .win-prob-track {
+      position: relative;
+      width: 100%;
+      height: 14px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 9999px;
+      padding: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.85), 0 4px 16px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+
+    .win-prob-seg {
+      height: 100%;
+      min-width: 4px;
+      transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .win-prob-seg-home {
+      background: linear-gradient(90deg, #06b6d4, #38bdf8);
+      border-top-left-radius: 9999px;
+      border-bottom-left-radius: 9999px;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+    }
+
+    .win-prob-seg-draw {
+      background: linear-gradient(90deg, #475569, #94a3b8, #475569);
+      border-left: 1px solid rgba(0, 0, 0, 0.45);
+      border-right: 1px solid rgba(0, 0, 0, 0.45);
+    }
+
+    .win-prob-seg-away {
+      background: linear-gradient(90deg, #a855f7, #c084fc);
+      border-top-right-radius: 9999px;
+      border-bottom-right-radius: 9999px;
+      box-shadow: 0 0 12px rgba(192, 132, 252, 0.6);
+    }
+
+    .win-prob-footnote {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      margin-top: 0.4rem;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
   </style>
 </head>
@@ -784,42 +930,36 @@
 
         </div>
 
-        <!-- Barra de Probabilidad de Victoria (Estilo Google) -->
-        <div id="win-prob-card" class="mt-6 max-w-xl mx-auto px-1 sm:px-3">
-          <div class="flex items-center justify-between text-xs font-bold mb-2 tracking-tight">
+        <!-- Barra de Probabilidad de Victoria (Estilo Google / StatsBomb) -->
+        <div id="win-prob-card" class="win-prob-card-box">
+          <div class="win-prob-labels">
             <!-- Local -->
-            <span class="flex items-center gap-1.5 text-cyan-400">
-              <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
-              <span id="prob-home-name" class="truncate max-w-[110px] sm:max-w-[160px] font-semibold">Equipo Local</span>
-              <span id="prob-home-val" class="font-mono text-white text-xs sm:text-sm font-extrabold ml-0.5">37%</span>
+            <span class="win-prob-label-home">
+              <span class="win-prob-dot-home"></span>
+              <span id="prob-home-name" class="truncate max-w-[120px] sm:max-w-[170px]">Equipo Local</span>
+              <span id="prob-home-val" class="win-prob-val-home">37%</span>
             </span>
             <!-- Empate -->
-            <span class="flex items-center gap-1.5 text-zinc-400">
-              <span class="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
-              <span class="font-semibold text-zinc-300">Empate</span>
-              <span id="prob-draw-val" class="font-mono text-zinc-200 text-xs sm:text-sm font-extrabold ml-0.5">30%</span>
+            <span class="win-prob-label-draw">
+              <span class="win-prob-dot-draw"></span>
+              <span>Empate</span>
+              <span id="prob-draw-val" class="win-prob-val-draw">30%</span>
             </span>
             <!-- Visitante -->
-            <span class="flex items-center gap-1.5 text-purple-400">
-              <span id="prob-away-val" class="font-mono text-white text-xs sm:text-sm font-extrabold mr-0.5">33%</span>
-              <span id="prob-away-name" class="truncate max-w-[110px] sm:max-w-[160px] font-semibold">Equipo Visitante</span>
-              <span class="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc]"></span>
+            <span class="win-prob-label-away">
+              <span id="prob-away-val" class="win-prob-val-away">33%</span>
+              <span id="prob-away-name" class="truncate max-w-[120px] sm:max-w-[170px]">Equipo Visitante</span>
+              <span class="win-prob-dot-away"></span>
             </span>
           </div>
 
-          <!-- Pista tricolor de la barra -->
-          <div class="relative w-full h-3 sm:h-3.5 bg-black/60 rounded-full p-0.5 border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] overflow-hidden flex items-center">
-            <div id="prob-bar-home" style="width: 37%;"
-                 class="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-l-full shadow-[0_0_12px_rgba(34,211,238,0.5)] transition-all duration-700 ease-out"
-                 title="Probabilidad Victoria Local"></div>
-            <div id="prob-bar-draw" style="width: 30%;"
-                 class="h-full bg-gradient-to-r from-slate-500 via-zinc-400 to-slate-500 transition-all duration-700 ease-out border-x border-black/40"
-                 title="Probabilidad Empate"></div>
-            <div id="prob-bar-away" style="width: 33%;"
-                 class="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-r-full shadow-[0_0_12px_rgba(192,132,252,0.5)] transition-all duration-700 ease-out"
-                 title="Probabilidad Victoria Visitante"></div>
+          <!-- Pista tricolor de la barra con colores CSS garantizados -->
+          <div class="win-prob-track">
+            <div id="prob-bar-home" class="win-prob-seg win-prob-seg-home" style="width: 37%;" title="Probabilidad Victoria Local"></div>
+            <div id="prob-bar-draw" class="win-prob-seg win-prob-seg-draw" style="width: 30%;" title="Probabilidad Empate"></div>
+            <div id="prob-bar-away" class="win-prob-seg win-prob-seg-away" style="width: 33%;" title="Probabilidad Victoria Visitante"></div>
           </div>
-          <div class="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-zinc-400 font-semibold tracking-wider uppercase">
+          <div class="win-prob-footnote">
             <span>Probabilidad de Victoria · Tiempo Real</span>
           </div>
         </div>
