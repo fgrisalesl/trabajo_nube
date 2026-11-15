@@ -383,6 +383,7 @@ INITIAL_EVENTS = []
 
 local_events = deque(INITIAL_EVENTS, maxlen=200)
 local_match = dict(DEFAULT_MATCH)
+local_cheers = {"HOME": 0, "AWAY": 0}
 local_subscribers_vivo = []
 local_subscribers_resumen = []
 latency_samples = deque([3.8], maxlen=500)
@@ -474,6 +475,41 @@ def get_match_state() -> dict:
     return dict(local_match)
 
 
+def get_cheers_counts() -> dict:
+    """Devuelve el conteo acumulado de aplausos/reacciones por equipo desde Redis o memoria local."""
+    if redis_client:
+        try:
+            raw = redis_client.hgetall("match:cheers") or {}
+            return {
+                "home": int(raw.get("HOME", local_cheers["HOME"])),
+                "away": int(raw.get("AWAY", local_cheers["AWAY"])),
+            }
+        except Exception:
+            pass
+    with metrics_lock:
+        return {"home": int(local_cheers["HOME"]), "away": int(local_cheers["AWAY"])}
+
+
+def _broadcast_sse_payload(payload_dict: dict, state_to_save: dict | None = None):
+    """Emite un payload JSON a los canales SSE vivo y resumen (Redis Pub/Sub + suscriptores locales)."""
+    payload_str = json.dumps(payload_dict)
+    if redis_client:
+        try:
+            pipe = redis_client.pipeline()
+            if state_to_save is not None:
+                pipe.set("match:state", json.dumps(state_to_save))
+            pipe.publish("channel:vivo", payload_str)
+            pipe.publish("channel:resumen", payload_str)
+            pipe.execute()
+            return
+        except Exception:
+            pass
+    for q in list(local_subscribers_vivo):
+        q.append(payload_str)
+    for q in list(local_subscribers_resumen):
+        q.append(payload_str)
+
+
 def save_match_state(state: dict, clear_events: bool = False):
     global total_events_published, total_fanout_deliveries
     global simulated_peak_readers_vivo, simulated_peak_readers_resumen, simulated_peak_until
@@ -481,6 +517,9 @@ def save_match_state(state: dict, clear_events: bool = False):
     local_match.update(state)
     if clear_events:
         local_events.clear()
+        with metrics_lock:
+            local_cheers["HOME"] = 0
+            local_cheers["AWAY"] = 0
         total_events_published = 0
         total_fanout_deliveries = 0
         simulated_peak_readers_vivo = 0
@@ -491,7 +530,7 @@ def save_match_state(state: dict, clear_events: bool = False):
             pipe = redis_client.pipeline()
             pipe.set("match:state", json.dumps(state))
             if clear_events:
-                pipe.delete("match:events")
+                pipe.delete("match:events", "match:cheers")
                 pipe.set("match:metrics:events_published", 0)
                 pipe.set("match:metrics:fanout_deliveries", 0)
                 pipe.delete("match:peak:until", "match:peak:vivo", "match:peak:resumen")
@@ -2300,6 +2339,14 @@ def api_match_setup():
         state["away_team"] = str(body["away_team"]).strip()
     if body.get("tournament"):
         state["tournament"] = str(body["tournament"]).strip()
+    if body.get("status"):
+        state["status"] = str(body["status"]).strip()
+    if body.get("minute") is not None:
+        try:
+            m_val = int(body["minute"])
+            state["minute"] = max(0, min(130, m_val))
+        except (TypeError, ValueError):
+            pass
     if body.get("reset_score"):
         recent_transcripts_history.clear()
         discovered_match_players.clear()
@@ -2349,10 +2396,157 @@ def api_summary():
         highlights=highlights,
         events=events,
         stats=stats,
+        cheers=get_cheers_counts(),
+        discovered_players=list(discovered_match_players),
         served_by_node=HOSTNAME,
         cache_hit=bool(redis_client),
         latency_ms=cache_latency_ms
     )
+
+
+def _apply_goal_score_delta(state: dict, ev_type: str, ev_team: str, delta: int):
+    """Ajusta el marcador de un equipo cuando se agrega, corrige o elimina un gol."""
+    if ev_type != "GOAL" or ev_team not in {"HOME", "AWAY"}:
+        return
+    key = "home_score" if ev_team == "HOME" else "away_score"
+    state[key] = max(0, int(state.get(key, 0)) + delta)
+
+
+def _mutate_or_delete_event(event_id: str, updates: dict | None = None, delete: bool = False) -> tuple[dict | None, dict | None]:
+    """Edita o elimina una jugada en memoria/Redis y ajusta el marcador si aplica."""
+    target_ev = None
+    for idx, item in enumerate(local_events):
+        if str(item.get("id")) == str(event_id):
+            target_ev = dict(item)
+            if delete:
+                del local_events[idx]
+            else:
+                local_events[idx] = _merge_event_fields(local_events[idx], updates, get_match_state())
+                target_ev = dict(local_events[idx])
+            break
+
+    if redis_client:
+        try:
+            raw_list = redis_client.lrange("match:events", 0, -1)
+            for idx, raw_item in enumerate(raw_list):
+                ev_obj = json.loads(raw_item)
+                if str(ev_obj.get("id")) == str(event_id):
+                    if target_ev is None:
+                        target_ev = dict(ev_obj)
+                    if delete:
+                        new_items = [x for i, x in enumerate(raw_list) if i != idx]
+                        pipe = redis_client.pipeline()
+                        pipe.delete("match:events")
+                        if new_items:
+                            pipe.rpush("match:events", *new_items)
+                        pipe.execute()
+                    else:
+                        merged = _merge_event_fields(ev_obj, updates, get_match_state())
+                        redis_client.lset("match:events", idx, json.dumps(merged))
+                        target_ev = merged
+                    break
+        except Exception:
+            pass
+
+    if not target_ev:
+        return None, None
+
+    state = get_match_state()
+    if delete:
+        _apply_goal_score_delta(state, target_ev.get("type", ""), target_ev.get("team", ""), -1)
+        state["updated_at"] = datetime.now(timezone.utc).isoformat()
+        local_match.update(state)
+        _broadcast_sse_payload({"deleted_event_id": str(event_id), "match": state}, state_to_save=state)
+        return target_ev, state
+
+    # Para edición: el delta de marcador depende del estado anterior vs nuevo
+    old_ev = updates.get("_old_event", {}) if updates else {}
+    _apply_goal_score_delta(state, old_ev.get("type", ""), old_ev.get("team", ""), -1)
+    _apply_goal_score_delta(state, target_ev.get("type", ""), target_ev.get("team", ""), +1)
+    state["updated_at"] = datetime.now(timezone.utc).isoformat()
+    local_match.update(state)
+    _broadcast_sse_payload({"event": target_ev, "match": state, "updated_event": True}, state_to_save=state)
+    return target_ev, state
+
+
+def _merge_event_fields(ev_obj: dict, updates: dict | None, state: dict) -> dict:
+    merged = dict(ev_obj)
+    if not updates:
+        return merged
+    if "minute" in updates and updates["minute"] is not None:
+        merged["minute"] = max(0, min(130, int(updates["minute"])))
+    if updates.get("type"):
+        new_type = str(updates["type"]).upper()
+        if new_type in {"GOAL", "PENALTY", "RED_CARD", "YELLOW_CARD", "SUBSTITUTION", "COMMENT", "MATCH_START", "MATCH_END"}:
+            merged["type"] = new_type
+            prio, ch = classify_event_priority(new_type)
+            merged["priority"] = prio
+            merged["channel"] = ch
+    if updates.get("team") in {"HOME", "AWAY", "NEUTRAL"}:
+        t = updates["team"]
+        merged["team"] = t
+        merged["team_name"] = state["home_team"] if t == "HOME" else (state["away_team"] if t == "AWAY" else "Transmisión Oficial")
+    if "player" in updates:
+        clean_player = str(updates["player"] or "").strip() or "Relato en Vivo"
+        merged["player"] = clean_player
+        if clean_player not in {"Relato en Vivo", "Por confirmar", "Varios / Partido", "Transmisión Oficial"}:
+            if clean_player not in discovered_match_players:
+                discovered_match_players.append(clean_player)
+    if "description" in updates:
+        merged["description"] = str(updates["description"] or "").strip()
+    if merged.get("type") == "GOAL":
+        merged["scorer_confirmed"] = True
+    return merged
+
+
+@app.put("/api/events/<event_id>")
+def api_update_event(event_id: str):
+    """Permite al periodista editar una jugada publicada sin reiniciar el marcador."""
+    ok, err_msg, code = verify_journalist_request()
+    if not ok:
+        return jsonify(error=err_msg), code
+
+    data = request.get_json(silent=True) or {}
+    existing = next((e for e in get_all_events(limit=200) if str(e.get("id")) == str(event_id)), None)
+    if not existing:
+        return jsonify(error="Jugada no encontrada."), 404
+
+    data["_old_event"] = existing
+    updated_ev, new_state = _mutate_or_delete_event(event_id, updates=data, delete=False)
+    return jsonify(status="updated", event=updated_ev, match=new_state)
+
+
+@app.delete("/api/events/<event_id>")
+def api_delete_event(event_id: str):
+    """Permite al periodista borrar una jugada publicada por error."""
+    ok, err_msg, code = verify_journalist_request()
+    if not ok:
+        return jsonify(error=err_msg), code
+
+    deleted_ev, new_state = _mutate_or_delete_event(event_id, delete=True)
+    if not deleted_ev:
+        return jsonify(error="Jugada no encontrada."), 404
+    return jsonify(status="deleted", deleted_event_id=str(event_id), match=new_state)
+
+
+@app.post("/api/cheers")
+def api_post_cheers():
+    """Registra un aplauso/reacción en vivo para Local o Visitante."""
+    data = request.get_json(silent=True) or {}
+    team = str(data.get("team", "")).upper()
+    if team not in {"HOME", "AWAY"}:
+        return jsonify(error="Equipo inválido para aplauso."), 400
+
+    with metrics_lock:
+        local_cheers[team] = int(local_cheers.get(team, 0)) + 1
+
+    if redis_client:
+        try:
+            redis_client.hincrby("match:cheers", team, 1)
+        except Exception:
+            pass
+
+    return jsonify(status="ok", cheers=get_cheers_counts())
 
 
 @app.post("/api/events")
@@ -2551,6 +2745,7 @@ def api_metrics():
         peak_remaining_sec=peak_remaining_sec,
         total_events_published=ev_pub,
         total_fanout_deliveries=fanout_del,
+        cheers=get_cheers_counts(),
         groq_ready=bool(os.environ.get("GROQ_API_KEY", GROQ_API_KEY)),
         latency_ms={
             "avg": avg,

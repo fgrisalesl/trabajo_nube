@@ -5,15 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>UNAL SPORTS · Mini Marcador</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@500;600;700&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet" />
 
   <style>
     :root {
-      --bg-deep: #090a0d;
-      --glass-surface: rgba(255, 255, 255, 0.04);
-      --glass-border: rgba(255, 255, 255, 0.12);
+      --bg-obsidian: #0B0D0E;
+      --bg-concrete: #121517;
+      --bg-elevated: #181C1F;
+      --ink-chalk: #F4F2EC;
+      --ink-secondary: #A6ACA8;
+      --ink-dark: #0B0D0E;
+      --volt: #C8FF2E;
+      --vermilion: #FF3B1D;
+      --draw-slate: #3A4147;
+      --hairline: rgba(244, 242, 236, 0.16);
+      --hairline-strong: rgba(244, 242, 236, 0.3);
     }
 
     * {
@@ -24,101 +32,84 @@
     }
 
     body {
-      background-color: var(--bg-deep);
-      color: #ffffff;
-      font-family: 'Outfit', -apple-system, sans-serif;
+      background-color: var(--bg-obsidian);
+      color: var(--ink-chalk);
+      font-family: 'DM Sans', -apple-system, sans-serif;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
       height: 100vh;
-      padding: 12px 14px;
+      padding: 8px;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Fondo de Vidrio Ahumado con sutil brillo */
-    .popup-glass-card {
-      background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.08) 0%, rgba(15, 17, 23, 0.75) 100%);
-      border: 1px solid var(--glass-border);
-      border-radius: 18px;
-      padding: 12px 14px;
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 16px 36px rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      flex: 1;
+    .popup-desk {
+      height: 100%;
+      background: var(--bg-concrete);
+      border: 1px solid var(--hairline-strong);
+      border-top: 3px solid var(--volt);
+      border-radius: 2px;
+      padding: 10px 12px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      gap: 6px;
     }
 
-    /* Barra Superior */
     .popup-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding-bottom: 6px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid var(--hairline);
     }
 
     .brand-box {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
     }
 
     .brand-logo {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       object-fit: contain;
     }
 
     .brand-title {
-      font-family: 'Syne', sans-serif;
+      font-family: 'Barlow Condensed', sans-serif;
       font-weight: 800;
-      font-size: 11px;
-      letter-spacing: -0.01em;
-      color: #ffffff;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      color: var(--ink-chalk);
     }
 
     .live-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 7px;
-      border-radius: 9999px;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.35);
-      color: #6ee7b7;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 9px;
       font-weight: 800;
-    }
-
-    .live-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: #34d399;
-      box-shadow: 0 0 6px #10b981;
+      letter-spacing: 0.1em;
+      color: var(--ink-dark);
+      background: var(--volt);
+      padding: 1px 5px;
+      border-radius: 2px;
     }
 
     .minute-tag {
-      font-family: 'Orbitron', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 11px;
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 2px 8px;
-      border-radius: 9999px;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      color: var(--volt);
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline);
+      padding: 2px 7px;
+      border-radius: 2px;
     }
 
-    /* Marcador Principal */
     .scoreboard-row {
       display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
       gap: 8px;
-      margin: 8px 0;
     }
 
     .team-col {
@@ -130,18 +121,20 @@
     }
 
     .team-badge-box {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      width: 34px;
+      height: 34px;
+      border-radius: 2px;
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 4px;
       margin-bottom: 4px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
     }
+
+    .team-col--home .team-badge-box { border-bottom: 2px solid var(--volt); }
+    .team-col--away .team-badge-box { border-bottom: 2px solid var(--vermilion); }
 
     .team-badge {
       width: 100%;
@@ -150,64 +143,103 @@
     }
 
     .team-name {
-      font-family: 'Syne', sans-serif;
+      font-family: 'Barlow Condensed', sans-serif;
       font-weight: 700;
-      font-size: 11px;
-      color: #f4f4f5;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--ink-chalk);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 100px;
+      max-width: 100%;
     }
 
-    /* Números de Marcador en Orbitron */
     .score-center {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 14px;
-      padding: 6px 14px;
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline-strong);
+      border-radius: 2px;
+      padding: 5px 12px;
     }
 
     .score-digit {
-      font-family: 'Orbitron', monospace;
-      font-weight: 900;
-      font-size: 30px;
-      color: #ffffff;
-      line-height: 1;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: 32px;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink-chalk);
+      line-height: 0.9;
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s ease;
     }
 
     .score-colon {
-      font-size: 20px;
-      color: rgba(255, 255, 255, 0.4);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      color: var(--ink-secondary);
       line-height: 1;
-      font-weight: 300;
     }
 
     .score-pop {
-      transform: scale(1.35) !important;
-      color: #34d399 !important;
+      transform: scale(1.22);
+      color: var(--volt);
     }
 
-    /* Barra Inferior */
+    .pop-prob-box {
+      padding: 0 2px;
+    }
+
+    .pop-prob-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .prob-l-home { color: var(--volt); }
+    .prob-l-draw { color: var(--ink-secondary); }
+    .prob-l-away { color: var(--vermilion); }
+
+    .pop-prob-track {
+      width: 100%;
+      height: 6px;
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline);
+      border-radius: 1px;
+      overflow: hidden;
+      display: flex;
+      gap: 1px;
+    }
+
+    .pop-bar-seg {
+      height: 100%;
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .pop-seg-h { background: var(--volt); }
+    .pop-seg-d { background: var(--draw-slate); }
+    .pop-seg-a { background: var(--vermilion); }
+
     .popup-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 6px;
+      gap: 8px;
       padding-top: 6px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 10px;
-      color: #a1a1aa;
+      border-top: 1px solid var(--hairline);
     }
 
     .latest-action {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--ink-secondary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -216,128 +248,86 @@
     }
 
     .btn-focus {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-      padding: 2px 7px;
-      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 9px;
-      font-weight: 600;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--ink-dark);
+      background: var(--ink-chalk);
+      border: none;
+      border-radius: 2px;
+      padding: 4px 8px;
       cursor: pointer;
-      transition: background 0.2s;
+      flex-shrink: 0;
+      transition: background-color 0.16s ease, transform 0.12s ease;
     }
 
     .btn-focus:hover {
-      background: rgba(255, 255, 255, 0.18);
+      background: var(--volt);
     }
 
-    /* Micro Barra de Probabilidad Google-style */
-    .pop-prob-box {
-      margin: 4px 0 6px 0;
-      padding: 0 4px;
+    .btn-focus:active {
+      transform: scale(0.96);
     }
-    .pop-prob-labels {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 9px;
-      font-weight: 700;
-      margin-bottom: 3px;
-      letter-spacing: -0.01em;
-    }
-    .prob-l-home { color: #38bdf8; font-family: 'Orbitron', monospace; }
-    .prob-l-draw { color: #94a3b8; font-family: 'Outfit', sans-serif; font-size: 8.5px; }
-    .prob-l-away { color: #c084fc; font-family: 'Orbitron', monospace; }
-    .pop-prob-track {
-      width: 100%;
-      height: 6px;
-      background: rgba(0, 0, 0, 0.6);
-      border-radius: 9999px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      overflow: hidden;
-      display: flex;
-    }
-    .pop-bar-seg {
-      height: 100%;
-      transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .pop-seg-h {
-      background: linear-gradient(90deg, #06b6d4, #38bdf8);
-      box-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
-    }
-    .pop-seg-d {
-      background: #64748b;
-      border-left: 1px solid rgba(0,0,0,0.3);
-      border-right: 1px solid rgba(0,0,0,0.3);
-    }
-    .pop-seg-a {
-      background: linear-gradient(90deg, #a855f7, #c084fc);
-      box-shadow: 0 0 6px rgba(192, 132, 252, 0.4);
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="popup-glass-card">
-    <!-- Top Bar -->
+  <div class="popup-desk">
     <div class="popup-top">
       <div class="brand-box">
-        <img src="/api/icon/logo" alt="" class="brand-logo" />
+        <img src="/api/icon/logo" alt="" class="brand-logo" onerror="this.style.display='none'" />
         <span class="brand-title">UNAL SPORTS</span>
-        <span class="live-tag">
-          <span class="live-dot"></span>
-          EN VIVO
-        </span>
+        <span class="live-tag">EN VIVO</span>
       </div>
       <div class="minute-tag">
         <span id="pop-minute">0</span>'
       </div>
     </div>
 
-    <!-- Center Scoreboard -->
     <div class="scoreboard-row">
-      <!-- Local Team -->
-      <div class="team-col">
+      <div class="team-col team-col--home">
         <div class="team-badge-box">
-          <img id="pop-home-badge" src="/api/badge?team=Equipo%20Local" alt="" class="team-badge" onerror="this.src='/escudos/default.svg'" />
+          <img id="pop-home-badge" src="/api/badge?team=Equipo%20Local" alt="" class="team-badge" onerror="this.onerror=null;this.src='/escudos/default.svg'" />
         </div>
         <span id="pop-home-team" class="team-name">Equipo Local</span>
       </div>
 
-      <!-- Score Display -->
       <div class="score-center">
         <span id="pop-home-score" class="score-digit">0</span>
         <span class="score-colon">:</span>
         <span id="pop-away-score" class="score-digit">0</span>
       </div>
 
-      <!-- Away Team -->
-      <div class="team-col">
+      <div class="team-col team-col--away">
         <div class="team-badge-box">
-          <img id="pop-away-badge" src="/api/badge?team=Equipo%20Visitante" alt="" class="team-badge" onerror="this.src='/escudos/default.svg'" />
+          <img id="pop-away-badge" src="/api/badge?team=Equipo%20Visitante" alt="" class="team-badge" onerror="this.onerror=null;this.src='/escudos/default.svg'" />
         </div>
         <span id="pop-away-team" class="team-name">Equipo Visitante</span>
       </div>
     </div>
 
-    <!-- Micro Barra de Probabilidad Google-style -->
     <div class="pop-prob-box">
       <div class="pop-prob-labels">
-        <span class="prob-l-home"><span id="pop-prob-h-val">37%</span> <span id="pop-prob-h-name">Local</span></span>
+        <span class="prob-l-home"><span id="pop-prob-h-val">35%</span> <span id="pop-prob-h-name">Local</span></span>
         <span class="prob-l-draw">Empate <span id="pop-prob-d-val">30%</span></span>
-        <span class="prob-l-away"><span id="pop-prob-a-name">Visita</span> <span id="pop-prob-a-val">33%</span></span>
+        <span class="prob-l-away"><span id="pop-prob-a-name">Visita</span> <span id="pop-prob-a-val">35%</span></span>
       </div>
       <div class="pop-prob-track">
-        <div id="pop-bar-h" class="pop-bar-seg pop-seg-h" style="width: 37%;"></div>
+        <div id="pop-bar-h" class="pop-bar-seg pop-seg-h" style="width: 35%;"></div>
         <div id="pop-bar-d" class="pop-bar-seg pop-seg-d" style="width: 30%;"></div>
-        <div id="pop-bar-a" class="pop-bar-seg pop-seg-a" style="width: 33%;"></div>
+        <div id="pop-bar-a" class="pop-bar-seg pop-seg-a" style="width: 35%;"></div>
       </div>
     </div>
 
-    <!-- Bottom Action Pill -->
     <div class="popup-footer">
-      <div id="pop-status-text" class="latest-action">
-        ⚡ Conectado · Esperando inicio del encuentro
-      </div>
+      <div id="pop-status-text" class="latest-action">Conectado · Esperando inicio del encuentro</div>
       <button type="button" class="btn-focus" onclick="focusMainApp()" title="Volver a la pestaña principal">
         Expandir ↗
       </button>
@@ -345,99 +335,77 @@
   </div>
 
   <script>
-    let currentHome = '';
-    let currentAway = '';
+    'use strict';
+    var currentHome = '';
+    var currentAway = '';
+    var knownEvents = new Map();
 
     function animateScore(id, val) {
-      const el = document.getElementById(id);
+      var el = document.getElementById(id);
       if (el && el.textContent !== String(val)) {
         el.textContent = val;
         el.classList.add('score-pop');
-        setTimeout(() => el.classList.remove('score-pop'), 450);
+        setTimeout(function () { el.classList.remove('score-pop'); }, 550);
       }
     }
 
-    function calcWinProbability(hScore, aScore, minute) {
-      const m = Math.max(0, Math.min(95, Number(minute) || 0));
-      const p = m / 90.0;
-      const diff = (Number(hScore) || 0) - (Number(aScore) || 0);
-      let hProb = 0, dProb = 0, aProb = 0;
-
-      if (diff === 0) {
-        dProb = 30 + 56 * Math.pow(p, 1.4);
-        const rem = 100 - dProb;
-        const homeShare = 0.53 - 0.03 * p;
-        hProb = rem * homeShare;
-        aProb = rem * (1 - homeShare);
-      } else if (diff > 0) {
-        if (diff === 1) {
-          hProb = 58 + 38 * Math.pow(p, 1.2);
-          dProb = (100 - hProb) * (0.68 - 0.18 * p);
-          aProb = 100 - hProb - dProb;
-        } else {
-          const extra = Math.min(3, diff - 2);
-          hProb = 74 + (8 * extra) + (24 - 8 * extra) * Math.pow(p, 0.9);
-          hProb = Math.min(99, hProb);
-          dProb = (100 - hProb) * (0.65 - 0.25 * p);
-          aProb = 100 - hProb - dProb;
-        }
-      } else {
-        const absDiff = Math.abs(diff);
-        if (absDiff === 1) {
-          aProb = 55 + 40 * Math.pow(p, 1.2);
-          dProb = (100 - aProb) * (0.64 - 0.14 * p);
-          hProb = 100 - aProb - dProb;
-        } else {
-          const extra = Math.min(3, absDiff - 2);
-          aProb = 72 + (8 * extra) + (26 - 8 * extra) * Math.pow(p, 0.9);
-          aProb = Math.min(99, aProb);
-          dProb = (100 - aProb) * (0.65 - 0.25 * p);
-          hProb = 100 - aProb - dProb;
-        }
+    function calcWinProbability(hScore, aScore, minute, status, redH, redA) {
+      if (/FINAL/i.test(status || '')) {
+        if (hScore > aScore) return { home: 100, draw: 0, away: 0 };
+        if (aScore > hScore) return { home: 0, draw: 0, away: 100 };
+        return { home: 0, draw: 100, away: 0 };
       }
+      var m = Math.max(0, Math.min(90, Number(minute) || 0));
+      var timeFactor = 0.3 + 0.7 * (m / 90);
+      var diff = (Number(hScore) || 0) - (Number(aScore) || 0);
+      var redPenalty = ((Number(redA) || 0) - (Number(redH) || 0)) * 0.45;
+      var eff = diff * (1 + timeFactor * 1.45) + redPenalty;
 
-      let rH = Math.round(hProb);
-      let rA = Math.round(aProb);
-      rH = Math.max(1, Math.min(98, rH));
-      rA = Math.max(1, Math.min(98, rA));
-      let rD = 100 - rH - rA;
-      if (rD < 1) {
-        rD = 1;
-        if (rH >= rA) rH = 100 - rA - rD;
-        else rA = 100 - rH - rD;
-      }
+      var drawBase = Math.max(8, 30 * (1 - Math.abs(diff) * 0.35) * (1 - m / 115));
+      if (diff === 0 && m > 70) drawBase = 30 + (m - 70) * 1.1;
+
+      var rem = 100 - drawBase;
+      var homeShare = 1 / (1 + Math.exp(-eff * 1.15));
+      var rH = Math.round(rem * homeShare);
+      var rD = Math.round(drawBase);
+      var rA = 100 - rH - rD;
+      if (rA < 0) { rA = 0; rH = 100 - rD; }
       return { home: rH, draw: rD, away: rA };
+    }
+
+    function shortTeamLabel(name) {
+      if (!name) return '';
+      var stop = { fc: 1, cf: 1, cd: 1, sc: 1, ac: 1, rc: 1, rb: 1, sd: 1, ud: 1, de: 1, la: 1, el: 1, del: 1, club: 1, atletico: 1, atlético: 1, deportivo: 1 };
+      var tokens = String(name).trim().split(/\s+/).filter(Boolean);
+      var significant = tokens.filter(function (t) { return !stop[t.toLowerCase()]; });
+      if (significant.length > 0) return significant[significant.length - 1];
+      return tokens[0] || name;
     }
 
     function updatePopupWinProbability(match) {
       if (!match) return;
-      const probs = calcWinProbability(match.home_score, match.away_score, match.minute);
+      var rH = 0, rA = 0;
+      knownEvents.forEach(function (ev) {
+        if (ev.type === 'RED_CARD') {
+          if (ev.team === 'HOME') rH++;
+          else if (ev.team === 'AWAY') rA++;
+        }
+      });
+      var probs = calcWinProbability(match.home_score, match.away_score, match.minute, match.status, rH, rA);
 
-      const barH = document.getElementById('pop-bar-h');
-      const barD = document.getElementById('pop-bar-d');
-      const barA = document.getElementById('pop-bar-a');
+      document.getElementById('pop-bar-h').style.width = probs.home + '%';
+      document.getElementById('pop-bar-d').style.width = probs.draw + '%';
+      document.getElementById('pop-bar-a').style.width = probs.away + '%';
 
-      if (barH) barH.style.width = `${probs.home}%`;
-      if (barD) barD.style.width = `${probs.draw}%`;
-      if (barA) barA.style.width = `${probs.away}%`;
+      document.getElementById('pop-prob-h-val').textContent = probs.home + '%';
+      document.getElementById('pop-prob-d-val').textContent = probs.draw + '%';
+      document.getElementById('pop-prob-a-val').textContent = probs.away + '%';
 
-      const valH = document.getElementById('pop-prob-h-val');
-      const valD = document.getElementById('pop-prob-d-val');
-      const valA = document.getElementById('pop-prob-a-val');
-
-      if (valH) valH.textContent = `${probs.home}%`;
-      if (valD) valD.textContent = `${probs.draw}%`;
-      if (valA) valA.textContent = `${probs.away}%`;
-
-      const nameH = document.getElementById('pop-prob-h-name');
-      const nameA = document.getElementById('pop-prob-a-name');
-      if (nameH && match.home_team) {
-        const parts = match.home_team.trim().split(' ');
-        nameH.textContent = parts[parts.length - 1] || match.home_team;
+      if (match.home_team) {
+        document.getElementById('pop-prob-h-name').textContent = shortTeamLabel(match.home_team);
       }
-      if (nameA && match.away_team) {
-        const parts = match.away_team.trim().split(' ');
-        nameA.textContent = parts[parts.length - 1] || match.away_team;
+      if (match.away_team) {
+        document.getElementById('pop-prob-a-name').textContent = shortTeamLabel(match.away_team);
       }
     }
 
@@ -446,31 +414,34 @@
       if (match.home_team && match.home_team !== currentHome) {
         currentHome = match.home_team;
         document.getElementById('pop-home-team').textContent = match.home_team;
-        document.getElementById('pop-home-badge').src = `/api/badge?team=${encodeURIComponent(match.home_team)}&t=${Date.now()}`;
+        document.getElementById('pop-home-badge').src = '/api/badge?team=' + encodeURIComponent(match.home_team);
       }
       if (match.away_team && match.away_team !== currentAway) {
         currentAway = match.away_team;
         document.getElementById('pop-away-team').textContent = match.away_team;
-        document.getElementById('pop-away-badge').src = `/api/badge?team=${encodeURIComponent(match.away_team)}&t=${Date.now()}`;
+        document.getElementById('pop-away-badge').src = '/api/badge?team=' + encodeURIComponent(match.away_team);
       }
-      animateScore('pop-home-score', match.home_score);
-      animateScore('pop-away-score', match.away_score);
-      document.getElementById('pop-minute').textContent = match.minute;
+      animateScore('pop-home-score', match.home_score !== undefined ? match.home_score : 0);
+      animateScore('pop-away-score', match.away_score !== undefined ? match.away_score : 0);
+      document.getElementById('pop-minute').textContent = match.minute !== undefined ? match.minute : 0;
       updatePopupWinProbability(match);
     }
 
     function updateActionText(ev) {
-      const el = document.getElementById('pop-status-text');
+      var el = document.getElementById('pop-status-text');
       if (!el || !ev) return;
-      let icon = '⚡';
-      if (ev.type === 'GOAL') icon = '⚽';
-      else if (ev.type === 'PENALTY') icon = '🥅';
-      else if (ev.type === 'YELLOW_CARD') icon = '🟨';
-      else if (ev.type === 'RED_CARD') icon = '🟥';
-      else if (ev.type === 'SUBSTITUTION') icon = '🔄';
-
-      const player = ev.player ? ` (${ev.player})` : '';
-      el.textContent = `${icon} ${ev.minute}' ${ev.type} ${player} - ${ev.description || ''}`;
+      var tags = {
+        GOAL: 'GOL',
+        PENALTY: 'PENAL',
+        YELLOW_CARD: 'AMARILLA',
+        RED_CARD: 'ROJA',
+        SUBSTITUTION: 'CAMBIO',
+        MATCH_START: 'INICIO',
+        COMMENT: 'EN VIVO'
+      };
+      var tag = tags[ev.type] || (ev.type || 'SUCESO');
+      var player = ev.player ? ' · ' + ev.player : '';
+      el.textContent = ev.minute + "' [" + tag + "]" + player + ' — ' + (ev.description || '');
     }
 
     function focusMainApp() {
@@ -481,43 +452,49 @@
       }
     }
 
-    async function pollSummary() {
-      try {
-        const res = await fetch('/api/summary');
-        const data = await res.json();
-        updateMatch(data.match);
-        if (data.events && data.events.length > 0) {
-          updateActionText(data.events[0]);
-        }
-      } catch (e) {}
+    function pollSummary() {
+      fetch('/api/summary', { cache: 'no-store' })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.events && Array.isArray(data.events)) {
+            knownEvents.clear();
+            data.events.forEach(function (ev) { knownEvents.set(String(ev.id), ev); });
+          }
+          if (data.match) updateMatch(data.match);
+          if (data.events && data.events.length > 0) updateActionText(data.events[0]);
+        })
+        .catch(function () {});
     }
 
-    // Conexión SSE
-    let evtSource = null;
+    var evtSource = null;
     function connectSSE() {
       if (evtSource) evtSource.close();
       evtSource = new EventSource('/api/stream/vivo?vid=popup_' + Date.now().toString(36));
-      evtSource.addEventListener('match_event', (e) => {
+      evtSource.addEventListener('match_event', function (e) {
         try {
-          const payload = JSON.parse(e.data);
+          var payload = JSON.parse(e.data);
+          if (payload.reset) knownEvents.clear();
+          if (payload.event) {
+            knownEvents.set(String(payload.event.id), payload.event);
+            updateActionText(payload.event);
+          }
           if (payload.match) updateMatch(payload.match);
-          if (payload.event) updateActionText(payload.event);
-        } catch(err) {}
+        } catch (err) {}
       });
-      evtSource.addEventListener('connected', (e) => {
+      evtSource.addEventListener('connected', function (e) {
         try {
-          const payload = JSON.parse(e.data);
+          var payload = JSON.parse(e.data);
           if (payload.match) updateMatch(payload.match);
-        } catch(err) {}
+        } catch (err) {}
       });
-      evtSource.onerror = () => {
+      evtSource.onerror = function () {
         setTimeout(connectSSE, 2000);
       };
     }
 
     pollSummary();
     connectSSE();
-    setInterval(pollSummary, 1200);
+    setInterval(pollSummary, 3500);
   </script>
 </body>
 </html>

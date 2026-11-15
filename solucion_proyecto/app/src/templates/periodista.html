@@ -1,719 +1,1608 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UNAL Sports · Consola de Transmisión</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B0D0E" />
+  <title>UNAL SPORTS · Cabina de Transmisión</title>
   <link rel="icon" href="/api/icon/logo" />
   <link rel="shortcut icon" href="/api/icon/logo" />
   <link rel="apple-touch-icon" href="/api/icon/logo" />
-  <link rel="stylesheet" href="/static/tailwind.min.css" />
 
-  <!-- TIPOGRAFÍA FUTURISTA LUXURY: Syne + Outfit + Orbitron -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
     /* ==========================================================================
-       ULTRA-CLEAR 3D GLASSMORPHISM & FLOATING 3D BUBBLES · UNAL SPORTS STUDIO
-       Vidrio Neutro Transparente + Esferas 3D con Reflejo Especular en Tiempo Real
+       THESIS: ON-AIR BROADCAST SWITCHER & PRESS DESK
+       Sibling of Swiss Stadium Telemetry Desk · Solid Architectural Hardware UI
+       Palette: Obsidian (#0B0D0E) · Concrete (#121517) · Chalk (#F4F2EC) · Volt (#C8FF2E) · Vermilion (#FF3B1D)
        ========================================================================== */
-
     :root {
-      --bg-deep: #090a0d;
-      --silver-bright: #ffffff;
-      --text-primary: #ffffff;
-      --text-secondary: rgba(255, 255, 255, 0.85);
-      --text-muted: rgba(255, 255, 255, 0.55);
-      
-      --glass-clear: rgba(255, 255, 255, 0.05);
-      --bevel-light: inset 0 1.5px 1px rgba(255, 255, 255, 0.35), inset 1px 0 1px rgba(255, 255, 255, 0.15), inset 0 -1px 1px rgba(0, 0, 0, 0.4);
-      --glass-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.7);
-      
-      --spring-apple: cubic-bezier(0.16, 1, 0.3, 1);
-      --spring-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      --bg-obsidian: #0B0D0E;
+      --bg-concrete: #121517;
+      --bg-elevated: #181C1F;
+      --bg-rack: #0E1012;
+
+      --ink-chalk: #F4F2EC;
+      --ink-secondary: #A6ACA8;
+      --ink-muted: #858E94;
+      --ink-dark: #0B0D0E;
+
+      --volt: #C8FF2E;
+      --volt-dim: rgba(200, 255, 46, 0.13);
+      --vermilion: #FF3B1D;
+      --vermilion-dim: rgba(255, 59, 29, 0.14);
+      --amber: #FFB800;
+      --amber-dim: rgba(255, 184, 0, 0.14);
+
+      --hairline: rgba(244, 242, 236, 0.14);
+      --hairline-strong: rgba(244, 242, 236, 0.28);
+
+      --font-display: 'Barlow Condensed', 'Arial Narrow', -apple-system, sans-serif;
+      --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+      --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-snappy: cubic-bezier(0.2, 0.9, 0.3, 1);
+      --radius: 2px;
     }
 
-    * { box-sizing: border-box; }
-
-    body {
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
+    }
+
+    html {
+      background: var(--bg-obsidian);
+      color: var(--ink-chalk);
+    }
+
+    body {
       min-height: 100vh;
-      background-color: var(--bg-deep);
-      color: var(--text-primary);
-      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      background-color: var(--bg-obsidian);
+      color: var(--ink-chalk);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      overflow-x: clip;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      font-variant-numeric: tabular-nums;
-      overflow-x: hidden;
-      position: relative;
+      padding-bottom: max(48px, env(safe-area-inset-bottom));
     }
 
-    /* Tipografía Escultórica de Vanguardia para Títulos, Equipos y Cabecera */
-    h1, h2, h3, h4, .font-display, #studio-home-name, #studio-away-name, .brand-logo-text {
-      font-family: 'Syne', -apple-system, BlinkMacSystemFont, sans-serif;
-      letter-spacing: -0.015em;
+    .hidden {
+      display: none !important;
     }
 
-    /* Tipografía Digital HUD Futurista para Marcador y Contadores: Orbitron */
-    .font-mono, #studio-min, #header-live-readers, #studio-home, #studio-away, .stat-num {
-      font-family: 'Orbitron', 'Space Mono', SFMono-Regular, Menlo, monospace !important;
-      letter-spacing: 0.03em;
+    button, input, select, textarea {
+      font: inherit;
+      color: inherit;
     }
 
-    /* Ecosistema de Burbujas 3D Totalmente Transparentes (Cero Color / Cero Azul) */
-    .liquid-background {
-      position: fixed;
-      inset: 0;
-      overflow: hidden;
-      pointer-events: none;
-      z-index: 0;
-      background: 
-        radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
-        radial-gradient(circle at 82% 28%, rgba(255, 255, 255, 0.04) 0%, transparent 45%),
-        radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
-        #090a0d;
+    button {
+      background: none;
+      border: none;
+      cursor: pointer;
     }
 
-    .bubble-3d {
-      position: absolute;
-      border-radius: 50%;
-      overflow: hidden;
-      background: radial-gradient(
-        circle at 32% 30%,
-        rgba(255, 255, 255, 0.35) 0%,
-        rgba(255, 255, 255, 0.08) 22%,
-        rgba(255, 255, 255, 0.02) 55%,
-        rgba(0, 0, 0, 0.30) 78%,
-        rgba(255, 255, 255, 0.20) 100%
-      );
-      box-shadow: 
-        inset 0 0 0 1.2px rgba(255, 255, 255, 0.35),
-        inset -8px -8px 20px rgba(0, 0, 0, 0.65),
-        inset 6px 6px 14px rgba(255, 255, 255, 0.35),
-        0 14px 35px rgba(0, 0, 0, 0.6);
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
-      transform: translateZ(0);
-      outline: 1px solid transparent;
-      will-change: transform;
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    a:focus-visible {
+      outline: 2px solid var(--volt);
+      outline-offset: 2px;
     }
 
-    .bubble-3d::before {
-      content: '';
-      position: absolute;
-      top: 14%;
-      left: 18%;
-      width: 28%;
-      height: 16%;
-      border-radius: 50%;
-      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 75%);
-      transform: rotate(-35deg);
+    a {
+      color: inherit;
+      text-decoration: none;
     }
 
-    .bubble-3d::after {
-      content: '';
-      position: absolute;
-      bottom: 12%;
-      right: 15%;
-      width: 18%;
-      height: 10%;
-      border-radius: 50%;
-      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.45) 0%, transparent 75%);
-      transform: rotate(-35deg);
-    }
-      transform: rotate(-35deg);
+    code {
+      font-family: var(--font-mono);
+      background: rgba(244, 242, 236, 0.08);
+      padding: 1px 5px;
+      border-radius: var(--radius);
+      font-size: 0.85em;
     }
 
-    .b-1 { width: 190px; height: 190px; top: 8%; left: 14%; animation: floatPath1 12s infinite alternate ease-in-out; }
-    .b-2 { width: 120px; height: 120px; top: 22%; right: 16%; animation: floatPath2 10s infinite alternate ease-in-out; }
-    .b-3 { width: 240px; height: 240px; top: 45%; left: 8%; animation: floatPath3 15s infinite alternate ease-in-out; opacity: 0.85; }
-    .b-4 { width: 95px; height: 95px; top: 15%; left: 48%; animation: floatPath4 9s infinite alternate ease-in-out; }
-    .b-5 { width: 165px; height: 165px; top: 62%; right: 12%; animation: floatPath1 13s infinite alternate-reverse ease-in-out; }
-    .b-6 { width: 75px; height: 75px; top: 38%; right: 32%; animation: floatPath2 8s infinite alternate ease-in-out; }
-    .b-7 { width: 140px; height: 140px; bottom: 8%; left: 32%; animation: floatPath3 11s infinite alternate ease-in-out; }
-    .b-8 { width: 60px; height: 60px; top: 72%; left: 22%; animation: floatPath4 7.5s infinite alternate ease-in-out; }
-    .b-9 { width: 210px; height: 210px; top: 28%; left: 68%; animation: floatPath1 14s infinite alternate ease-in-out; opacity: 0.8; }
-    .b-10 { width: 85px; height: 85px; bottom: 18%; right: 42%; animation: floatPath2 9.5s infinite alternate-reverse ease-in-out; }
-
-    @keyframes floatPath1 {
-      0% { transform: translate3d(0, 0, 0) scale(1); }
-      50% { transform: translate3d(110px, -90px, 0) scale(1.06); }
-      100% { transform: translate3d(-70px, 100px, 0) scale(0.95); }
-    }
-    @keyframes floatPath2 {
-      0% { transform: translate3d(0, 0, 0) scale(1); }
-      50% { transform: translate3d(-120px, 85px, 0) scale(1.08); }
-      100% { transform: translate3d(80px, -95px, 0) scale(0.94); }
-    }
-    @keyframes floatPath3 {
-      0% { transform: translate3d(0, 0, 0) scale(0.96); }
-      50% { transform: translate3d(130px, 75px, 0) scale(1.05); }
-      100% { transform: translate3d(-90px, -110px, 0) scale(1.02); }
-    }
-    @keyframes floatPath4 {
-      0% { transform: translate3d(0, 0, 0) scale(1); }
-      50% { transform: translate3d(-85px, -100px, 0) scale(1.1); }
-      100% { transform: translate3d(95px, 80px, 0) scale(0.92); }
-    }
-
-    /* Capa de Contenido */
-    .studio-viewport {
-      position: relative;
-      z-index: 10;
-    }
-
-    /* Barra Superior de Vidrio Ahumado Transparente */
-    .fm-nav {
-      background: rgba(14, 16, 22, 0.65) !important;
-      backdrop-filter: blur(28px) saturate(140%) !important;
-      -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
-      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-    }
-
-    /* Placas Maestras de Vidrio Neutro Ultra-Transparente */
-    .fm-surface {
-      background: var(--glass-clear) !important;
-      backdrop-filter: blur(28px) saturate(140%) !important;
-      -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.14) !important;
-      box-shadow: var(--glass-shadow), var(--bevel-light) !important;
-    }
-
-    /* Entradas de Texto en Vidrio Translúcido */
-    .fm-input {
-      background: rgba(255, 255, 255, 0.06) !important;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.16) !important;
-      color: #ffffff !important;
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-      transition: all 0.2s var(--spring-apple) !important;
-    }
-    .fm-input:focus {
-      border-color: #ffffff !important;
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2), inset 0 1px 0 #ffffff !important;
-      outline: none !important;
-    }
-
-    /* Pestañas de Modo */
-    .fm-mode-active {
-      background: rgba(255, 255, 255, 0.18) !important;
-      border: 1px solid rgba(255, 255, 255, 0.35) !important;
-      color: #ffffff !important;
-      font-weight: 800 !important;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
-    }
-    .fm-mode-inactive {
-      background: transparent !important;
-      color: rgba(255, 255, 255, 0.65) !important;
-      font-weight: 600 !important;
-    }
-    .fm-mode-inactive:hover {
-      color: #ffffff !important;
-      background: rgba(255, 255, 255, 0.08) !important;
-    }
-
-    /* Botones de Acción de Jugadas en Vidrio Transparente */
-    .action-choice-btn {
-      background: rgba(255, 255, 255, 0.05) !important;
-      border: 1px solid rgba(255, 255, 255, 0.14) !important;
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      color: #e2e8f0 !important;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-      transition: all 0.22s var(--spring-apple) !important;
-    }
-    .action-choice-btn:hover {
-      transform: translateY(-2px);
-      border-color: rgba(255, 255, 255, 0.35) !important;
-      color: #ffffff !important;
-      background: rgba(255, 255, 255, 0.09) !important;
-    }
-    .action-choice-btn.is-selected {
-      transform: translateY(-2px);
-      color: #ffffff !important;
-    }
-    .action-choice-btn.is-selected[data-tone="emerald"] {
-      background: rgba(16, 185, 129, 0.22) !important;
-      border-color: #34d399 !important;
-      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-    }
-    .action-choice-btn.is-selected[data-tone="emerald"] .choice-dot {
-      background: #34d399 !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 0 8px #34d399 !important;
-    }
-    .action-choice-btn.is-selected[data-tone="sky"] {
-      background: rgba(255, 255, 255, 0.18) !important;
-      border-color: rgba(255, 255, 255, 0.6) !important;
-      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
-    }
-    .action-choice-btn.is-selected[data-tone="sky"] .choice-dot {
-      background: #ffffff !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 0 8px rgba(255, 255, 255, 0.7) !important;
-    }
-    .action-choice-btn.is-selected[data-tone="rose"] {
-      background: rgba(244, 63, 94, 0.22) !important;
-      border-color: #fb7185 !important;
-      box-shadow: 0 4px 14px rgba(244, 63, 94, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-    }
-    .action-choice-btn.is-selected[data-tone="rose"] .choice-dot {
-      background: #fb7185 !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 0 8px #fb7185 !important;
-    }
-    .action-choice-btn.is-selected[data-tone="amber"] {
-      background: rgba(251, 191, 36, 0.22) !important;
-      border-color: #fbbf24 !important;
-      box-shadow: 0 4px 14px rgba(251, 191, 36, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-    }
-    .action-choice-btn.is-selected[data-tone="amber"] .choice-dot {
-      background: #fbbf24 !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 0 8px #fbbf24 !important;
-    }
-    .action-choice-btn.is-selected[data-tone="zinc"] {
-      background: rgba(255, 255, 255, 0.16) !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-    }
-    .action-choice-btn.is-selected[data-tone="zinc"] .choice-dot {
-      background: #ffffff !important;
-      border-color: #cbd5e1 !important;
-      box-shadow: 0 0 8px #ffffff !important;
-    }
-
-    @keyframes wave {
-      0%, 100% { height: 6px; }
-      50% { height: 22px; }
-    }
-    .voice-bar {
-      width: 3.5px;
-      background: #ffffff;
-      box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
-      border-radius: 999px;
-      animation: wave 0.75s infinite ease-in-out;
+    .cabin-shell {
+      width: 100%;
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 0 clamp(14px, 3vw, 28px);
     }
 
     /* ==========================================================================
-       MODAL DE CÓDIGO QR PARA CONECTAR AFICIONADOS
+       TOP BROADCAST STUDIO MASTER RAIL
        ========================================================================== */
-    .qr-modal-backdrop {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      z-index: 99999 !important;
-      background: rgba(0, 0, 0, 0.82) !important;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+    .studio-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--bg-obsidian);
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .studio-header-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 58px;
+      padding: 8px 0;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--bg-concrete);
+      border: 1px solid var(--hairline-strong);
+      border-radius: var(--radius);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
-      transition: opacity 0.25s ease, visibility 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .brand-mark img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .tally-badge {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: var(--radius);
+      border: 1px solid var(--hairline-strong);
+      background: var(--bg-concrete);
+      color: var(--ink-secondary);
+    }
+
+    .tally-badge.is-on-air {
+      background: var(--vermilion);
+      border-color: var(--vermilion);
+      color: var(--ink-dark);
+    }
+
+    .studio-nav-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .audience-counter {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink-secondary);
+      background: var(--bg-concrete);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      padding: 6px 10px;
+    }
+
+    .audience-counter strong {
+      color: var(--volt);
+      font-weight: 800;
+    }
+
+    .btn-hw {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 7px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--hairline-strong);
+      background: var(--bg-concrete);
+      color: var(--ink-chalk);
+      transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.12s var(--ease-snappy);
+    }
+
+    .btn-hw:hover {
+      background: var(--bg-elevated);
+      border-color: var(--ink-chalk);
+    }
+
+    .btn-hw:active {
+      transform: scale(0.97);
+    }
+
+    .btn-hw--volt {
+      background: var(--volt);
+      border-color: var(--volt);
+      color: var(--ink-dark);
+    }
+
+    .btn-hw--volt:hover {
+      background: #d6ff5c;
+      border-color: #d6ff5c;
+      color: var(--ink-dark);
+    }
+
+    .btn-hw--danger {
+      background: var(--vermilion-dim);
+      border-color: var(--vermilion);
+      color: #ff8e7a;
+    }
+
+    .btn-hw--danger:hover {
+      background: var(--vermilion);
+      color: var(--ink-dark);
+    }
+
+    .btn-hw--amber {
+      background: var(--amber);
+      border-color: var(--amber);
+      color: var(--ink-dark);
+    }
+
+    .btn-hw--amber:hover {
+      background: #ffc933;
+      border-color: #ffc933;
+    }
+
+    .btn-hw:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ==========================================================================
+       EXCLUSIVE PRESS ACCESS GATE (LOGIN CONSOLE)
+       ========================================================================== */
+    #journalist-auth-gate {
+      max-width: 480px;
+      margin: clamp(32px, 8vw, 76px) auto 0;
+      padding: 0 16px;
+      animation: fade-rise 0.42s var(--ease-out-expo) forwards;
+    }
+
+    .auth-hardware-box {
+      background: var(--bg-concrete);
+      border: 1px solid var(--hairline-strong);
+      border-top: 4px solid var(--volt);
+      border-radius: var(--radius);
+      padding: clamp(22px, 4vw, 32px);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .auth-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .auth-crest {
+      width: 46px;
+      height: 46px;
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .auth-crest img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .auth-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--volt);
+    }
+
+    .auth-title {
+      font-family: var(--font-display);
+      font-size: 1.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      margin-top: 3px;
+    }
+
+    .cabin-status-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(200, 255, 46, 0.32);
+      border-left: 4px solid var(--volt);
+      background: var(--volt-dim);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--ink-chalk);
+    }
+
+    .cabin-status-strip.is-occupied {
+      border-color: rgba(255, 184, 0, 0.4);
+      border-left-color: var(--amber);
+      background: var(--amber-dim);
+      color: #ffe28a;
+    }
+
+    .cabin-status-square {
+      width: 8px;
+      height: 8px;
+      background: var(--volt);
+      flex-shrink: 0;
+    }
+
+    .cabin-status-strip.is-occupied .cabin-status-square {
+      background: var(--amber);
+    }
+
+    .field-label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--ink-secondary);
+      margin-bottom: 6px;
+    }
+
+    .hw-input {
+      width: 100%;
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline-strong);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-size: 0.875rem;
+      color: var(--ink-chalk);
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .hw-input::placeholder {
+      color: var(--ink-muted);
+    }
+
+    .hw-input:focus {
+      outline: none;
+      border-color: var(--volt);
+      box-shadow: 0 0 0 1px var(--volt);
+    }
+
+    .hw-input--mono {
+      font-family: var(--font-mono);
+    }
+
+    .error-strip {
+      padding: 10px 12px;
+      background: var(--vermilion-dim);
+      border: 1px solid var(--vermilion);
+      border-radius: var(--radius);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #ffb2a6;
+    }
+
+    .auth-footnote {
+      font-size: 0.78rem;
+      color: var(--ink-muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* ==========================================================================
+       STUDIO PROGRAM MONITOR & TEAM SETUP STRIP
+       ========================================================================== */
+    #studio-main-content {
+      padding-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fade-rise 0.36s var(--ease-out-expo) forwards;
+    }
+
+    .program-monitor-bar {
+      background: var(--bg-concrete);
+      border: 1px solid var(--hairline);
+      border-left: 4px solid var(--volt);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .monitor-readout-side {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .monitor-kicker {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+    }
+
+    .monitor-scoreline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .monitor-crest {
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .monitor-team {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: var(--ink-chalk);
+    }
+
+    .monitor-score-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline-strong);
+      border-radius: var(--radius);
+      font-family: var(--font-display);
+      font-size: 1.65rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      line-height: 0.9;
+      color: var(--volt);
+    }
+
+    .monitor-min-badge {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      padding: 4px 8px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      color: var(--ink-chalk);
+    }
+
+    .team-setup-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .team-setup-controls .hw-input {
+      width: 155px;
+      padding: 8px 10px;
+      font-size: 0.8125rem;
+    }
+
+    .vs-label {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       MODE SWITCHER TABS + DESK SPLIT GRID
+       ========================================================================== */
+    .mode-switcher-strip {
+      display: flex;
+      border-bottom: 1px solid var(--hairline);
+      gap: 24px;
+    }
+
+    .mode-tab-btn {
+      padding: 10px 4px 12px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.16s ease, border-color 0.2s ease, transform 0.12s ease;
+    }
+
+    .mode-tab-btn:hover {
+      color: var(--ink-chalk);
+    }
+
+    .mode-tab-btn:active {
+      transform: scale(0.98);
+    }
+
+    .mode-tab-btn.is-active {
+      color: var(--volt);
+      border-bottom-color: var(--volt);
+    }
+
+    .desk-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .console-rack {
+      background: var(--bg-concrete);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      padding: clamp(18px, 3vw, 26px);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .rack-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .rack-kicker {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--volt);
+    }
+
+    .rack-kicker--amber {
+      color: var(--amber);
+    }
+
+    .rack-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      line-height: 1.05;
+      margin-top: 2px;
+    }
+
+    .spec-chip {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--ink-secondary);
+      padding: 4px 8px;
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+    }
+
+    .sub-slot {
+      background: var(--bg-rack);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .slot-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .slot-title {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--ink-chalk);
+    }
+
+    /* Storage Meter */
+    .storage-box {
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .storage-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--ink-secondary);
+    }
+
+    .storage-track {
+      width: 100%;
+      height: 5px;
+      background: var(--bg-elevated);
+      overflow: hidden;
+    }
+
+    #media-storage-bar {
+      height: 100%;
+      background: var(--volt);
+      transition: width 0.35s var(--ease-out-expo), background-color 0.2s ease;
+    }
+
+    .row-flex {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flex-1 {
+      flex: 1 1 200px;
+      min-width: 0;
+    }
+
+    #match-media-player {
+      width: 100%;
+      max-height: 270px;
+      background: #000;
+      border: 1px solid var(--hairline-strong);
+      border-radius: var(--radius);
+    }
+
+    .player-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: var(--ink-secondary);
+    }
+
+    /* Hardware VU Meter Bars (Sharp Rectangular LEDs) */
+    #mic-listening-indicator {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--vermilion-dim);
+      border: 1px solid var(--vermilion);
+      border-radius: var(--radius);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #ffb8ac;
+    }
+
+    .vu-meter {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 20px;
+    }
+
+    .voice-bar {
+      width: 4px;
+      background: var(--vermilion);
+      border-radius: 0;
+      animation: wave 0.7s infinite ease-in-out;
+    }
+
+    @keyframes wave {
+      0%, 100% { height: 5px; }
+      50% { height: 20px; }
+    }
+
+    .http-help-box {
+      padding: 12px;
+      background: var(--amber-dim);
+      border: 1px solid var(--amber);
+      border-radius: var(--radius);
+      font-size: 0.78rem;
+      color: #ffe399;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Broadcast Transcript Console */
+    #ai-log-container {
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      padding: 12px;
+      height: 230px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--ink-secondary);
+    }
+
+    .ai-log-entry {
+      padding: 9px 10px;
+      background: var(--bg-concrete);
+      border: 1px solid var(--hairline);
+      border-left: 3px solid var(--volt);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* ==========================================================================
+       MANUAL HARDWARE SWITCHER KEYPAD (MODE 2)
+       ========================================================================== */
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .action-choice-btn {
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline-strong);
+      border-radius: var(--radius);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--ink-secondary);
+      transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.12s var(--ease-snappy);
+    }
+
+    .action-choice-btn:hover {
+      border-color: var(--ink-chalk);
+      color: var(--ink-chalk);
+    }
+
+    .action-choice-btn:active {
+      transform: scale(0.97);
+    }
+
+    .action-choice-btn img {
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+    }
+
+    .choice-led {
+      width: 10px;
+      height: 4px;
+      background: var(--hairline-strong);
+      flex-shrink: 0;
+    }
+
+    .action-choice-btn.is-selected {
+      background: var(--volt-dim);
+      border-color: var(--volt);
+      color: var(--ink-chalk);
+    }
+
+    .action-choice-btn.is-selected .choice-led {
+      background: var(--volt);
+    }
+
+    .action-choice-btn.is-selected[data-tone="rose"] {
+      background: var(--vermilion-dim);
+      border-color: var(--vermilion);
+    }
+
+    .action-choice-btn.is-selected[data-tone="rose"] .choice-led {
+      background: var(--vermilion);
+    }
+
+    .action-choice-btn.is-selected[data-tone="amber"] {
+      background: var(--amber-dim);
+      border-color: var(--amber);
+    }
+
+    .action-choice-btn.is-selected[data-tone="amber"] .choice-led {
+      background: var(--amber);
+    }
+
+    .manual-row-2 {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+    }
+
+    .feedback-strip {
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-align: center;
+      border: 1px solid var(--hairline);
+    }
+
+    /* ==========================================================================
+       RIGHT ENGINEERING COLUMN: PEAK SIMULATOR + LIVE TELEMETRY MATRIX
+       ========================================================================== */
+    .side-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sim-output-box {
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline);
+      border-left: 3px solid var(--amber);
+      border-radius: var(--radius);
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--ink-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .metrics-list {
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid var(--hairline);
+    }
+
+    .metric-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 0.8125rem;
+    }
+
+    .metric-label {
+      color: var(--ink-secondary);
+    }
+
+    .metric-val {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink-chalk);
+      text-align: right;
+    }
+
+    .metric-val--volt { color: var(--volt); }
+    .metric-val--amber { color: var(--amber); }
+
+    /* ==========================================================================
+       QR MODAL (SOLID ARCHITECTURAL SCRIM & FRAME)
+       ========================================================================== */
+    .qr-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(11, 13, 14, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
     }
 
     .qr-modal-backdrop.is-hidden {
-      opacity: 0 !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
     }
 
     .qr-modal-card {
       width: 100%;
-      max-width: 360px;
-      background: rgba(18, 20, 29, 0.95);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 24px;
-      padding: 1.5rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      max-width: 370px;
+      background: var(--bg-concrete);
+      border: 1px solid var(--hairline-strong);
+      border-top: 4px solid var(--volt);
+      border-radius: var(--radius);
+      padding: 22px;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 24px 54px rgba(0, 0, 0, 0.75);
+    }
+
+    .qr-close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-secondary);
+    }
+
+    .qr-close-btn:hover {
+      color: var(--ink-chalk);
+      border-color: var(--ink-chalk);
+    }
+
+    .qr-frame {
+      background: #FFFFFF;
+      padding: 14px;
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #qr-code-img {
+      width: 220px;
+      height: 220px;
+      object-fit: contain;
+    }
+
+    .qr-caption {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #0B0D0E;
+    }
+
+    #qr-code-img {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* ==========================================================================
+       CLOCK STOPWATCH, PERIOD SWITCHER & PUBLISHED EVENTS MANAGER
+       ========================================================================== */
+    .monitor-clock-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid var(--hairline);
+    }
+
+    .clock-control-group,
+    .status-switch-group {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-clock,
+    .btn-status-key {
+      padding: 4px 9px;
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-secondary);
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s var(--ease-snappy);
+    }
+
+    .btn-clock:hover,
+    .btn-status-key:hover {
+      border-color: var(--hairline-strong);
+      color: var(--ink-chalk);
+    }
+
+    .btn-clock:active,
+    .btn-status-key:active {
+      transform: scale(0.97);
+    }
+
+    .btn-clock.is-running {
+      background: var(--volt);
+      border-color: var(--volt);
+      color: var(--ink-dark);
+    }
+
+    .btn-status-key.is-active {
+      background: var(--volt-dim);
+      border-color: var(--volt);
+      color: var(--volt);
+    }
+
+    .btn-status-key--final.is-active {
+      background: var(--vermilion-dim);
+      border-color: var(--vermilion);
+      color: #ffb2a6;
+    }
+
+    .pub-event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 310px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .pub-event-empty {
+      padding: 16px 12px;
+      background: var(--bg-obsidian);
+      border: 1px dashed var(--hairline);
+      border-radius: var(--radius);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      text-align: center;
+      color: var(--ink-muted);
+    }
+
+    .pub-event-row {
+      padding: 10px 12px;
+      background: var(--bg-obsidian);
+      border: 1px solid var(--hairline);
+      border-left: 3px solid var(--hairline-strong);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pub-event-row.is-goal { border-left-color: var(--volt); }
+    .pub-event-row.is-red { border-left-color: var(--vermilion); }
+    .pub-event-row.is-yellow { border-left-color: var(--amber); }
+
+    .pub-event-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .pub-event-meta {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink-secondary);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pub-event-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .btn-mini-action {
+      padding: 3px 7px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      font-family: var(--font-mono);
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-secondary);
+      transition: border-color 0.14s ease, color 0.14s ease, background-color 0.14s ease;
+    }
+
+    .btn-mini-action:hover {
+      border-color: var(--volt);
+      color: var(--volt);
+    }
+
+    .btn-mini-action--danger:hover {
+      border-color: var(--vermilion);
+      color: #ffb2a6;
+      background: var(--vermilion-dim);
+    }
+
+    .pub-event-player {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--ink-chalk);
+    }
+
+    .pub-event-desc {
+      font-size: 0.78rem;
+      color: var(--ink-secondary);
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .edit-event-panel {
+      background: var(--bg-obsidian);
+      border: 1px solid var(--volt);
+      border-radius: var(--radius);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .edit-grid-2 {
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      gap: 8px;
+    }
+
+    /* ==========================================================================
+       ANIMATIONS & RESPONSIVE BREAKPOINTS
+       ========================================================================== */
+    @keyframes fade-rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1024px) {
+      .desk-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 680px) {
+      .cabin-shell {
+        padding: 0 14px;
+      }
+
+      .console-rack,
+      .side-column,
+      .sub-slot {
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .storage-row {
+        flex-wrap: wrap;
+      }
+
+      .mode-switcher-strip {
+        gap: 14px;
+      }
+
+      .mode-tab-btn {
+        font-size: 0.6875rem;
+        letter-spacing: 0.03em;
+        text-align: left;
+      }
+
+      .keypad-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .manual-row-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .team-setup-controls .hw-input {
+        width: calc(50% - 20px);
+        flex: 1 1 120px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
-<body class="min-h-screen pb-14">
+<body>
 
-  <!-- FONDO VIVO CON 10 BURBUJAS DE CRISTAL 3D FLOTANTES EN TIEMPO REAL -->
-  <div class="liquid-background" aria-hidden="true">
-    <div class="bubble-3d b-1"></div>
-    <div class="bubble-3d b-2"></div>
-    <div class="bubble-3d b-3"></div>
-    <div class="bubble-3d b-4"></div>
-    <div class="bubble-3d b-5"></div>
-    <div class="bubble-3d b-6"></div>
-    <div class="bubble-3d b-7"></div>
-    <div class="bubble-3d b-8"></div>
-    <div class="bubble-3d b-9"></div>
-    <div class="bubble-3d b-10"></div>
-  </div>
-
-  <div class="studio-viewport">
-
-  <!-- Barra Superior de la Consola de Transmisión -->
-  <header class="sticky top-0 z-50 fm-nav">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <img src="/api/icon/logo" alt="Logo" class="w-8 h-8 object-contain rounded-lg" />
-        <div class="flex items-center gap-2.5">
-          <span class="brand-logo-text font-black text-sm sm:text-base text-white tracking-tight">UNAL SPORTS</span>
-          <span class="px-2 py-0.5 rounded bg-white/[0.08] border border-white/15 text-[11px] font-semibold text-zinc-300 uppercase tracking-wider">
-            Consola de Prensa
-          </span>
+  <!-- TOP BROADCAST MASTER RAIL -->
+  <header class="studio-header">
+    <div class="cabin-shell studio-header-inner">
+      <div class="brand-group">
+        <div class="brand-mark">
+          <img src="/api/icon/logo" alt="UNAL Sports" onerror="this.style.display='none'" />
         </div>
+        <span class="brand-title">UNAL SPORTS</span>
+        <span id="studio-tally-badge" class="tally-badge">CABINA EN ESPERA</span>
       </div>
 
-      <div class="flex items-center gap-2.5 text-xs">
-        <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold">
-          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span><strong id="header-live-readers" class="text-white font-mono font-bold">0</strong> en vivo</span>
-        </span>
-        <button type="button" id="btn-reset-board" onclick="resetBlankBoard()"
-          class="hidden px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold transition">
-          Reiniciar Marcador (0-0)
+      <div class="studio-nav-actions">
+        <div class="audience-counter" title="Aficionados conectados en tiempo real">
+          <span>AUDIENCIA</span>
+          <strong id="header-live-readers">0</strong>
+        </div>
+
+        <button type="button" id="btn-reset-board" onclick="resetBlankBoard()" class="btn-hw btn-hw--danger hidden">
+          Reiniciar 0–0
         </button>
-        <button type="button" id="btn-logout-cabin" onclick="logoutJournalist()"
-          class="hidden px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-zinc-300 font-semibold transition">
+
+        <button type="button" id="btn-logout-cabin" onclick="logoutJournalist()" class="btn-hw hidden">
           Cerrar Cabina
         </button>
-        <button type="button" onclick="openQrModal()" id="btn-open-qr"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 font-semibold transition cursor-pointer"
-          title="Generar código QR dinámico para conectar a los aficionados en vivo">
-          <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+        <button type="button" id="btn-open-qr" onclick="openQrModal()" class="btn-hw btn-hw--volt" title="Generar QR con la dirección activa para aficionados">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
             <rect x="3" y="3" width="7" height="7"></rect>
             <rect x="14" y="3" width="7" height="7"></rect>
             <rect x="14" y="14" width="7" height="7"></rect>
             <rect x="3" y="14" width="7" height="7"></rect>
           </svg>
-          <span class="font-bold">📲 QR Aficionados</span>
+          <span>QR Aficionados</span>
         </button>
-        <a href="/" target="_blank"
-          class="px-3.5 py-1.5 rounded-lg bg-white/[0.1] hover:bg-white/[0.18] border border-white/25 text-white font-semibold transition">
-          Ver Portal Público ↗
-        </a>
+
+        <a href="/" target="_blank" class="btn-hw">Portal Público ↗</a>
       </div>
     </div>
   </header>
 
-  <!-- PANTALLA DE LOGIN DE PRENSA Y CONTROL DE SESIÓN ÚNICA (1 PERIODISTA A LA VEZ) -->
-  <section id="journalist-auth-gate" class="max-w-md mx-auto px-4 pt-16 pb-12">
-    <div class="fm-surface rounded-2xl p-7 space-y-5 shadow-2xl">
-      <div class="flex items-center gap-3.5">
-        <img src="/api/icon/logo" alt="Logo" class="w-11 h-11 object-contain rounded-xl bg-white/[0.08] border border-white/15 p-1.5 shadow-sm" />
+  <!-- PRESS CREDENTIAL ACCESS GATE -->
+  <section id="journalist-auth-gate">
+    <div class="auth-hardware-box">
+      <div class="auth-head">
+        <div class="auth-crest">
+          <img src="/api/icon/logo" alt="Logo" onerror="this.style.display='none'" />
+        </div>
         <div>
-          <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Acceso Exclusivo · 1 Sesión Activa</span>
-          <h1 class="text-lg font-bold text-white leading-tight mt-0.5">Cabina de Transmisión</h1>
+          <div class="auth-eyebrow">Acceso Exclusivo · 1 Sesión Activa</div>
+          <h1 class="auth-title">Cabina de Transmisión</h1>
         </div>
       </div>
 
-      <div id="cabin-lock-badge" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-300">
-        <span id="cabin-lock-dot" class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+      <div id="cabin-lock-badge" class="cabin-status-strip">
+        <span id="cabin-lock-dot" class="cabin-status-square"></span>
         <span id="cabin-lock-text">Cabina disponible para iniciar transmisión en vivo</span>
       </div>
 
-      <form onsubmit="submitJournalistLogin(event)" class="space-y-4">
+      <form onsubmit="submitJournalistLogin(event)" style="display:flex; flex-direction:column; gap:14px;">
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wide text-zinc-300 mb-1.5">
-            Clave de Prensa Autorizada
-          </label>
-          <input type="password" id="login-press-key" placeholder="Ingresa la credencial del periodista..." required autocomplete="current-password"
-            class="fm-input w-full rounded-xl px-4 py-3 text-white text-sm font-mono" />
+          <label for="login-press-key" class="field-label">Clave de Prensa Autorizada</label>
+          <input type="password" id="login-press-key" placeholder="Ingresa la credencial del periodista..." required autocomplete="current-password" class="hw-input hw-input--mono" />
         </div>
 
-        <div id="login-error-box" class="hidden rounded-xl p-3 text-xs font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30"></div>
+        <div id="login-error-box" class="error-strip hidden"></div>
 
-        <button type="submit" id="btn-login-submit"
-          class="w-full py-3.5 px-5 rounded-xl font-bold text-sm bg-white/[0.12] hover:bg-white/[0.2] border border-white/25 text-white transition shadow-md">
+        <button type="submit" id="btn-login-submit" class="btn-hw btn-hw--volt" style="width:100%; padding:12px;">
           Desbloquear Cabina de Prensa
         </button>
       </form>
 
-      <p class="text-[11px] text-zinc-400 leading-relaxed text-center">
+      <p class="auth-footnote">
         Solo puede haber <strong>un periodista conectado a la vez</strong> para proteger la integridad del marcador en tiempo real.
       </p>
     </div>
   </section>
 
-  <main id="studio-main-content" class="hidden max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+  <!-- MAIN PRESS STUDIO CONSOLE -->
+  <main id="studio-main-content" class="cabin-shell hidden">
 
-    <!-- BARRA DE CONTROL DE MARCADOR Y EQUIPOS -->
-    <section class="fm-surface rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-3.5">
-        <div>
-          <div class="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold">Marcador Activo en Transmisión</div>
-          <div class="flex items-center gap-2.5 text-sm text-zinc-300 mt-1.5">
-            <img id="studio-home-badge" src="/api/badge?team=Equipo%20Local" alt="" class="w-6 h-6 object-contain" onerror="this.src='/escudos/default.svg'" />
-            <span id="studio-home-name" class="font-bold text-white">Equipo Local</span>
-            <strong id="studio-home" class="text-white font-extrabold text-xl mx-1 font-mono">0</strong>
-            <span class="text-zinc-600 font-bold">-</span>
-            <strong id="studio-away" class="text-white font-extrabold text-xl mx-1 font-mono">0</strong>
-            <span id="studio-away-name" class="font-bold text-white">Equipo Visitante</span>
-            <img id="studio-away-badge" src="/api/badge?team=Equipo%20Visitante" alt="" class="w-6 h-6 object-contain" onerror="this.src='/escudos/default.svg'" />
-            <span class="ml-1 px-2 py-0.5 rounded bg-white/[0.08] border border-white/15 text-xs font-mono font-bold text-white shadow-sm"><span id="studio-min">0</span>'</span>
+    <!-- LIVE PROGRAM MONITOR + TEAM PAIR CONFIGURATOR -->
+    <section class="program-monitor-bar" aria-label="Monitor de programa en vivo">
+      <div class="monitor-readout-side">
+        <span class="monitor-kicker">Señal al Aire · <span id="studio-status-label">POR INICIAR</span></span>
+        <div class="monitor-scoreline">
+          <img id="studio-home-badge" src="/api/badge?team=Equipo%20Local" alt="" class="monitor-crest" onerror="this.onerror=null;this.src='/escudos/default.svg'" />
+          <span id="studio-home-name" class="monitor-team">Equipo Local</span>
+          <div class="monitor-score-box">
+            <span id="studio-home">0</span>
+            <span style="color:var(--ink-muted); font-size:1.1rem;">:</span>
+            <span id="studio-away">0</span>
+          </div>
+          <span id="studio-away-name" class="monitor-team">Equipo Visitante</span>
+          <img id="studio-away-badge" src="/api/badge?team=Equipo%20Visitante" alt="" class="monitor-crest" onerror="this.onerror=null;this.src='/escudos/default.svg'" />
+          <span class="monitor-min-badge"><span id="studio-min">0</span>'</span>
+        </div>
+
+        <div class="monitor-clock-strip">
+          <div class="clock-control-group" aria-label="Reloj automático del partido">
+            <button type="button" id="btn-min-minus" onclick="nudgeMatchMinute(-1)" class="btn-clock" title="Restar 1 minuto">-1'</button>
+            <button type="button" id="btn-clock-toggle" onclick="toggleMatchClock()" class="btn-clock" aria-pressed="false" title="Iniciar o pausar avance automático cada 60s">▶ Iniciar Reloj</button>
+            <button type="button" id="btn-min-plus" onclick="nudgeMatchMinute(1)" class="btn-clock" title="Sumar 1 minuto">+1'</button>
+          </div>
+          <div class="status-switch-group" role="group" aria-label="Estado rápido del partido">
+            <button type="button" data-match-status="EN VIVO · 1T" onclick="setMatchStatus('EN VIVO · 1T')" class="btn-status-key">1T</button>
+            <button type="button" data-match-status="DESCANSO" onclick="setMatchStatus('DESCANSO')" class="btn-status-key">Descanso</button>
+            <button type="button" data-match-status="EN VIVO · 2T" onclick="setMatchStatus('EN VIVO · 2T')" class="btn-status-key">2T</button>
+            <button type="button" data-match-status="FINALIZADO" onclick="setMatchStatus('FINALIZADO')" class="btn-status-key btn-status-key--final">Final</button>
           </div>
         </div>
       </div>
 
-      <!-- Configuración de Equipos -->
-      <div class="flex flex-wrap items-center gap-2 text-xs">
-        <input type="text" id="setup-home" placeholder="Equipo Local"
-          class="fm-input rounded-lg px-3 py-2 text-white w-36 sm:w-40" />
-        <span class="text-zinc-500 font-bold uppercase text-[11px]">vs</span>
-        <input type="text" id="setup-away" placeholder="Equipo Visitante"
-          class="fm-input rounded-lg px-3 py-2 text-white w-36 sm:w-40" />
-        <button type="button" onclick="applyMatchTeams()"
-          class="px-3.5 py-2 rounded-lg bg-white/[0.1] hover:bg-white/[0.18] border border-white/20 text-white font-semibold transition shadow-sm">
-          Fijar Equipos
-        </button>
+      <div class="team-setup-controls">
+        <input type="text" id="setup-home" placeholder="Equipo Local" class="hw-input" />
+        <span class="vs-label">vs</span>
+        <input type="text" id="setup-away" placeholder="Equipo Visitante" class="hw-input" />
+        <button type="button" onclick="applyMatchTeams()" class="btn-hw">Fijar Equipos</button>
       </div>
     </section>
 
-    <!-- PESTAÑAS DE MODO DE OPERACIÓN -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div class="inline-flex p-1 rounded-xl fm-surface">
-        <button id="tab-ai" onclick="switchStudioTab('ai')"
-          class="px-5 py-2 rounded-lg text-xs transition-all fm-mode-active">
-          Modo 1 · Transmisión Automática (Video / Voz)
-        </button>
-        <button id="tab-manual" onclick="switchStudioTab('manual')"
-          class="px-5 py-2 rounded-lg text-xs transition-all fm-mode-inactive">
-          Modo 2 · Registro Manual del Periodista
-        </button>
-      </div>
+    <!-- BROADCAST OPERATION MODE SWITCHER -->
+    <div class="mode-switcher-strip" role="tablist" aria-label="Modo de operación de cabina">
+      <button type="button" id="tab-ai" role="tab" aria-selected="true" onclick="switchStudioTab('ai')" class="mode-tab-btn is-active">
+        Modo 1 · Relato Automático (Video / Voz)
+      </button>
+      <button type="button" id="tab-manual" role="tab" aria-selected="false" onclick="switchStudioTab('manual')" class="mode-tab-btn">
+        Modo 2 · Switcher Manual del Periodista
+      </button>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- ASYMMETRIC STUDIO WORKBENCH GRID -->
+    <div class="desk-grid">
 
-      <!-- ====================================================================== -->
-      <!-- PANEL MODO 1 (7/12): VIDEO / VOZ CON INTERPRETACIÓN AUTOMÁTICA         -->
-      <!-- ====================================================================== -->
-      <section id="panel-ai" class="lg:col-span-7 fm-surface rounded-2xl p-6 space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4">
+      <!-- DECK 1 (7/12): AUDIO / VIDEO / WHISPER PRODUCTION RACK -->
+      <section id="panel-ai" class="console-rack">
+        <div class="rack-header">
           <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Reconocimiento de Relato en Vivo</span>
-            <h2 class="text-lg font-bold text-white mt-0.5">Extracción Automática desde Video o Micrófono</h2>
+            <div class="rack-kicker">Reconocimiento de Relato en Vivo</div>
+            <h2 class="rack-title">Extracción Automática desde Video o Micrófono</h2>
           </div>
-          <span class="text-[11px] px-2.5 py-1 rounded-md bg-white/[0.05] border border-white/10 text-zinc-300 font-mono">
-            Whisper v3 Turbo + Qwen 3.8 27B
-          </span>
+          <span class="spec-chip">Whisper v3 Turbo + Qwen 3.8 27B</span>
         </div>
 
-        <!-- 1. Fuente de Video o Audio del Partido -->
-        <div class="rounded-xl bg-white/[0.04] border border-white/10 p-4 space-y-3 shadow-sm">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <label class="text-xs font-bold text-zinc-200 uppercase tracking-wide">
-              1. Fuente de Video o Audio del Partido
-            </label>
-            <label id="lbl-upload-media" class="cursor-pointer px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white transition shadow-sm">
+        <!-- 1. Video / Audio Source & Storage Meter -->
+        <div class="sub-slot">
+          <div class="slot-head">
+            <span class="slot-title">1. Fuente de Video o Audio del Partido</span>
+            <label id="lbl-upload-media" class="btn-hw" style="cursor:pointer;">
               Subir Video / Audio
               <input type="file" id="media-upload-input" accept="video/*,audio/*" class="hidden" onchange="uploadMediaFile(event)" />
             </label>
           </div>
 
-          <!-- Medidor de Espacio Disponible para Videos (Límite 1000 MB) -->
-          <div class="rounded-lg bg-black/40 border border-white/10 px-3 py-2 space-y-1.5">
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="text-zinc-400 font-medium">Capacidad de Almacenamiento de Videos:</span>
-              <span id="media-storage-text" class="font-mono font-semibold text-emerald-400">Calculando...</span>
+          <div class="storage-box">
+            <div class="storage-row">
+              <span>Capacidad de Almacenamiento:</span>
+              <strong id="media-storage-text" style="color: var(--volt);">Calculando...</strong>
             </div>
-            <div class="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
-              <div id="media-storage-bar" class="h-full bg-emerald-400 transition-all duration-300" style="width: 0%"></div>
+            <div class="storage-track">
+              <div id="media-storage-bar" style="width: 0%;"></div>
             </div>
           </div>
 
-          <div id="media-storage-warning" class="hidden rounded-lg bg-rose-500/15 border border-rose-500/30 px-3 py-2 text-xs text-rose-300 font-medium"></div>
+          <div id="media-storage-warning" class="error-strip hidden"></div>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <select id="media-select" onchange="selectExistingMedia()" class="fm-input flex-1 rounded-lg px-3 py-2.5 text-xs text-zinc-200">
+          <div class="row-flex">
+            <select id="media-select" onchange="selectExistingMedia()" class="hw-input flex-1">
               <option value="">Seleccionar archivo de transmisión...</option>
             </select>
-            <button type="button" id="btn-delete-media" onclick="deleteSelectedMedia()" disabled
-              class="px-3 py-2.5 rounded-lg text-xs font-semibold border transition bg-rose-500/15 text-rose-300 border-rose-500/30 hover:bg-rose-500/25 disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
+            <button type="button" id="btn-delete-media" onclick="deleteSelectedMedia()" disabled class="btn-hw btn-hw--danger">
               Borrar Video
             </button>
           </div>
 
-          <!-- Reproductor HTML5 -->
-          <div id="player-wrapper" class="hidden pt-2 space-y-2.5">
-            <video id="match-media-player" controls class="w-full rounded-xl border border-white/10 max-h-64 bg-black"></video>
-            <div class="flex items-center justify-between text-[11px] text-zinc-400">
-              <span>Al reproducir el video, el sistema escucha al relator cada 15 segundos y publica las jugadas en vivo.</span>
-              <button type="button" onclick="analyzeCurrentVideoMomentNow()"
-                class="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-semibold shrink-0 transition">
+          <div id="player-wrapper" class="hidden">
+            <video id="match-media-player" controls></video>
+            <div class="player-meta-row">
+              <span>Al reproducir, la cabina procesa fragmentos cada 15s y publica jugadas al instante.</span>
+              <button type="button" onclick="analyzeCurrentVideoMomentNow()" class="btn-hw btn-hw--volt">
                 Analizar instante actual
               </button>
             </div>
           </div>
         </div>
 
-        <!-- 2. Micrófono en Vivo + Entrada de Relato -->
-        <div class="rounded-xl bg-white/[0.04] border border-white/10 p-4 space-y-3 shadow-sm">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="text-xs font-bold text-zinc-200 uppercase tracking-wide">
-              2. Narración en Vivo por Micrófono o Texto
-            </span>
-            <div class="flex items-center gap-2">
-              <button type="button" id="btn-mic" onclick="toggleMicrophoneNarration()"
-                class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition shadow-sm">
-                <img src="/api/icon/microfono" alt="" class="w-4 h-4 object-contain" />
+        <!-- 2. Live Booth Microphone & Transcript Command Line -->
+        <div class="sub-slot">
+          <div class="slot-head">
+            <span class="slot-title">2. Narración en Vivo por Micrófono o Texto</span>
+            <div>
+              <button type="button" id="btn-mic" onclick="toggleMicrophoneNarration()" class="btn-hw btn-hw--danger">
+                <img src="/api/icon/microfono" alt="" style="width:15px; height:15px; object-fit:contain;" onerror="this.style.display='none'" />
                 <span id="btn-mic-label">Narrar por Micrófono</span>
               </button>
               <input type="file" id="mobile-mic-input" accept="audio/*" capture="user" class="hidden" onchange="uploadRecordedMicAudio(event)" />
             </div>
           </div>
 
-          <div id="mic-listening-indicator" class="hidden flex items-center gap-3 px-4 py-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-xs text-rose-200">
-            <div class="flex items-center gap-1 h-5">
+          <div id="mic-listening-indicator" class="hidden">
+            <div class="vu-meter" aria-hidden="true">
               <div class="voice-bar" style="animation-delay: 0s"></div>
-              <div class="voice-bar" style="animation-delay: 0.2s"></div>
-              <div class="voice-bar" style="animation-delay: 0.4s"></div>
+              <div class="voice-bar" style="animation-delay: 0.18s"></div>
+              <div class="voice-bar" style="animation-delay: 0.36s"></div>
+              <div class="voice-bar" style="animation-delay: 0.12s"></div>
             </div>
             <span id="mic-interim-text">Grabando audio... Pulsa "Enviar narración" al terminar.</span>
           </div>
 
-          <div id="mic-http-help-box" class="hidden rounded-xl bg-amber-500/10 border border-amber-500/30 p-3.5 text-xs text-amber-200 space-y-2.5">
-            <div class="font-bold text-amber-300">
-              Tu navegador bloqueó el micrófono porque entraste por HTTP con una IP nueva (<code id="mic-current-origin" class="text-white font-mono"></code>)
-            </div>
-            <div class="text-zinc-300 leading-relaxed">
-              Para activar el micrófono en vivo con la IP de hoy: abre <code class="text-amber-300 font-mono">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>, pega <strong id="mic-origin-inline" class="text-white font-mono"></strong>, ponlo en <strong>Enabled</strong> y dale <strong>Relaunch</strong>.
-            </div>
-            <div class="flex flex-wrap items-center gap-2 pt-1">
-              <button type="button" onclick="copyCurrentOriginForMic()"
-                class="px-3 py-1.5 rounded-lg bg-amber-400 text-black font-bold hover:bg-amber-300 transition shadow-sm">
-                Copiar URL de hoy
-              </button>
-              <button type="button" onclick="document.getElementById('mobile-mic-input').click()"
-                class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-zinc-200 font-semibold transition">
-                Subir archivo de voz grabado
-              </button>
+          <div id="mic-http-help-box" class="http-help-box hidden">
+            <strong>El navegador bloqueó el micrófono por acceso HTTP (<code id="mic-current-origin"></code>)</strong>
+            <span>
+              En Chrome abre <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>, pega <strong id="mic-origin-inline"></strong>, activa <strong>Enabled</strong> y pulsa <strong>Relaunch</strong>.
+            </span>
+            <div class="row-flex">
+              <button type="button" onclick="copyCurrentOriginForMic()" class="btn-hw btn-hw--amber">Copiar URL de hoy</button>
+              <button type="button" onclick="document.getElementById('mobile-mic-input').click()" class="btn-hw">Subir archivo de voz</button>
             </div>
           </div>
 
-          <div class="flex gap-2">
+          <div class="row-flex">
             <input type="text" id="ai-transcript-input"
               onkeydown="if(event.key==='Enter'){event.preventDefault();sendTranscriptToAI();}"
-              placeholder='Escribe el relato (ej: "Minuto 53, gol de Leroy Sané para el Bayern Múnich")'
-              class="fm-input flex-1 rounded-lg px-3.5 py-2.5 text-xs text-white" />
-            <button type="button" onclick="sendTranscriptToAI()" id="btn-send-ai"
-              class="px-4 py-2.5 rounded-lg font-bold text-xs bg-white/[0.12] hover:bg-white/[0.2] border border-white/25 text-white transition shrink-0 shadow-md">
+              placeholder='Relato rápido (ej: "Minuto 53, gol de Edwin Cardona para Atlético Nacional")'
+              class="hw-input flex-1" />
+            <button type="button" onclick="sendTranscriptToAI()" id="btn-send-ai" class="btn-hw btn-hw--volt">
               Procesar Relato
             </button>
           </div>
         </div>
 
-        <!-- 3. Bitácora de Transmisión -->
-        <div class="space-y-2">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-zinc-300 uppercase tracking-wide text-[11px]">Registro de Actividad en Vivo</span>
-            <span id="ai-status-text" class="text-zinc-500 font-mono text-[11px]">En espera</span>
+        <!-- 3. Broadcast Activity Log -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="slot-head">
+            <span class="field-label" style="margin-bottom:0;">Registro de Actividad en Vivo</span>
+            <span id="ai-status-text" style="font-family:var(--font-mono); font-size:0.72rem; color:var(--ink-secondary);">En espera</span>
           </div>
-          <div id="ai-log-container" class="rounded-xl bg-black/50 border border-white/10 text-zinc-300 p-3.5 h-56 overflow-y-auto space-y-2 font-mono text-xs shadow-inner">
-            <div class="text-zinc-500">
-              Sistema listo en 0 - 0. Reproduce un video del partido o utiliza el micrófono para transmitir jugadas en tiempo real.
+          <div id="ai-log-container">
+            <div style="color:var(--ink-muted);">
+              Cabina inicializada en 0 - 0. Reproduce un video o activa el micrófono para transmitir en vivo.
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ====================================================================== -->
-      <!-- PANEL MODO 2 (7/12): REGISTRO MANUAL DEL PERIODISTA (ALTO CONTRASTE)   -->
-      <!-- ====================================================================== -->
-      <section id="panel-manual" class="hidden lg:col-span-7 fm-surface rounded-2xl p-6 space-y-6">
-        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <!-- DECK 2 (7/12): MANUAL BROADCAST SWITCHER KEYPAD -->
+      <section id="panel-manual" class="console-rack hidden">
+        <div class="rack-header">
           <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Control Manual de Incidencias</span>
-            <h2 class="text-lg font-bold text-white mt-0.5">Publicar Jugada Directamente</h2>
+            <div class="rack-kicker">Control Manual de Incidencias</div>
+            <h2 class="rack-title">Publicar Jugada Directamente</h2>
           </div>
-          <span class="text-xs px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/10 text-zinc-400">
-            Publicación Inmediata
-          </span>
+          <span class="spec-chip">Publicación Inmediata SSE</span>
         </div>
 
-        <form id="journalist-form" onsubmit="submitEvent(event)" class="space-y-5">
+        <form id="journalist-form" onsubmit="submitEvent(event)" style="display:flex; flex-direction:column; gap:18px;">
           <div>
-            <div class="flex items-center justify-between mb-2">
-              <label class="block text-xs font-bold uppercase tracking-wide text-zinc-300">
-                1. Tipo de Incidencia
-              </label>
-              <span id="selected-type-indicator" class="text-xs font-bold text-emerald-400">
+            <div class="slot-head" style="margin-bottom:8px;">
+              <label class="field-label" style="margin-bottom:0;">1. Selector de Incidencia</label>
+              <span id="selected-type-indicator" style="font-family:var(--font-mono); font-size:0.72rem; font-weight:700; color:var(--volt);">
                 Seleccionado: GOL
               </span>
             </div>
             <input type="hidden" id="ev-type" value="GOAL" />
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs font-bold">
-              <button type="button" data-type="GOAL" data-label="GOL" data-tone="emerald" onclick="selectType('GOAL', this)"
-                class="action-choice-btn is-selected flex items-center justify-between py-3 px-3.5 rounded-xl">
-                <span class="inline-flex items-center gap-2">
-                  <img src="/api/icon/balon" alt="" class="w-4 h-4 object-contain" />
+            <div class="keypad-grid">
+              <button type="button" data-type="GOAL" data-label="GOL" data-tone="emerald" onclick="selectType('GOAL', this)" class="action-choice-btn is-selected">
+                <span style="display:inline-flex; align-items:center; gap:8px;">
+                  <img src="/api/icon/balon" alt="" onerror="this.style.display='none'" />
                   <span>GOL</span>
                 </span>
-                <span class="choice-dot"></span>
+                <span class="choice-led"></span>
               </button>
 
-              <button type="button" data-type="PENALTY" data-label="PENAL" data-tone="sky" onclick="selectType('PENALTY', this)"
-                class="action-choice-btn flex items-center justify-between py-3 px-3.5 rounded-xl">
-                <span class="inline-flex items-center gap-2">
-                  <img src="/api/icon/penal" alt="" class="w-4 h-4 object-contain" />
+              <button type="button" data-type="PENALTY" data-label="PENAL" data-tone="sky" onclick="selectType('PENALTY', this)" class="action-choice-btn">
+                <span style="display:inline-flex; align-items:center; gap:8px;">
+                  <img src="/api/icon/penal" alt="" onerror="this.style.display='none'" />
                   <span>PENAL</span>
                 </span>
-                <span class="choice-dot"></span>
+                <span class="choice-led"></span>
               </button>
 
-              <button type="button" data-type="RED_CARD" data-label="TARJETA ROJA" data-tone="rose" onclick="selectType('RED_CARD', this)"
-                class="action-choice-btn flex items-center justify-between py-3 px-3.5 rounded-xl">
-                <span class="inline-flex items-center gap-2">
-                  <img src="/api/icon/roja" alt="" class="w-4 h-4 object-contain" />
+              <button type="button" data-type="RED_CARD" data-label="TARJETA ROJA" data-tone="rose" onclick="selectType('RED_CARD', this)" class="action-choice-btn">
+                <span style="display:inline-flex; align-items:center; gap:8px;">
+                  <img src="/api/icon/roja" alt="" onerror="this.style.display='none'" />
                   <span>ROJA</span>
                 </span>
-                <span class="choice-dot"></span>
+                <span class="choice-led"></span>
               </button>
 
-              <button type="button" data-type="YELLOW_CARD" data-label="TARJETA AMARILLA" data-tone="amber" onclick="selectType('YELLOW_CARD', this)"
-                class="action-choice-btn flex items-center justify-between py-3 px-3.5 rounded-xl">
-                <span class="inline-flex items-center gap-2">
-                  <img src="/api/icon/amarilla" alt="" class="w-4 h-4 object-contain" />
+              <button type="button" data-type="YELLOW_CARD" data-label="TARJETA AMARILLA" data-tone="amber" onclick="selectType('YELLOW_CARD', this)" class="action-choice-btn">
+                <span style="display:inline-flex; align-items:center; gap:8px;">
+                  <img src="/api/icon/amarilla" alt="" onerror="this.style.display='none'" />
                   <span>AMARILLA</span>
                 </span>
-                <span class="choice-dot"></span>
+                <span class="choice-led"></span>
               </button>
 
-              <button type="button" data-type="SUBSTITUTION" data-label="CAMBIO" data-tone="emerald" onclick="selectType('SUBSTITUTION', this)"
-                class="action-choice-btn flex items-center justify-between py-3 px-3.5 rounded-xl">
-                <span class="inline-flex items-center gap-2">
-                  <img src="/api/icon/cambio" alt="" class="w-4 h-4 object-contain" />
+              <button type="button" data-type="SUBSTITUTION" data-label="CAMBIO" data-tone="emerald" onclick="selectType('SUBSTITUTION', this)" class="action-choice-btn">
+                <span style="display:inline-flex; align-items:center; gap:8px;">
+                  <img src="/api/icon/cambio" alt="" onerror="this.style.display='none'" />
                   <span>CAMBIO</span>
                 </span>
-                <span class="choice-dot"></span>
+                <span class="choice-led"></span>
               </button>
 
-              <button type="button" data-type="COMMENT" data-label="COMENTARIO" data-tone="zinc" onclick="selectType('COMMENT', this)"
-                class="action-choice-btn flex items-center justify-between py-3 px-3.5 rounded-xl">
-                <span class="inline-flex items-center gap-2">
-                  <img src="/api/icon/comentario" alt="" class="w-4 h-4 object-contain" />
+              <button type="button" data-type="COMMENT" data-label="COMENTARIO" data-tone="zinc" onclick="selectType('COMMENT', this)" class="action-choice-btn">
+                <span style="display:inline-flex; align-items:center; gap:8px;">
+                  <img src="/api/icon/comentario" alt="" onerror="this.style.display='none'" />
                   <span>RELATO</span>
                 </span>
-                <span class="choice-dot"></span>
+                <span class="choice-led"></span>
               </button>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="manual-row-2">
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wide text-zinc-300 mb-1.5">2. Minuto</label>
-              <input type="number" id="ev-minute" value="1" min="1" max="125" required
-                class="fm-input w-full rounded-xl px-3.5 py-2.5 text-white font-mono text-sm" />
+              <label for="ev-minute" class="field-label">2. Minuto</label>
+              <input type="number" id="ev-minute" value="1" min="1" max="125" required class="hw-input hw-input--mono" />
             </div>
-            <div class="sm:col-span-2">
-              <label class="block text-xs font-bold uppercase tracking-wide text-zinc-300 mb-1.5">3. Equipo</label>
-              <select id="ev-team" class="fm-input w-full rounded-xl px-3.5 py-2.5 text-white text-sm">
+            <div>
+              <label for="ev-team" class="field-label">3. Equipo</label>
+              <select id="ev-team" class="hw-input">
                 <option value="HOME" id="opt-home-team">Equipo Local</option>
                 <option value="AWAY" id="opt-away-team">Equipo Visitante</option>
                 <option value="NEUTRAL">Árbitro Central / General</option>
@@ -722,124 +1611,231 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wide text-zinc-300 mb-1.5">4. Jugador Protagonista</label>
-            <input type="text" id="ev-player" placeholder="Ej: Kylian Mbappé / Jamal Musiala" required
-              class="fm-input w-full rounded-xl px-3.5 py-2.5 text-white text-sm" />
+            <label for="ev-player" class="field-label">4. Jugador Protagonista</label>
+            <input type="text" id="ev-player" list="players-datalist" autocomplete="off" placeholder="Ej: Edwin Cardona / Leonardo Castro" required class="hw-input" />
+            <datalist id="players-datalist"></datalist>
           </div>
 
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wide text-zinc-300 mb-1.5">5. Descripción de la Jugada</label>
-            <textarea id="ev-desc" rows="2" placeholder="Describe la acción para el minuto a minuto..." required
-              class="fm-input w-full rounded-xl px-3.5 py-2.5 text-white text-sm"></textarea>
+            <label for="ev-desc" class="field-label">5. Descripción de la Jugada</label>
+            <textarea id="ev-desc" rows="3" placeholder="Describe la acción para el minuto a minuto..." required class="hw-input"></textarea>
           </div>
 
-          <button type="submit"
-            class="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-white/[0.12] hover:bg-white/[0.2] border border-white/25 text-white transition shadow-md">
+          <button type="submit" class="btn-hw btn-hw--volt" style="width:100%; padding:13px;">
             Publicar Jugada en Vivo
           </button>
 
-          <div id="publish-feedback" class="hidden rounded-xl p-3 text-xs font-medium text-center"></div>
+          <div id="publish-feedback" class="feedback-strip hidden"></div>
         </form>
       </section>
 
-      <!-- ====================================================================== -->
-      <!-- COLUMNA DERECHA (5/12): PRUEBA DE CARGA (HU-04) + ESTADO DEL SERVICIO  -->
-      <!-- ====================================================================== -->
-      <section class="lg:col-span-5 space-y-6">
+      <!-- RIGHT COLUMN (5/12): STRESS TEST + ENGINEERING TELEMETRY -->
+      <aside class="side-column">
 
-        <div class="fm-surface rounded-2xl p-6 space-y-4">
-          <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400">Prueba de Estrés · HU-04</span>
-            <h3 class="text-base font-bold text-white mt-0.5">Simulador de Pico de Audiencia (1,000 Lectores)</h3>
-            <p class="text-xs text-zinc-400 mt-1 leading-relaxed">
-              Ejecuta una ráfaga de los minutos finales del partido hacia <strong>1,000 espectadores concurrentes</strong> y mide la latencia de distribución.
-            </p>
+        <!-- Peak Load Simulator (HU-04) -->
+        <div class="console-rack">
+          <div class="rack-header" style="padding-bottom:12px;">
+            <div>
+              <div class="rack-kicker rack-kicker--amber">Prueba de Estrés · HU-04</div>
+              <h3 class="rack-title" style="font-size:1.3rem;">Simulador de Pico (1,000 Lectores)</h3>
+            </div>
           </div>
 
-          <button onclick="triggerPeakSimulation()" id="btn-sim-peak"
-            class="w-full py-3 px-4 rounded-xl font-bold text-xs bg-amber-400 text-black hover:bg-amber-300 transition shadow-md">
-            Ejecutar Simulación de 1,000 Lectores Concurrentes
+          <p style="font-size:0.82rem; color:var(--ink-secondary); line-height:1.5;">
+            Dispara una ráfaga simulada hacia <strong>1,000 espectadores concurrentes</strong> y mide la latencia de distribución en Redis y SSE sin alterar el marcador real.
+          </p>
+
+          <button type="button" onclick="triggerPeakSimulation()" id="btn-sim-peak" class="btn-hw btn-hw--amber" style="width:100%; padding:11px;">
+            Ejecutar Simulación de 1,000 Lectores
           </button>
 
-          <div id="sim-result" class="hidden rounded-xl bg-black/50 border border-white/10 p-3.5 text-xs font-mono space-y-1.5 text-zinc-300">
+          <div id="sim-result" class="sim-output-box hidden"></div>
+        </div>
+
+        <!-- Published Events Management Panel (Edit / Delete) -->
+        <div id="published-events-rack" class="console-rack">
+          <div class="rack-header" style="padding-bottom:12px;">
+            <div>
+              <div class="rack-kicker">Control de Crónica</div>
+              <h3 class="rack-title" style="font-size:1.3rem;">Jugadas Publicadas</h3>
+            </div>
+            <span id="published-events-count" class="spec-chip">0</span>
+          </div>
+
+          <div id="edit-event-panel" class="edit-event-panel hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="rack-kicker" style="margin:0;">Editar Jugada</span>
+              <button type="button" onclick="cancelEditEvent()" class="btn-mini-action">Cerrar</button>
+            </div>
+            <input type="hidden" id="edit-ev-id" />
+            <div class="edit-grid-2">
+              <input type="number" id="edit-ev-minute" min="0" max="125" class="hw-input hw-input--mono" title="Minuto" />
+              <select id="edit-ev-type" class="hw-input">
+                <option value="GOAL">GOL</option>
+                <option value="PENALTY">PENAL</option>
+                <option value="RED_CARD">TARJETA ROJA</option>
+                <option value="YELLOW_CARD">TARJETA AMARILLA</option>
+                <option value="SUBSTITUTION">CAMBIO</option>
+                <option value="COMMENT">RELATO</option>
+              </select>
+            </div>
+            <div class="edit-grid-2" style="grid-template-columns: 1fr 1fr;">
+              <select id="edit-ev-team" class="hw-input">
+                <option value="HOME">Local</option>
+                <option value="AWAY">Visitante</option>
+                <option value="NEUTRAL">General</option>
+              </select>
+              <input type="text" id="edit-ev-player" list="players-datalist" autocomplete="off" placeholder="Jugador" class="hw-input" />
+            </div>
+            <textarea id="edit-ev-desc" rows="2" placeholder="Descripción..." class="hw-input"></textarea>
+            <div class="row-flex">
+              <button type="button" onclick="saveEditedEvent()" class="btn-hw btn-hw--volt flex-1">Guardar Cambios</button>
+              <button type="button" onclick="cancelEditEvent()" class="btn-hw">Cancelar</button>
+            </div>
+          </div>
+
+          <div id="published-events-list" class="pub-event-list">
+            <div class="pub-event-empty">Sin jugadas publicadas aún.</div>
           </div>
         </div>
 
-        <!-- Telemetría de Servicios -->
-        <div class="fm-surface rounded-2xl p-6 space-y-3 text-xs">
-          <h4 class="font-bold text-white text-sm uppercase tracking-wide">Estado de la Plataforma</h4>
-          <div class="space-y-2.5 pt-2 border-t border-white/10 text-zinc-400">
-            <div class="flex justify-between">
-              <span>Espectadores Conectados:</span>
-              <strong id="studio-readers" class="text-white font-mono">0</strong>
+        <!-- Live Infrastructure Metrics -->
+        <div class="console-rack">
+          <div class="rack-header" style="padding-bottom:12px;">
+            <div>
+              <div class="rack-kicker">Telemetría de Infraestructura</div>
+              <h3 class="rack-title" style="font-size:1.3rem;">Estado de la Plataforma</h3>
             </div>
-            <div class="flex justify-between">
-              <span>Eventos Distribuidos (Fan-Out):</span>
-              <strong id="studio-deliveries" class="text-emerald-400 font-mono">0</strong>
+          </div>
+
+          <div class="metrics-list">
+            <div class="metric-row">
+              <span class="metric-label">Espectadores Conectados</span>
+              <strong id="studio-readers" class="metric-val">0</strong>
             </div>
-            <div class="flex justify-between">
-              <span>Latencia Mediana (p50):</span>
-              <strong id="metric-p50" class="text-emerald-400 font-mono">-- ms</strong>
+            <div class="metric-row">
+              <span class="metric-label">Eventos Distribuidos (Fan-Out)</span>
+              <strong id="studio-deliveries" class="metric-val metric-val--volt">0</strong>
             </div>
-            <div class="flex justify-between">
-              <span>Latencia Pico (p95 / p99):</span>
-              <strong id="metric-p99" class="text-amber-400 font-mono">-- ms</strong>
+            <div class="metric-row">
+              <span class="metric-label">Latencia Mediana (p50)</span>
+              <strong id="metric-p50" class="metric-val metric-val--volt">-- ms</strong>
             </div>
-            <div class="flex justify-between">
-              <span>Motor IA Activo:</span>
-              <strong id="metric-ai" class="text-zinc-200 font-mono">Groq (Whisper v3 Turbo + Qwen 3.8 27B)</strong>
+            <div class="metric-row">
+              <span class="metric-label">Latencia Pico (p95 / p99)</span>
+              <strong id="metric-p99" class="metric-val metric-val--amber">-- ms</strong>
             </div>
-            <div class="flex justify-between">
-              <span>Caché de Resumen:</span>
-              <strong id="metric-cache" class="text-white font-bold">Redis</strong>
+            <div class="metric-row">
+              <span class="metric-label">Motor IA Activo</span>
+              <strong id="metric-ai" class="metric-val">Groq (Whisper v3 + Qwen 27B)</strong>
+            </div>
+            <div class="metric-row" style="border-bottom:none;">
+              <span class="metric-label">Caché de Resumen</span>
+              <strong id="metric-cache" class="metric-val">Redis</strong>
             </div>
           </div>
         </div>
-        </div>
 
-      </section>
-
+      </aside>
     </div>
   </main>
 
-  <script>
-    let mediaFilesMap = {};
-    let currentSelectedFilename = '';
-    let processedChunkBuckets = new Set();
-    let isProcessingVideoChunk = false;
-    let isListeningMic = false;
-    let mediaRecorder = null;
-    let micAudioChunks = [];
-    let lastStudioHome = '';
-    let lastStudioAway = '';
-    let isJournalistAuthenticated = false;
-    let journalistToken = sessionStorage.getItem('unal_journalist_token') || '';
-    let journalistSessionId = sessionStorage.getItem('unal_journalist_session') || '';
+  <!-- DYNAMIC QR MODAL FOR FAN ACCESS -->
+  <div id="qr-modal" class="qr-modal-backdrop is-hidden" onclick="handleQrBackdropClick(event)" role="dialog" aria-modal="true" aria-label="Código QR para aficionados">
+    <div class="qr-modal-card" onclick="event.stopPropagation()">
+      <button type="button" onclick="closeQrModal()" class="qr-close-btn" title="Cerrar ventana" aria-label="Cerrar">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
 
-    function getJournalistHeaders(includeJson = true) {
-      const h = {
+      <div>
+        <div class="rack-kicker">Acceso Móvil Instantáneo</div>
+        <h3 class="rack-title" style="font-size:1.45rem;">Conectar Aficionados</h3>
+        <p style="font-size:0.78rem; color:var(--ink-secondary); margin-top:2px;">
+          Escanea desde el celular para abrir el portal en vivo.
+        </p>
+      </div>
+
+      <div class="qr-frame">
+        <img id="qr-code-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Código QR Portal Aficionados" />
+        <span class="qr-caption">UNAL SPORTS · PORTAL EN VIVO</span>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <span class="field-label" style="margin-bottom:0;">Dirección IPv4 / URL Activa</span>
+        <div class="row-flex">
+          <input type="text" id="qr-target-url" readonly class="hw-input hw-input--mono flex-1" style="font-size:0.75rem; color:var(--volt);" />
+          <button type="button" id="btn-copy-url" onclick="copyFanPortalUrl()" class="btn-hw">Copiar</button>
+        </div>
+      </div>
+
+      <div class="row-flex">
+        <button type="button" onclick="closeQrModal()" class="btn-hw" style="flex:1;">Cerrar</button>
+        <a id="qr-open-portal-link" href="/" target="_blank" class="btn-hw btn-hw--volt" style="flex:1;">Abrir Portal ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    var mediaFilesMap = {};
+    var currentSelectedFilename = '';
+    var processedChunkBuckets = new Set();
+    var isProcessingVideoChunk = false;
+    var isListeningMic = false;
+    var mediaRecorder = null;
+    var micAudioChunks = [];
+    var lastStudioHome = '';
+    var lastStudioAway = '';
+    var studioCurrentMinute = 0;
+    var studioCurrentStatus = 'POR INICIAR';
+    var clockRunning = false;
+    var clockTimerId = null;
+    var lastLocalClockEditAt = 0;
+    var publishedEventsCache = new Map();
+    var lastEventsRenderSig = '';
+    var isJournalistAuthenticated = false;
+    var journalistToken = '';
+    var journalistSessionId = '';
+    try {
+      journalistToken = sessionStorage.getItem('unal_journalist_token') || '';
+      journalistSessionId = sessionStorage.getItem('unal_journalist_session') || '';
+    } catch (e) {}
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getJournalistHeaders(includeJson) {
+      if (includeJson === undefined) includeJson = true;
+      var h = {
         'X-Journalist-Token': journalistToken,
         'X-Journalist-Session': journalistSessionId
       };
-      if (includeJson) {
-        h['Content-Type'] = 'application/json';
-      }
+      if (includeJson) h['Content-Type'] = 'application/json';
       return h;
     }
 
-    function updateLockBadgeUI(occupied, customMessage = '') {
-      const badge = document.getElementById('cabin-lock-badge');
-      const dot = document.getElementById('cabin-lock-dot');
-      const txt = document.getElementById('cabin-lock-text');
-      const btn = document.getElementById('btn-login-submit');
+    function updateLockBadgeUI(occupied, customMessage) {
+      var badge = document.getElementById('cabin-lock-badge');
+      var txt = document.getElementById('cabin-lock-text');
+      var btn = document.getElementById('btn-login-submit');
+      if (!badge || !txt || !btn) return;
+
       if (occupied) {
-        badge.className = 'flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs text-amber-300';
-        dot.className = 'w-2 h-2 rounded-full bg-amber-400 shrink-0';
+        badge.classList.add('is-occupied');
         txt.textContent = customMessage || 'Cabina en uso por una transmisión en vivo activa';
         btn.textContent = 'Acceso Restringido (Cabina en Uso)';
       } else {
-        badge.className = 'flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-300';
-        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 shrink-0';
+        badge.classList.remove('is-occupied');
         txt.textContent = customMessage || 'Cabina disponible para iniciar transmisión en vivo';
         btn.textContent = 'Desbloquear Cabina de Prensa';
       }
@@ -851,13 +1847,19 @@
       document.getElementById('studio-main-content').classList.remove('hidden');
       document.getElementById('btn-reset-board').classList.remove('hidden');
       document.getElementById('btn-logout-cabin').classList.remove('hidden');
+      var tally = document.getElementById('studio-tally-badge');
+      if (tally) {
+        tally.textContent = 'ON AIR · CABINA ACTIVA';
+        tally.classList.add('is-on-air');
+      }
       loadMediaCatalog();
       syncStudioStatus();
     }
 
-    function lockCabinUI(reasonMsg = '', occupied = false) {
+    function lockCabinUI(reasonMsg, occupied) {
       isJournalistAuthenticated = false;
-      const player = document.getElementById('match-media-player');
+      if (typeof stopMatchClock === 'function') stopMatchClock();
+      var player = document.getElementById('match-media-player');
       if (player && !player.paused) {
         try { player.pause(); } catch (e) {}
       }
@@ -865,8 +1867,13 @@
       document.getElementById('btn-reset-board').classList.add('hidden');
       document.getElementById('btn-logout-cabin').classList.add('hidden');
       document.getElementById('journalist-auth-gate').classList.remove('hidden');
-      updateLockBadgeUI(occupied);
-      const errBox = document.getElementById('login-error-box');
+      var tally = document.getElementById('studio-tally-badge');
+      if (tally) {
+        tally.textContent = occupied ? 'CABINA OCUPADA' : 'CABINA EN ESPERA';
+        tally.classList.remove('is-on-air');
+      }
+      updateLockBadgeUI(Boolean(occupied));
+      var errBox = document.getElementById('login-error-box');
       if (reasonMsg) {
         errBox.textContent = reasonMsg;
         errBox.classList.remove('hidden');
@@ -877,23 +1884,28 @@
 
     async function checkJournalistAuthStatus() {
       try {
-        const res = await fetch('/api/auth/journalist-status', {
-          headers: getJournalistHeaders(false)
+        var res = await fetch('/api/auth/journalist-status', {
+          headers: getJournalistHeaders(false),
+          cache: 'no-store'
         });
-        const data = await res.json();
+        var data = await res.json();
         if (data.authenticated && journalistToken) {
-          if (!isJournalistAuthenticated) {
-            unlockCabinUI();
-          }
+          if (!isJournalistAuthenticated) unlockCabinUI();
         } else {
           if (isJournalistAuthenticated) {
-            sessionStorage.removeItem('unal_journalist_token');
-            sessionStorage.removeItem('unal_journalist_session');
+            try {
+              sessionStorage.removeItem('unal_journalist_token');
+              sessionStorage.removeItem('unal_journalist_session');
+            } catch (e) {}
             journalistToken = '';
             journalistSessionId = '';
             lockCabinUI('Tu sesión se cerró porque otro periodista tomó el control de la cabina.', true);
           } else {
             updateLockBadgeUI(Boolean(data.cabin_occupied));
+            var tally = document.getElementById('studio-tally-badge');
+            if (tally && !isJournalistAuthenticated) {
+              tally.textContent = data.cabin_occupied ? 'CABINA OCUPADA' : 'CABINA EN ESPERA';
+            }
           }
         }
       } catch (e) {}
@@ -901,35 +1913,39 @@
 
     async function submitJournalistLogin(e) {
       e.preventDefault();
-      const passInput = document.getElementById('login-press-key');
-      const errBox = document.getElementById('login-error-box');
-      const password = passInput.value.trim();
+      var passInput = document.getElementById('login-press-key');
+      var errBox = document.getElementById('login-error-box');
+      var password = passInput.value.trim();
       if (!password) return;
 
       errBox.classList.add('hidden');
-      const res = await fetch('/api/auth/journalist-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          password,
-          session_id: journalistSessionId
-        })
-      });
-      const data = await res.json();
+      try {
+        var res = await fetch('/api/auth/journalist-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: password, session_id: journalistSessionId })
+        });
+        var data = await res.json();
 
-      if (res.ok && data.authenticated) {
-        journalistToken = data.token;
-        journalistSessionId = data.session_id;
-        sessionStorage.setItem('unal_journalist_token', journalistToken);
-        sessionStorage.setItem('unal_journalist_session', journalistSessionId);
-        passInput.value = '';
-        unlockCabinUI();
-      } else if (res.status === 409) {
-        updateLockBadgeUI(true, 'Cabina ocupada por una transmisión activa');
-        errBox.textContent = data.error || 'Cabina ocupada: Hay un periodista transmitiendo en vivo en este momento.';
-        errBox.classList.remove('hidden');
-      } else {
-        errBox.textContent = data.error || 'Credencial de prensa inválida.';
+        if (res.ok && data.authenticated) {
+          journalistToken = data.token;
+          journalistSessionId = data.session_id;
+          try {
+            sessionStorage.setItem('unal_journalist_token', journalistToken);
+            sessionStorage.setItem('unal_journalist_session', journalistSessionId);
+          } catch (err) {}
+          passInput.value = '';
+          unlockCabinUI();
+        } else if (res.status === 409) {
+          updateLockBadgeUI(true, 'Cabina ocupada por una transmisión activa');
+          errBox.textContent = data.error || 'Cabina ocupada: Hay un periodista transmitiendo en vivo en este momento.';
+          errBox.classList.remove('hidden');
+        } else {
+          errBox.textContent = data.error || 'Credencial de prensa inválida.';
+          errBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        errBox.textContent = 'No se pudo contactar al servidor de autenticación.';
         errBox.classList.remove('hidden');
       }
     }
@@ -942,42 +1958,46 @@
           body: JSON.stringify({ session_id: journalistSessionId })
         });
       } catch (e) {}
-      sessionStorage.removeItem('unal_journalist_token');
-      sessionStorage.removeItem('unal_journalist_session');
+      try {
+        sessionStorage.removeItem('unal_journalist_token');
+        sessionStorage.removeItem('unal_journalist_session');
+      } catch (e) {}
       journalistToken = '';
       journalistSessionId = '';
       lockCabinUI('', false);
     }
 
     function switchStudioTab(tab) {
-      const pAi = document.getElementById('panel-ai');
-      const pMan = document.getElementById('panel-manual');
-      const tAi = document.getElementById('tab-ai');
-      const tMan = document.getElementById('tab-manual');
+      var pAi = document.getElementById('panel-ai');
+      var pMan = document.getElementById('panel-manual');
+      var tAi = document.getElementById('tab-ai');
+      var tMan = document.getElementById('tab-manual');
 
-      if (tab === 'ai') {
-        pAi.classList.remove('hidden');
-        pMan.classList.add('hidden');
-        tAi.className = 'px-5 py-2 rounded-lg text-xs transition-all fm-mode-active';
-        tMan.className = 'px-5 py-2 rounded-lg text-xs transition-all fm-mode-inactive';
-      } else {
-        pMan.classList.remove('hidden');
-        pAi.classList.add('hidden');
-        tMan.className = 'px-5 py-2 rounded-lg text-xs transition-all fm-mode-active';
-        tAi.className = 'px-5 py-2 rounded-lg text-xs transition-all fm-mode-inactive';
-      }
+      var isAi = tab === 'ai';
+      pAi.classList.toggle('hidden', !isAi);
+      pMan.classList.toggle('hidden', isAi);
+      tAi.classList.toggle('is-active', isAi);
+      tMan.classList.toggle('is-active', !isAi);
+      tAi.setAttribute('aria-selected', String(isAi));
+      tMan.setAttribute('aria-selected', String(!isAi));
     }
 
-    function appendAiLog(htmlContent) {
-      const box = document.getElementById('ai-log-container');
-      const item = document.createElement('div');
-      item.className = 'p-2.5 rounded-lg bg-white/[0.03] border border-white/10 space-y-1';
+    function appendAiLog(htmlContent, borderColor) {
+      var box = document.getElementById('ai-log-container');
+      if (!box) return;
+      var item = document.createElement('div');
+      item.className = 'ai-log-entry';
+      if (borderColor) item.style.borderLeftColor = borderColor;
       item.innerHTML = htmlContent;
       box.prepend(item);
     }
 
     async function resetBlankBoard() {
-      const res = await fetch('/api/match/setup', {
+      if (!window.confirm('¿Seguro que deseas reiniciar el tablero 0 - 0 y borrar todas las jugadas publicadas? Esta acción no se puede deshacer.')) {
+        return;
+      }
+      stopMatchClock();
+      var res = await fetch('/api/match/setup', {
         method: 'POST',
         headers: getJournalistHeaders(true),
         body: JSON.stringify({ blank_reset: true })
@@ -989,119 +2009,109 @@
       processedChunkBuckets.clear();
       document.getElementById('setup-home').value = '';
       document.getElementById('setup-away').value = '';
-      appendAiLog(`<div class="text-emerald-400 font-bold">Marcador reiniciado en blanco (0 - 0, 0 jugadas).</div>`);
+      studioCurrentMinute = 0;
+      document.getElementById('ev-minute').value = 1;
+      appendAiLog('<div style="color:var(--volt); font-weight:700;">Marcador reiniciado en blanco (0 - 0, 0 jugadas).</div>');
       syncStudioStatus();
     }
 
-    async function applyMatchTeams(homeOverride, awayOverride, resetScore = false) {
-      const h = (homeOverride || document.getElementById('setup-home').value).trim();
-      const a = (awayOverride || document.getElementById('setup-away').value).trim();
+    async function applyMatchTeams(homeOverride, awayOverride, resetScore) {
+      var h = (homeOverride || document.getElementById('setup-home').value).trim();
+      var a = (awayOverride || document.getElementById('setup-away').value).trim();
       if (!h && !a) return;
-      const res = await fetch('/api/match/setup', {
+      var res = await fetch('/api/match/setup', {
         method: 'POST',
         headers: getJournalistHeaders(true),
         body: JSON.stringify({
           home_team: h || undefined,
           away_team: a || undefined,
-          reset_score: resetScore
+          reset_score: Boolean(resetScore)
         })
       });
       if (res.status === 401 || res.status === 403) {
         await checkJournalistAuthStatus();
         return;
       }
-      appendAiLog(`<div class="text-zinc-200">Equipos actualizados: <strong>${h || 'Local'} vs ${a || 'Visitante'}</strong></div>`);
+      appendAiLog('<div>Equipos actualizados: <strong style="color:var(--ink-chalk);">' + escapeHtml(h || 'Local') + ' vs ' + escapeHtml(a || 'Visitante') + '</strong></div>');
       syncStudioStatus();
     }
 
-    let currentMediaStorage = { used_mb: 0, limit_mb: 1000, remaining_mb: 1000, percent_used: 0 };
+    var currentMediaStorage = { used_mb: 0, limit_mb: 1000, remaining_mb: 1000, percent_used: 0 };
 
     function renderMediaStorageBar(st) {
       if (!st) return;
       currentMediaStorage = st;
-      const txtEl = document.getElementById('media-storage-text');
-      const barEl = document.getElementById('media-storage-bar');
+      var txtEl = document.getElementById('media-storage-text');
+      var barEl = document.getElementById('media-storage-bar');
       if (!txtEl || !barEl) return;
 
-      txtEl.textContent = `${st.used_mb} MB / ${st.limit_mb} MB (${st.remaining_mb} MB libres)`;
-      barEl.style.width = `${Math.min(100, st.percent_used)}%`;
+      txtEl.textContent = st.used_mb + ' MB / ' + st.limit_mb + ' MB (' + st.remaining_mb + ' MB libres)';
+      barEl.style.width = Math.min(100, st.percent_used) + '%';
 
-      if (st.percent_used >= 90) {
-        txtEl.className = 'font-mono font-semibold text-rose-400';
-        barEl.className = 'h-full bg-rose-500 transition-all duration-300';
-      } else if (st.percent_used >= 70) {
-        txtEl.className = 'font-mono font-semibold text-amber-400';
-        barEl.className = 'h-full bg-amber-400 transition-all duration-300';
-      } else {
-        txtEl.className = 'font-mono font-semibold text-emerald-400';
-        barEl.className = 'h-full bg-emerald-400 transition-all duration-300';
-      }
+      var color = st.percent_used >= 90 ? 'var(--vermilion)' : (st.percent_used >= 70 ? 'var(--amber)' : 'var(--volt)');
+      txtEl.style.color = color;
+      barEl.style.backgroundColor = color;
     }
 
     async function loadMediaCatalog() {
       try {
-        const res = await fetch('/api/media/list');
-        const data = await res.json();
+        var res = await fetch('/api/media/list', { cache: 'no-store' });
+        var data = await res.json();
         mediaFilesMap = {};
+        if (data.storage) renderMediaStorageBar(data.storage);
 
-        if (data.storage) {
-          renderMediaStorageBar(data.storage);
-        }
-
-        const sel = document.getElementById('media-select');
-        const prevVal = sel.value;
+        var sel = document.getElementById('media-select');
+        var prevVal = sel.value;
         sel.innerHTML = '<option value="">Seleccionar archivo de transmisión...</option>';
-        (data.files || []).forEach(f => {
+        (data.files || []).forEach(function (f) {
           mediaFilesMap[f.url] = f;
-          const opt = document.createElement('option');
+          var opt = document.createElement('option');
           opt.value = f.url;
-          opt.textContent = `${f.filename} (${f.size_mb} MB)`;
+          opt.textContent = f.filename + ' (' + f.size_mb + ' MB)';
           sel.appendChild(opt);
         });
-        if (prevVal && mediaFilesMap[prevVal]) {
-          sel.value = prevVal;
-        }
-        const delBtn = document.getElementById('btn-delete-media');
+        if (prevVal && mediaFilesMap[prevVal]) sel.value = prevVal;
+        var delBtn = document.getElementById('btn-delete-media');
         if (delBtn) delBtn.disabled = !sel.value;
       } catch (e) {}
     }
 
     async function uploadMediaFile(e) {
-      const file = e.target.files[0];
+      var file = e.target.files[0];
       if (!file) return;
-      const warnBox = document.getElementById('media-storage-warning');
+      var warnBox = document.getElementById('media-storage-warning');
       if (warnBox) warnBox.classList.add('hidden');
 
-      const fileSizeMb = Math.round((file.size / (1024 * 1024)) * 100) / 100;
+      var fileSizeMb = Math.round((file.size / (1024 * 1024)) * 100) / 100;
       if (currentMediaStorage && fileSizeMb > currentMediaStorage.remaining_mb) {
-        const msg = `Límite de almacenamiento: "${file.name}" pesa ${fileSizeMb} MB y solo quedan ${currentMediaStorage.remaining_mb} MB libres (límite ${currentMediaStorage.limit_mb} MB). Borra un video primero.`;
+        var msg = 'Límite de almacenamiento: "' + file.name + '" pesa ' + fileSizeMb + ' MB y quedan ' + currentMediaStorage.remaining_mb + ' MB libres.';
         if (warnBox) {
           warnBox.textContent = msg;
           warnBox.classList.remove('hidden');
         }
-        appendAiLog(`<div class="text-rose-400 font-semibold">${msg}</div>`);
+        appendAiLog('<div style="color:var(--vermilion); font-weight:700;">' + escapeHtml(msg) + '</div>', 'var(--vermilion)');
         e.target.value = '';
         return;
       }
 
-      const formData = new FormData();
+      var formData = new FormData();
       formData.append('file', file);
-      document.getElementById('ai-status-text').textContent = `Subiendo ${file.name} (${fileSizeMb} MB)...`;
+      document.getElementById('ai-status-text').textContent = 'Subiendo ' + file.name + ' (' + fileSizeMb + ' MB)...';
 
       try {
-        const res = await fetch('/api/media/upload', {
+        var res = await fetch('/api/media/upload', {
           method: 'POST',
           headers: getJournalistHeaders(false),
           body: formData
         });
-        const data = await res.json();
+        var data = await res.json();
         if (res.ok) {
           if (data.storage) renderMediaStorageBar(data.storage);
           await loadMediaCatalog();
           document.getElementById('media-select').value = data.url;
           await selectExistingMedia();
           document.getElementById('ai-status-text').textContent = 'Archivo listo';
-          appendAiLog(`<div class="text-emerald-400">Archivo <code>${data.filename}</code> (${data.size_mb || fileSizeMb} MB) cargado correctamente.</div>`);
+          appendAiLog('<div style="color:var(--volt);">Archivo <code>' + escapeHtml(data.filename) + '</code> cargado correctamente.</div>');
         } else {
           if (data.storage) renderMediaStorageBar(data.storage);
           document.getElementById('ai-status-text').textContent = 'En espera';
@@ -1109,56 +2119,56 @@
             warnBox.textContent = data.error || 'Error subiendo archivo';
             warnBox.classList.remove('hidden');
           }
-          appendAiLog(`<div class="text-rose-400">Error subiendo archivo: ${data.error}</div>`);
+          appendAiLog('<div style="color:var(--vermilion);">Error subiendo archivo: ' + escapeHtml(data.error) + '</div>', 'var(--vermilion)');
         }
       } catch (err) {
         document.getElementById('ai-status-text').textContent = 'En espera';
-        appendAiLog(`<div class="text-rose-400">Error de red al subir archivo. Verifica permisos de la carpeta media.</div>`);
+        appendAiLog('<div style="color:var(--vermilion);">Error de red al subir archivo.</div>', 'var(--vermilion)');
       } finally {
         e.target.value = '';
       }
     }
 
     async function deleteSelectedMedia() {
-      const sel = document.getElementById('media-select');
-      const url = sel.value;
+      var sel = document.getElementById('media-select');
+      var url = sel.value;
       if (!url) return;
-      const meta = mediaFilesMap[url] || {};
-      const filename = meta.filename || decodeURIComponent(url.replace('/media/', ''));
+      var meta = mediaFilesMap[url] || {};
+      var filename = meta.filename || decodeURIComponent(url.replace('/media/', ''));
 
-      const player = document.getElementById('match-media-player');
+      var player = document.getElementById('match-media-player');
       if (player) {
         try { player.pause(); player.removeAttribute('src'); player.load(); } catch (e) {}
       }
 
-      const res = await fetch('/api/media/delete', {
+      var res = await fetch('/api/media/delete', {
         method: 'POST',
         headers: getJournalistHeaders(true),
-        body: JSON.stringify({ filename })
+        body: JSON.stringify({ filename: filename })
       });
       if (res.status === 401 || res.status === 403) {
         await checkJournalistAuthStatus();
         return;
       }
-      const data = await res.json();
-      const warnBox = document.getElementById('media-storage-warning');
+      var data = await res.json();
+      var warnBox = document.getElementById('media-storage-warning');
       if (warnBox) warnBox.classList.add('hidden');
 
       if (res.ok) {
         sel.value = '';
         await selectExistingMedia();
         await loadMediaCatalog();
-        appendAiLog(`<div class="text-amber-300">Video eliminado: <code>${data.deleted}</code> (${data.freed_mb} MB liberados).</div>`);
+        appendAiLog('<div style="color:var(--amber);">Video eliminado: <code>' + escapeHtml(data.deleted) + '</code> (' + escapeHtml(data.freed_mb) + ' MB liberados).</div>', 'var(--amber)');
       } else {
-        appendAiLog(`<div class="text-rose-400">No se pudo eliminar: ${data.error}</div>`);
+        appendAiLog('<div style="color:var(--vermilion);">No se pudo eliminar: ' + escapeHtml(data.error) + '</div>', 'var(--vermilion)');
       }
     }
 
     async function selectExistingMedia() {
-      const url = document.getElementById('media-select').value;
-      const wrap = document.getElementById('player-wrapper');
-      const player = document.getElementById('match-media-player');
-      const delBtn = document.getElementById('btn-delete-media');
+      var url = document.getElementById('media-select').value;
+      var wrap = document.getElementById('player-wrapper');
+      var player = document.getElementById('match-media-player');
+      var delBtn = document.getElementById('btn-delete-media');
       if (delBtn) delBtn.disabled = !url;
       if (!url) {
         wrap.classList.add('hidden');
@@ -1166,7 +2176,7 @@
         return;
       }
 
-      const meta = mediaFilesMap[url] || {};
+      var meta = mediaFilesMap[url] || {};
       currentSelectedFilename = meta.filename || decodeURIComponent(url.replace('/media/', ''));
       processedChunkBuckets.clear();
       isProcessingVideoChunk = false;
@@ -1180,38 +2190,48 @@
       wrap.classList.remove('hidden');
       player.src = url;
 
-      player.ontimeupdate = () => {
+      player.ontimeupdate = function () {
         if (player.paused || player.ended || !currentSelectedFilename) return;
-        const sec = Math.floor(player.currentTime);
-        const bucket = Math.floor(sec / 15);
+        var sec = Math.floor(player.currentTime);
+        var bucket = Math.floor(sec / 15);
         if (!processedChunkBuckets.has(bucket) && !isProcessingVideoChunk) {
           processedChunkBuckets.add(bucket);
-          const chunkStart = Math.max(0, bucket * 15 - (bucket > 0 ? 2 : 0));
+          var chunkStart = Math.max(0, bucket * 15 - (bucket > 0 ? 2 : 0));
           extractAndAnalyzeVideoAudio(chunkStart, 16, player.duration || 0);
         }
       };
 
-      player.onseeked = () => {
-        const sec = Math.floor(player.currentTime);
-        const bucket = Math.floor(sec / 15);
+      player.onseeked = function () {
+        var sec = Math.floor(player.currentTime);
+        var bucket = Math.floor(sec / 15);
         processedChunkBuckets.delete(bucket);
       };
     }
 
     async function analyzeCurrentVideoMomentNow() {
-      const player = document.getElementById('match-media-player');
+      var player = document.getElementById('match-media-player');
       if (!currentSelectedFilename) return;
-      const startSec = Math.max(0, Math.floor(player.currentTime) - 3);
+      var startSec = Math.max(0, Math.floor(player.currentTime) - 3);
       await extractAndAnalyzeVideoAudio(startSec, 16, player.duration || 0);
+    }
+
+    function renderEventLogBlock(prefixLabel, transcriptText, ev, data) {
+      var actionNote = data.updated_existing_goal
+        ? 'Autor confirmado en repetición: <code>' + escapeHtml(ev.player) + '</code> — "' + escapeHtml(ev.description) + '"'
+        : 'Publicado (' + escapeHtml(data.latency_ms) + ' ms): "' + escapeHtml(ev.description) + '"';
+      return '' +
+        '<div><strong>' + escapeHtml(prefixLabel) + ':</strong> "' + escapeHtml(transcriptText) + '"</div>' +
+        '<div><strong>Clasificación:</strong> Tipo=<code>' + escapeHtml(ev.type) + '</code> | Min=<code>' + escapeHtml(ev.minute) + '\'</code> | Jugador=<code>' + escapeHtml(ev.player) + '</code> | Marcador=<code>' + escapeHtml(data.match.home_team + ' ' + data.match.home_score + '-' + data.match.away_score + ' ' + data.match.away_team) + '</code></div>' +
+        '<div style="color:var(--volt);">' + actionNote + '</div>';
     }
 
     async function extractAndAnalyzeVideoAudio(startSec, durationSec, totalDuration) {
       if (!currentSelectedFilename || isProcessingVideoChunk) return;
       isProcessingVideoChunk = true;
-      document.getElementById('ai-status-text').textContent = `Analizando audio (${startSec}s - ${startSec + durationSec}s)...`;
+      document.getElementById('ai-status-text').textContent = 'Analizando audio (' + startSec + 's - ' + (startSec + durationSec) + 's)...';
 
       try {
-        const res = await fetch('/api/ai/process-video-chunk', {
+        var res = await fetch('/api/ai/process-video-chunk', {
           method: 'POST',
           headers: getJournalistHeaders(true),
           body: JSON.stringify({
@@ -1225,18 +2245,10 @@
           await checkJournalistAuthStatus();
           return;
         }
-        const data = await res.json();
+        var data = await res.json();
         if (res.status === 201 && data.event) {
-          const ev = data.event;
-          document.getElementById('ai-status-text').textContent = `Publicado en ${data.latency_ms} ms`;
-          const actionNote = data.updated_existing_goal
-            ? `Autor confirmado en repetición: <code>${ev.player}</code> — "${ev.description}"`
-            : `Publicado (${data.latency_ms} ms): "${ev.description}"`;
-          appendAiLog(`
-            <div class="text-zinc-400"><strong>Audio [${startSec}s-${startSec + durationSec}s]:</strong> "${data.transcript_received}"</div>
-            <div class="text-zinc-300"><strong>Clasificación:</strong> Tipo=<code>${ev.type}</code> | Min=<code>${ev.minute}'</code> | Jugador=<code>${ev.player}</code> | Marcador=<code>${data.match.home_team} ${data.match.home_score}-${data.match.away_score} ${data.match.away_team}</code></div>
-            <div class="text-emerald-400">${actionNote}</div>
-          `);
+          document.getElementById('ai-status-text').textContent = 'Publicado en ' + data.latency_ms + ' ms';
+          appendAiLog(renderEventLogBlock('Audio [' + startSec + 's-' + (startSec + durationSec) + 's]', data.transcript_received, data.event, data));
           syncStudioStatus();
         } else {
           document.getElementById('ai-status-text').textContent = 'Monitoreando audio...';
@@ -1252,7 +2264,7 @@
       if (!phrase || !phrase.trim()) return;
       document.getElementById('ai-status-text').textContent = 'Procesando relato...';
 
-      const res = await fetch('/api/ai/narrate', {
+      var res = await fetch('/api/ai/narrate', {
         method: 'POST',
         headers: getJournalistHeaders(true),
         body: JSON.stringify({ transcript: phrase })
@@ -1261,45 +2273,37 @@
         await checkJournalistAuthStatus();
         return;
       }
-      const data = await res.json();
-      if (res.ok) {
-        const ev = data.event;
-        document.getElementById('ai-status-text').textContent = `Publicado en ${data.latency_ms} ms`;
-        const actionNote = data.updated_existing_goal
-          ? `Autor confirmado: <code>${ev.player}</code> — "${ev.description}"`
-          : `Publicado (${data.latency_ms} ms): "${ev.description}"`;
-        appendAiLog(`
-          <div class="text-zinc-400"><strong>Relato recibido:</strong> "${phrase}"</div>
-          <div class="text-zinc-300"><strong>Clasificación:</strong> Tipo=<code>${ev.type}</code> | Minuto=<code>${ev.minute}'</code> | Jugador=<code>${ev.player}</code> | Marcador=<code>${data.match.home_team} ${data.match.home_score}-${data.match.away_score} ${data.match.away_team}</code></div>
-          <div class="text-emerald-400">${actionNote}</div>
-        `);
+      var data = await res.json();
+      if (res.ok && data.event) {
+        document.getElementById('ai-status-text').textContent = 'Publicado en ' + data.latency_ms + ' ms';
+        appendAiLog(renderEventLogBlock('Relato recibido', phrase, data.event, data));
         syncStudioStatus();
       } else {
-        appendAiLog(`<div class="text-rose-400">Error: ${data.error}</div>`);
+        appendAiLog('<div style="color:var(--vermilion);">Error: ' + escapeHtml(data.error) + '</div>', 'var(--vermilion)');
       }
     }
 
     async function sendTranscriptToAI() {
-      const inp = document.getElementById('ai-transcript-input');
-      const text = inp.value.trim();
+      var inp = document.getElementById('ai-transcript-input');
+      var text = inp.value.trim();
       if (!text) return;
       inp.value = '';
       await processNarratorPhraseWithAI(text);
     }
 
-    async function sendAudioBlobToWhisper(blobOrFile, labelName = 'mic.webm') {
-      const ind = document.getElementById('mic-listening-indicator');
+    async function sendAudioBlobToWhisper(blobOrFile, labelName) {
+      var ind = document.getElementById('mic-listening-indicator');
       document.getElementById('ai-status-text').textContent = 'Transcribiendo narración...';
       ind.classList.remove('hidden');
       document.getElementById('mic-interim-text').textContent = 'Procesando audio de voz...';
 
       try {
-        const formData = new FormData();
-        formData.append('file', blobOrFile, labelName);
+        var formData = new FormData();
+        formData.append('file', blobOrFile, labelName || 'mic.webm');
         formData.append('token', journalistToken);
         formData.append('session_id', journalistSessionId);
 
-        const res = await fetch('/api/ai/transcribe-mic', {
+        var res = await fetch('/api/ai/transcribe-mic', {
           method: 'POST',
           headers: getJournalistHeaders(false),
           body: formData
@@ -1309,51 +2313,43 @@
           await checkJournalistAuthStatus();
           return;
         }
-        const data = await res.json();
+        var data = await res.json();
         ind.classList.add('hidden');
 
         if (res.status === 201 && data.event) {
-          const ev = data.event;
-          document.getElementById('ai-status-text').textContent = `Publicado en ${data.latency_ms} ms`;
-          const actionNote = data.updated_existing_goal
-            ? `Autor confirmado: <code>${ev.player}</code> — "${ev.description}"`
-            : `Publicado (${data.latency_ms} ms): "${ev.description}"`;
-          appendAiLog(`
-            <div class="text-zinc-400"><strong>Transcripción de voz:</strong> "${data.transcript_received}"</div>
-            <div class="text-zinc-300"><strong>Clasificación:</strong> Tipo=<code>${ev.type}</code> | Min=<code>${ev.minute}'</code> | Jugador=<code>${ev.player}</code> | Marcador=<code>${data.match.home_team} ${data.match.home_score}-${data.match.away_score} ${data.match.away_team}</code></div>
-            <div class="text-emerald-400">${actionNote}</div>
-          `);
+          document.getElementById('ai-status-text').textContent = 'Publicado en ' + data.latency_ms + ' ms';
+          appendAiLog(renderEventLogBlock('Transcripción de voz', data.transcript_received, data.event, data));
           syncStudioStatus();
         } else {
           document.getElementById('ai-status-text').textContent = 'En espera';
-          appendAiLog(`<div class="text-amber-300">Micrófono: ${data.error || data.message || 'No se detectó voz clara.'}</div>`);
+          appendAiLog('<div style="color:var(--amber);">Micrófono: ' + escapeHtml(data.error || data.message || 'No se detectó voz clara.') + '</div>', 'var(--amber)');
         }
       } catch (err) {
         ind.classList.add('hidden');
         document.getElementById('ai-status-text').textContent = 'En espera';
-        appendAiLog(`<div class="text-rose-400">Error enviando audio: ${err.message}</div>`);
+        appendAiLog('<div style="color:var(--vermilion);">Error enviando audio: ' + escapeHtml(err.message) + '</div>', 'var(--vermilion)');
       }
     }
 
     async function uploadRecordedMicAudio(e) {
-      const file = e.target.files[0];
+      var file = e.target.files[0];
       if (!file) return;
       await sendAudioBlobToWhisper(file, file.name || 'narracion_voz.m4a');
       e.target.value = '';
     }
 
     function copyCurrentOriginForMic() {
-      const orig = window.location.origin;
+      var orig = window.location.origin;
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(orig);
       }
-      appendAiLog(`<div class="text-emerald-400">Copiado al portapapeles: <code>${orig}</code> — Pégalo en <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code></div>`);
+      appendAiLog('<div style="color:var(--volt);">Copiado: <code>' + escapeHtml(orig) + '</code></div>');
     }
 
     async function toggleMicrophoneNarration() {
-      const btnLabel = document.getElementById('btn-mic-label');
-      const ind = document.getElementById('mic-listening-indicator');
-      const helpBox = document.getElementById('mic-http-help-box');
+      var btnLabel = document.getElementById('btn-mic-label');
+      var ind = document.getElementById('mic-listening-indicator');
+      var helpBox = document.getElementById('mic-http-help-box');
 
       if (isListeningMic && mediaRecorder && mediaRecorder.state !== 'inactive') {
         isListeningMic = false;
@@ -1362,7 +2358,7 @@
         return;
       }
 
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+      var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         if (isMobile) {
@@ -1378,17 +2374,17 @@
       if (helpBox) helpBox.classList.add('hidden');
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micAudioChunks = [];
         mediaRecorder = new MediaRecorder(stream);
 
-        mediaRecorder.ondataavailable = (ev) => {
+        mediaRecorder.ondataavailable = function (ev) {
           if (ev.data && ev.data.size > 0) micAudioChunks.push(ev.data);
         };
 
-        mediaRecorder.onstop = async () => {
-          stream.getTracks().forEach(t => t.stop());
-          const audioBlob = new Blob(micAudioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        mediaRecorder.onstop = async function () {
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          var audioBlob = new Blob(micAudioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
           await sendAudioBlobToWhisper(audioBlob, 'relato_en_vivo.webm');
         };
 
@@ -1396,85 +2392,356 @@
         isListeningMic = true;
         btnLabel.textContent = 'Enviar narración';
         ind.classList.remove('hidden');
-        document.getElementById('mic-interim-text').textContent = 'Grabando tu narración en vivo... Habla y pulsa "Enviar narración" para publicar.';
+        document.getElementById('mic-interim-text').textContent = 'Grabando tu narración en vivo... Pulsa "Enviar narración" al terminar.';
       } catch (err) {
-        appendAiLog(`<div class="text-rose-400">Permiso de micrófono denegado en el navegador: ${err.message || 'Verifica el candado de permisos arriba en la barra de direcciones.'}</div>`);
+        appendAiLog('<div style="color:var(--vermilion);">Permiso de micrófono denegado: ' + escapeHtml(err.message || '') + '</div>', 'var(--vermilion)');
       }
     }
 
     function selectType(typeVal, btnEl) {
       document.getElementById('ev-type').value = typeVal;
-      document.querySelectorAll('.action-choice-btn').forEach(b => b.classList.remove('is-selected'));
+      document.querySelectorAll('.action-choice-btn').forEach(function (b) { b.classList.remove('is-selected'); });
       btnEl.classList.add('is-selected');
-      const label = btnEl.getAttribute('data-label') || typeVal;
-      const indicator = document.getElementById('selected-type-indicator');
-      if (indicator) {
-        indicator.textContent = `Seleccionado: ${label}`;
+      var label = btnEl.getAttribute('data-label') || typeVal;
+      var indicator = document.getElementById('selected-type-indicator');
+      if (indicator) indicator.textContent = 'Seleccionado: ' + label;
+    }
+
+    function syncClockUiState() {
+      var btn = document.getElementById('btn-clock-toggle');
+      if (!btn) return;
+      btn.classList.toggle('is-running', clockRunning);
+      btn.setAttribute('aria-pressed', String(clockRunning));
+      btn.textContent = clockRunning ? '⏸ Pausar Reloj' : '▶ Iniciar Reloj';
+    }
+
+    function stopMatchClock() {
+      if (clockTimerId) {
+        clearInterval(clockTimerId);
+        clockTimerId = null;
       }
+      clockRunning = false;
+      syncClockUiState();
+    }
+
+    async function pushMatchMinute(minuteVal) {
+      var clamped = Math.max(0, Math.min(125, Number(minuteVal) || 0));
+      studioCurrentMinute = clamped;
+      lastLocalClockEditAt = Date.now();
+      var minBadge = document.getElementById('studio-min');
+      if (minBadge) minBadge.textContent = clamped;
+      var evMinInput = document.getElementById('ev-minute');
+      if (evMinInput && document.activeElement !== evMinInput) {
+        evMinInput.value = Math.max(1, clamped);
+      }
+      try {
+        await fetch('/api/match/setup', {
+          method: 'POST',
+          headers: getJournalistHeaders(true),
+          body: JSON.stringify({ minute: clamped })
+        });
+      } catch (e) {}
+    }
+
+    function toggleMatchClock() {
+      if (clockRunning) {
+        stopMatchClock();
+        return;
+      }
+      clockRunning = true;
+      if (studioCurrentMinute === 0) {
+        pushMatchMinute(1);
+      }
+      syncClockUiState();
+      clockTimerId = setInterval(function () {
+        if (!isJournalistAuthenticated) {
+          stopMatchClock();
+          return;
+        }
+        var nextMin = Math.min(125, studioCurrentMinute + 1);
+        pushMatchMinute(nextMin);
+      }, 60000);
+    }
+
+    function nudgeMatchMinute(delta) {
+      var nextMin = Math.max(0, Math.min(125, studioCurrentMinute + delta));
+      pushMatchMinute(nextMin);
+    }
+
+    function highlightStatusButton(statusStr) {
+      document.querySelectorAll('.btn-status-key').forEach(function (btn) {
+        var target = btn.getAttribute('data-match-status') || '';
+        btn.classList.toggle('is-active', target.toUpperCase() === String(statusStr || '').toUpperCase());
+      });
+    }
+
+    async function setMatchStatus(statusStr) {
+      studioCurrentStatus = statusStr;
+      var statusEl = document.getElementById('studio-status-label');
+      if (statusEl) statusEl.textContent = statusStr;
+      highlightStatusButton(statusStr);
+      if (/DESCANSO|FINAL/i.test(statusStr)) {
+        stopMatchClock();
+      }
+      try {
+        var res = await fetch('/api/match/setup', {
+          method: 'POST',
+          headers: getJournalistHeaders(true),
+          body: JSON.stringify({ status: statusStr })
+        });
+        if (res.status === 401 || res.status === 403) {
+          await checkJournalistAuthStatus();
+          return;
+        }
+        syncStudioStatus();
+      } catch (e) {}
+    }
+
+    function updatePlayersDatalist(sumData) {
+      var dl = document.getElementById('players-datalist');
+      if (!dl) return;
+      var seen = new Set();
+      var ordered = [];
+      function addName(raw) {
+        var clean = String(raw || '').trim();
+        if (!clean || clean === 'Por confirmar') return;
+        var key = clean.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          ordered.push(clean);
+        }
+      }
+      if (sumData && Array.isArray(sumData.discovered_players)) {
+        sumData.discovered_players.forEach(addName);
+      }
+      if (sumData && Array.isArray(sumData.events)) {
+        sumData.events.forEach(function (ev) { addName(ev.player); });
+      }
+      var nextHtml = ordered.map(function (name) {
+        return '<option value="' + escapeHtml(name) + '"></option>';
+      }).join('');
+      if (dl.innerHTML !== nextHtml) {
+        dl.innerHTML = nextHtml;
+      }
+    }
+
+    function formatEventTypeEs(type) {
+      var map = {
+        GOAL: 'GOL',
+        PENALTY: 'PENAL',
+        RED_CARD: 'ROJA',
+        YELLOW_CARD: 'AMARILLA',
+        SUBSTITUTION: 'CAMBIO',
+        COMMENT: 'RELATO'
+      };
+      return map[type] || (type || 'JUGADA');
+    }
+
+    function renderPublishedEventsList(eventsList) {
+      var container = document.getElementById('published-events-list');
+      var countChip = document.getElementById('published-events-count');
+      if (!container) return;
+      var list = Array.isArray(eventsList) ? eventsList : [];
+      if (countChip) countChip.textContent = String(list.length);
+
+      var sig = list.map(function (ev) {
+        return [ev.id, ev.minute, ev.type, ev.team, ev.player, ev.description].join('|');
+      }).join('\n');
+      if (sig === lastEventsRenderSig) return;
+      lastEventsRenderSig = sig;
+
+      publishedEventsCache.clear();
+      list.forEach(function (ev) {
+        publishedEventsCache.set(String(ev.id), ev);
+      });
+
+      if (list.length === 0) {
+        container.innerHTML = '<div class="pub-event-empty">Sin jugadas publicadas aún.</div>';
+        return;
+      }
+
+      container.innerHTML = list.slice(0, 40).map(function (ev) {
+        var idStr = escapeHtml(String(ev.id));
+        var rowCls = 'pub-event-row';
+        if (ev.type === 'GOAL' || ev.type === 'PENALTY') rowCls += ' is-goal';
+        else if (ev.type === 'RED_CARD') rowCls += ' is-red';
+        else if (ev.type === 'YELLOW_CARD') rowCls += ' is-yellow';
+        var teamText = ev.team_name || (ev.team === 'AWAY' ? lastStudioAway : (ev.team === 'HOME' ? lastStudioHome : 'General'));
+        return '' +
+          '<div class="' + rowCls + '">' +
+            '<div class="pub-event-head">' +
+              '<span class="pub-event-meta">' + escapeHtml(ev.minute !== undefined ? ev.minute : 0) + "' · " + escapeHtml(formatEventTypeEs(ev.type)) + ' · ' + escapeHtml(teamText) + '</span>' +
+              '<div class="pub-event-actions">' +
+                '<button type="button" class="btn-mini-action" data-ev-id="' + idStr + '" onclick="openEditEvent(this.getAttribute(\'data-ev-id\'))">Editar</button>' +
+                '<button type="button" class="btn-mini-action btn-mini-action--danger" data-ev-id="' + idStr + '" onclick="deletePublishedEvent(this.getAttribute(\'data-ev-id\'))">Borrar</button>' +
+              '</div>' +
+            '</div>' +
+            (ev.player ? '<div class="pub-event-player">' + escapeHtml(ev.player) + '</div>' : '') +
+            '<div class="pub-event-desc">' + escapeHtml(ev.description || '') + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function openEditEvent(evId) {
+      var ev = publishedEventsCache.get(String(evId));
+      if (!ev) return;
+      document.getElementById('edit-ev-id').value = String(ev.id);
+      document.getElementById('edit-ev-minute').value = ev.minute !== undefined ? ev.minute : 1;
+      document.getElementById('edit-ev-type').value = ev.type || 'COMMENT';
+      document.getElementById('edit-ev-team').value = ev.team || 'HOME';
+      document.getElementById('edit-ev-player').value = ev.player || '';
+      document.getElementById('edit-ev-desc').value = ev.description || '';
+      document.getElementById('edit-event-panel').classList.remove('hidden');
+    }
+
+    function cancelEditEvent() {
+      var panel = document.getElementById('edit-event-panel');
+      if (panel) panel.classList.add('hidden');
+    }
+
+    async function saveEditedEvent() {
+      var evId = document.getElementById('edit-ev-id').value;
+      if (!evId) return;
+      var payload = {
+        minute: parseInt(document.getElementById('edit-ev-minute').value, 10) || 0,
+        type: document.getElementById('edit-ev-type').value,
+        team: document.getElementById('edit-ev-team').value,
+        player: document.getElementById('edit-ev-player').value.trim(),
+        description: document.getElementById('edit-ev-desc').value.trim()
+      };
+      try {
+        var res = await fetch('/api/events/' + encodeURIComponent(evId), {
+          method: 'PUT',
+          headers: getJournalistHeaders(true),
+          body: JSON.stringify(payload)
+        });
+        if (res.status === 401 || res.status === 403) {
+          await checkJournalistAuthStatus();
+          return;
+        }
+        if (res.ok) {
+          cancelEditEvent();
+          appendAiLog('<div style="color:var(--volt); font-weight:700;">Jugada #' + escapeHtml(evId) + ' actualizada en vivo.</div>');
+          syncStudioStatus();
+        }
+      } catch (e) {}
+    }
+
+    async function deletePublishedEvent(evId) {
+      if (!evId) return;
+      if (!window.confirm('¿Eliminar esta jugada del minuto a minuto? Si es un gol, se descontará automáticamente del marcador.')) {
+        return;
+      }
+      try {
+        var res = await fetch('/api/events/' + encodeURIComponent(evId), {
+          method: 'DELETE',
+          headers: getJournalistHeaders(true)
+        });
+        if (res.status === 401 || res.status === 403) {
+          await checkJournalistAuthStatus();
+          return;
+        }
+        if (res.ok) {
+          if (document.getElementById('edit-ev-id').value === String(evId)) cancelEditEvent();
+          appendAiLog('<div style="color:var(--amber); font-weight:700;">Jugada #' + escapeHtml(evId) + ' eliminada de la transmisión.</div>');
+          syncStudioStatus();
+        }
+      } catch (e) {}
     }
 
     async function syncStudioStatus() {
       try {
-        const [sumRes, metRes] = await Promise.all([
-          fetch('/api/summary'),
-          fetch('/api/metrics')
+        var results = await Promise.all([
+          fetch('/api/summary', { cache: 'no-store' }),
+          fetch('/api/metrics', { cache: 'no-store' })
         ]);
-        const sumData = await sumRes.json();
-        const metData = await metRes.json();
+        var sumData = await results[0].json();
+        var metData = await results[1].json();
 
-        const hTeam = sumData.match.home_team;
-        const aTeam = sumData.match.away_team;
-        document.getElementById('studio-home-name').textContent = hTeam;
-        document.getElementById('studio-away-name').textContent = aTeam;
-        if (hTeam !== lastStudioHome) {
-          lastStudioHome = hTeam;
-          document.getElementById('studio-home-badge').src = `/api/badge?team=${encodeURIComponent(hTeam)}&t=${Date.now()}`;
-        }
-        if (aTeam !== lastStudioAway) {
-          lastStudioAway = aTeam;
-          document.getElementById('studio-away-badge').src = `/api/badge?team=${encodeURIComponent(aTeam)}&t=${Date.now()}`;
-        }
-        document.getElementById('opt-home-team').textContent = `${hTeam} (Local)`;
-        document.getElementById('opt-away-team').textContent = `${aTeam} (Visitante)`;
-        document.getElementById('studio-home').textContent = sumData.match.home_score;
-        document.getElementById('studio-away').textContent = sumData.match.away_score;
-        document.getElementById('studio-min').textContent = sumData.match.minute;
-
-        document.getElementById('studio-readers').textContent = metData.total_active_readers.toLocaleString();
-        const headerReadersEl = document.getElementById('header-live-readers');
-        if (headerReadersEl) {
-          headerReadersEl.textContent = metData.total_active_readers.toLocaleString();
-        }
-        const peakStatusEl = document.getElementById('sim-live-countdown');
-        if (peakStatusEl) {
-          if (metData.peak_simulation_active) {
-            peakStatusEl.textContent = `Pico en curso: ${metData.total_active_readers.toLocaleString()} conectados (${metData.peak_remaining_sec}s restantes)`;
-            peakStatusEl.className = 'text-emerald-400 font-bold';
-          } else {
-            peakStatusEl.textContent = 'Pico de 45s finalizado · Audiencia normalizada';
-            peakStatusEl.className = 'text-zinc-400 font-semibold';
+        if (sumData && sumData.match) {
+          var hTeam = sumData.match.home_team || 'Equipo Local';
+          var aTeam = sumData.match.away_team || 'Equipo Visitante';
+          document.getElementById('studio-home-name').textContent = hTeam;
+          document.getElementById('studio-away-name').textContent = aTeam;
+          if (hTeam !== lastStudioHome) {
+            lastStudioHome = hTeam;
+            document.getElementById('studio-home-badge').src = '/api/badge?team=' + encodeURIComponent(hTeam);
           }
+          if (aTeam !== lastStudioAway) {
+            lastStudioAway = aTeam;
+            document.getElementById('studio-away-badge').src = '/api/badge?team=' + encodeURIComponent(aTeam);
+          }
+          document.getElementById('opt-home-team').textContent = hTeam + ' (Local)';
+          document.getElementById('opt-away-team').textContent = aTeam + ' (Visitante)';
+          var editTeamSel = document.getElementById('edit-ev-team');
+          if (editTeamSel && editTeamSel.options.length >= 2) {
+            editTeamSel.options[0].textContent = hTeam + ' (Local)';
+            editTeamSel.options[1].textContent = aTeam + ' (Visitante)';
+          }
+
+          document.getElementById('studio-home').textContent = sumData.match.home_score !== undefined ? sumData.match.home_score : 0;
+          document.getElementById('studio-away').textContent = sumData.match.away_score !== undefined ? sumData.match.away_score : 0;
+
+          var srvMin = sumData.match.minute !== undefined ? Number(sumData.match.minute) : 0;
+          if (Date.now() - lastLocalClockEditAt > 1800) {
+            studioCurrentMinute = srvMin;
+            document.getElementById('studio-min').textContent = srvMin;
+          }
+
+          var srvStatus = sumData.match.status || 'POR INICIAR';
+          studioCurrentStatus = srvStatus;
+          var statusEl = document.getElementById('studio-status-label');
+          if (statusEl) statusEl.textContent = srvStatus;
+          highlightStatusButton(srvStatus);
         }
-        document.getElementById('studio-deliveries').textContent = metData.total_fanout_deliveries.toLocaleString();
-        document.getElementById('metric-p50').textContent = `${metData.latency_ms.p50} ms`;
-        document.getElementById('metric-p99').textContent = `${metData.latency_ms.p95} / ${metData.latency_ms.p99} ms`;
-        document.getElementById('metric-cache').textContent = metData.architecture.cache_engine;
-        if (metData.architecture.ai_engine) {
-          document.getElementById('metric-ai').textContent = metData.architecture.ai_engine;
+
+        if (sumData) {
+          updatePlayersDatalist(sumData);
+          renderPublishedEventsList(sumData.events || []);
+        }
+
+        if (metData) {
+          var readers = Number(metData.total_active_readers || 0).toLocaleString();
+          document.getElementById('studio-readers').textContent = readers;
+          var headerReadersEl = document.getElementById('header-live-readers');
+          if (headerReadersEl) headerReadersEl.textContent = readers;
+
+          var peakStatusEl = document.getElementById('sim-live-countdown');
+          if (peakStatusEl) {
+            if (metData.peak_simulation_active) {
+              peakStatusEl.textContent = 'Pico activo: ' + readers + ' conectados (' + metData.peak_remaining_sec + 's restantes)';
+              peakStatusEl.style.color = 'var(--volt)';
+            } else {
+              peakStatusEl.textContent = 'Pico finalizado · Audiencia normalizada';
+              peakStatusEl.style.color = 'var(--ink-secondary)';
+            }
+          }
+
+          if (metData.total_fanout_deliveries !== undefined) {
+            document.getElementById('studio-deliveries').textContent = Number(metData.total_fanout_deliveries).toLocaleString();
+          }
+          if (metData.latency_ms) {
+            document.getElementById('metric-p50').textContent = metData.latency_ms.p50 + ' ms';
+            document.getElementById('metric-p99').textContent = metData.latency_ms.p95 + ' / ' + metData.latency_ms.p99 + ' ms';
+          }
+          if (metData.architecture) {
+            if (metData.architecture.cache_engine) document.getElementById('metric-cache').textContent = metData.architecture.cache_engine;
+            if (metData.architecture.ai_engine) document.getElementById('metric-ai').textContent = metData.architecture.ai_engine;
+          }
         }
       } catch (e) {}
     }
 
     async function submitEvent(e) {
       e.preventDefault();
-      const body = {
+      var body = {
         minute: parseInt(document.getElementById('ev-minute').value, 10),
         team: document.getElementById('ev-team').value,
         type: document.getElementById('ev-type').value,
         player: document.getElementById('ev-player').value,
         description: document.getElementById('ev-desc').value
       };
-      const res = await fetch('/api/events', {
+      var res = await fetch('/api/events', {
         method: 'POST',
         headers: getJournalistHeaders(true),
         body: JSON.stringify(body)
@@ -1483,171 +2750,408 @@
         await checkJournalistAuthStatus();
         return;
       }
-      const data = await res.json();
-      const fb = document.getElementById('publish-feedback');
+      var data = await res.json();
+      var fb = document.getElementById('publish-feedback');
       fb.classList.remove('hidden');
 
       if (res.ok) {
-        fb.className = 'rounded-xl p-3 text-xs font-medium text-center bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
-        fb.textContent = `Jugada publicada en ${data.latency_ms} ms`;
+        fb.style.backgroundColor = 'var(--volt-dim)';
+        fb.style.borderColor = 'var(--volt)';
+        fb.style.color = 'var(--volt)';
+        fb.textContent = 'Jugada publicada en vivo (' + data.latency_ms + ' ms)';
         document.getElementById('ev-desc').value = '';
         document.getElementById('ev-minute').value = Math.min(120, body.minute + 1);
         syncStudioStatus();
       } else {
-        fb.className = 'rounded-xl p-3 text-xs font-medium text-center bg-rose-500/15 text-rose-300 border border-rose-500/30';
-        fb.textContent = `Error: ${data.error}`;
+        fb.style.backgroundColor = 'var(--vermilion-dim)';
+        fb.style.borderColor = 'var(--vermilion)';
+        fb.style.color = '#ffb2a6';
+        fb.textContent = 'Error: ' + (data.error || 'No se pudo publicar');
       }
     }
 
     async function triggerPeakSimulation() {
-      const btn = document.getElementById('btn-sim-peak');
+      var btn = document.getElementById('btn-sim-peak');
       btn.disabled = true;
       btn.textContent = 'Conectando 1,000 lectores concurrentes...';
-      const res = await fetch('/api/simulate-peak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ readers: 1000, duration_sec: 45 })
-      });
-      const data = await res.json();
-      const box = document.getElementById('sim-result');
-      box.classList.remove('hidden');
-      box.innerHTML = `
-        <div id="sim-live-countdown" class="text-emerald-400 font-bold">Pico en curso: ${data.simulated_concurrent_readers.toLocaleString()} conectados (${data.duration_sec}s restantes)</div>
-        <div>Canal En Vivo: <strong>${data.readers_vivo} lectores</strong> · Momentos Clave: <strong>${data.readers_resumen} lectores</strong></div>
-        <div>Marcador del partido: <strong>Intacto (sin jugadas artificiales)</strong></div>
-        <div>Consultas iniciales a caché: <strong>${data.total_fanout_messages_delivered.toLocaleString()}</strong></div>
-        <div>Latencia media por consulta: <strong>${data.avg_event_latency_ms} ms</strong></div>
-      `;
-      btn.disabled = false;
-      btn.textContent = 'Ejecutar Simulación de 1,000 Lectores Concurrentes';
-      syncStudioStatus();
+      try {
+        var res = await fetch('/api/simulate-peak', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ readers: 1000, duration_sec: 45 })
+        });
+        var data = await res.json();
+        var box = document.getElementById('sim-result');
+        box.classList.remove('hidden');
+        box.innerHTML = '' +
+          '<div id="sim-live-countdown" style="color:var(--volt); font-weight:700;">Pico activo: ' + Number(data.simulated_concurrent_readers).toLocaleString() + ' conectados (' + escapeHtml(data.duration_sec) + 's restantes)</div>' +
+          '<div>Canal En Vivo: <strong>' + escapeHtml(data.readers_vivo) + '</strong> · Momentos Clave: <strong>' + escapeHtml(data.readers_resumen) + '</strong></div>' +
+          '<div>Marcador del partido: <strong>Intacto (sin jugadas artificiales)</strong></div>' +
+          '<div>Consultas caché: <strong>' + Number(data.total_fanout_messages_delivered).toLocaleString() + '</strong> · Latencia media: <strong>' + escapeHtml(data.avg_event_latency_ms) + ' ms</strong></div>';
+        syncStudioStatus();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Ejecutar Simulación de 1,000 Lectores';
+      }
     }
 
-    checkJournalistAuthStatus();
-    syncStudioStatus();
-    setInterval(() => {
-      checkJournalistAuthStatus();
-      syncStudioStatus();
-    }, 2000);
+    /* ==========================================================================
+       QR MODAL LOGIC (100% OFFLINE ISO/IEC 18004 V1-V5 LEVEL L SVG GENERATOR)
+       ========================================================================== */
+    var QR_SPECS_L = [
+      { version: 1, size: 21, dataCw: 19, ecCw: 7, maxBytes: 17, remBits: 0, align: [] },
+      { version: 2, size: 25, dataCw: 34, ecCw: 10, maxBytes: 32, remBits: 7, align: [6, 18] },
+      { version: 3, size: 29, dataCw: 55, ecCw: 15, maxBytes: 53, remBits: 7, align: [6, 22] },
+      { version: 4, size: 33, dataCw: 80, ecCw: 20, maxBytes: 78, remBits: 7, align: [6, 26] },
+      { version: 5, size: 37, dataCw: 108, ecCw: 26, maxBytes: 106, remBits: 7, align: [6, 30] }
+    ];
 
-    // =========================================================================
-    // MODAL DE CÓDIGO QR PARA CONECTAR AFICIONADOS (DETECTA IP AUTOMÁTICA)
-    // =========================================================================
+    var QR_GF_EXP = new Uint8Array(512);
+    var QR_GF_LOG = new Uint8Array(256);
+    (function () {
+      var x = 1;
+      for (var i = 0; i < 255; i++) {
+        QR_GF_EXP[i] = x;
+        QR_GF_LOG[x] = i;
+        x <<= 1;
+        if (x & 256) x ^= 0x11d;
+      }
+      for (var j = 255; j < 512; j++) {
+        QR_GF_EXP[j] = QR_GF_EXP[j - 255];
+      }
+    })();
+
+    function qrGfMul(a, b) {
+      return (a === 0 || b === 0) ? 0 : QR_GF_EXP[QR_GF_LOG[a] + QR_GF_LOG[b]];
+    }
+
+    function qrRsEncode(dataBytes, ecLen) {
+      var gen = [1];
+      for (var i = 0; i < ecLen; i++) {
+        var next = new Array(gen.length + 1).fill(0);
+        var root = QR_GF_EXP[i];
+        for (var j = 0; j < gen.length; j++) {
+          next[j] ^= gen[j];
+          next[j + 1] ^= qrGfMul(gen[j], root);
+        }
+        gen = next;
+      }
+      var rem = new Array(dataBytes.length + ecLen).fill(0);
+      for (var d = 0; d < dataBytes.length; d++) rem[d] = dataBytes[d];
+      for (var k = 0; k < dataBytes.length; k++) {
+        var factor = rem[k];
+        if (factor !== 0) {
+          for (var g = 0; g < gen.length; g++) {
+            rem[k + g] ^= qrGfMul(gen[g], factor);
+          }
+        }
+      }
+      return rem.slice(dataBytes.length);
+    }
+
+    function qrComputeFormatBits(maskIdx) {
+      var data = (1 << 3) | (maskIdx & 7); // Level L = 01
+      var rem = data << 10;
+      for (var i = 14; i >= 10; i--) {
+        if ((rem >>> i) & 1) rem ^= (0x537 << (i - 10));
+      }
+      return ((data << 10) | rem) ^ 0x5412;
+    }
+
+    function qrMaskPredicate(maskIdx, r, c) {
+      switch (maskIdx) {
+        case 0: return (r + c) % 2 === 0;
+        case 1: return r % 2 === 0;
+        case 2: return c % 3 === 0;
+        case 3: return (r + c) % 3 === 0;
+        case 4: return (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0;
+        case 5: return ((r * c) % 2 + (r * c) % 3) === 0;
+        case 6: return (((r * c) % 2 + (r * c) % 3) % 2) === 0;
+        case 7: return (((r + c) % 2 + (r * c) % 3) % 2) === 0;
+        default: return false;
+      }
+    }
+
+    function qrPenaltyScore(grid, size) {
+      var penalty = 0;
+      for (var r = 0; r < size; r++) {
+        var runColor = grid[r][0], runLen = 1;
+        var colColor = grid[0][r], colLen = 1;
+        for (var c = 1; c < size; c++) {
+          if (grid[r][c] === runColor) {
+            runLen++;
+            if (runLen === 5) penalty += 3;
+            else if (runLen > 5) penalty += 1;
+          } else {
+            runColor = grid[r][c];
+            runLen = 1;
+          }
+          if (grid[c][r] === colColor) {
+            colLen++;
+            if (colLen === 5) penalty += 3;
+            else if (colLen > 5) penalty += 1;
+          } else {
+            colColor = grid[c][r];
+            colLen = 1;
+          }
+        }
+      }
+      var darkCount = 0;
+      for (var r2 = 0; r2 < size; r2++) {
+        for (var c2 = 0; c2 < size; c2++) {
+          if (grid[r2][c2]) darkCount++;
+          if (r2 < size - 1 && c2 < size - 1) {
+            var v = grid[r2][c2];
+            if (v === grid[r2][c2 + 1] && v === grid[r2 + 1][c2] && v === grid[r2 + 1][c2 + 1]) {
+              penalty += 3;
+            }
+          }
+        }
+      }
+      for (var y = 0; y < size; y++) {
+        for (var x = 0; x <= size - 11; x++) {
+          if (
+            (grid[y][x] && !grid[y][x + 1] && grid[y][x + 2] && grid[y][x + 3] && grid[y][x + 4] && !grid[y][x + 5] && grid[y][x + 6] && !grid[y][x + 7] && !grid[y][x + 8] && !grid[y][x + 9] && !grid[y][x + 10]) ||
+            (!grid[y][x] && !grid[y][x + 1] && !grid[y][x + 2] && !grid[y][x + 3] && grid[y][x + 4] && !grid[y][x + 5] && grid[y][x + 6] && grid[y][x + 7] && grid[y][x + 8] && !grid[y][x + 9] && grid[y][x + 10])
+          ) penalty += 40;
+          if (
+            (grid[x][y] && !grid[x + 1][y] && grid[x + 2][y] && grid[x + 3][y] && grid[x + 4][y] && !grid[x + 5][y] && grid[x + 6][y] && !grid[x + 7][y] && !grid[x + 8][y] && !grid[x + 9][y] && !grid[x + 10][y]) ||
+            (!grid[x][y] && !grid[x + 1][y] && !grid[x + 2][y] && !grid[x + 3][y] && grid[x + 4][y] && !grid[x + 5][y] && grid[x + 6][y] && grid[x + 7][y] && grid[x + 8][y] && !grid[x + 9][y] && grid[x + 10][y])
+          ) penalty += 40;
+        }
+      }
+      var pct = (darkCount * 100) / (size * size);
+      var k = Math.floor(Math.abs(pct - 50) / 5);
+      return penalty + k * 10;
+    }
+
+    function encodeQrMatrix(text) {
+      var bytes = Array.from(new TextEncoder().encode(String(text || '')));
+      var spec = null;
+      for (var si = 0; si < QR_SPECS_L.length; si++) {
+        if (bytes.length <= QR_SPECS_L[si].maxBytes) {
+          spec = QR_SPECS_L[si];
+          break;
+        }
+      }
+      if (!spec) return null;
+
+      var bits = [];
+      function pushBits(val, len) {
+        for (var b = len - 1; b >= 0; b--) bits.push((val >>> b) & 1);
+      }
+      pushBits(4, 4); // Byte mode
+      pushBits(bytes.length, 8);
+      for (var bi = 0; bi < bytes.length; bi++) pushBits(bytes[bi], 8);
+      var maxDataBits = spec.dataCw * 8;
+      var termLen = Math.min(4, maxDataBits - bits.length);
+      for (var ti = 0; ti < termLen; ti++) bits.push(0);
+      while (bits.length % 8 !== 0) bits.push(0);
+      var padToggle = 0;
+      while (bits.length < maxDataBits) {
+        pushBits(padToggle % 2 === 0 ? 0xec : 0x11, 8);
+        padToggle++;
+      }
+
+      var dataCwArr = [];
+      for (var ci = 0; ci < bits.length; ci += 8) {
+        var byteVal = 0;
+        for (var k = 0; k < 8; k++) byteVal = (byteVal << 1) | bits[ci + k];
+        dataCwArr.push(byteVal);
+      }
+      var allCw = dataCwArr.concat(qrRsEncode(dataCwArr, spec.ecCw));
+      var streamBits = [];
+      for (var wi = 0; wi < allCw.length; wi++) {
+        for (var bk = 7; bk >= 0; bk--) streamBits.push((allCw[wi] >>> bk) & 1);
+      }
+      for (var ri = 0; ri < spec.remBits; ri++) streamBits.push(0);
+
+      var N = spec.size;
+      var grid = Array.from({ length: N }, function () { return new Array(N).fill(false); });
+      var isFunc = Array.from({ length: N }, function () { return new Array(N).fill(false); });
+
+      function setFn(r, c, val) {
+        grid[r][c] = Boolean(val);
+        isFunc[r][c] = true;
+      }
+
+      function drawFinder(topR, leftC) {
+        for (var dy = -1; dy <= 7; dy++) {
+          for (var dx = -1; dx <= 7; dx++) {
+            var rr = topR + dy, cc = leftC + dx;
+            if (rr < 0 || rr >= N || cc < 0 || cc >= N) continue;
+            var inside = dy >= 0 && dy <= 6 && dx >= 0 && dx <= 6;
+            var dark = inside && (dy === 0 || dy === 6 || dx === 0 || dx === 6 || (dy >= 2 && dy <= 4 && dx >= 2 && dx <= 4));
+            setFn(rr, cc, dark);
+          }
+        }
+      }
+
+      drawFinder(0, 0);
+      drawFinder(0, N - 7);
+      drawFinder(N - 7, 0);
+
+      for (var i = 8; i <= N - 9; i++) {
+        setFn(6, i, i % 2 === 0);
+        setFn(i, 6, i % 2 === 0);
+      }
+
+      if (spec.align.length > 0) {
+        for (var ay = 0; ay < spec.align.length; ay++) {
+          for (var ax = 0; ax < spec.align.length; ax++) {
+            var cy = spec.align[ay], cx = spec.align[ax];
+            if ((cy <= 8 && cx <= 8) || (cy <= 8 && cx >= N - 9) || (cy >= N - 9 && cx <= 8)) continue;
+            for (var ady = -2; ady <= 2; ady++) {
+              for (var adx = -2; adx <= 2; adx++) {
+                setFn(cy + ady, cx + adx, Math.max(Math.abs(ady), Math.abs(adx)) !== 1);
+              }
+            }
+          }
+        }
+      }
+
+      setFn(4 * spec.version + 9, 8, true);
+
+      for (var fi = 0; fi <= 8; fi++) {
+        if (fi !== 6) {
+          isFunc[8][fi] = true;
+          isFunc[fi][8] = true;
+        }
+      }
+      for (var fj = 1; fj <= 8; fj++) {
+        isFunc[8][N - fj] = true;
+        if (fj <= 7) isFunc[N - fj][8] = true;
+      }
+
+      var bitPtr = 0;
+      var dir = -1;
+      for (var rightCol = N - 1; rightCol >= 1; rightCol -= 2) {
+        if (rightCol === 6) rightCol = 5;
+        for (var step = 0; step < N; step++) {
+          var row = dir === -1 ? (N - 1 - step) : step;
+          for (var dxCol = 0; dxCol < 2; dxCol++) {
+            var col = rightCol - dxCol;
+            if (!isFunc[row][col]) {
+              grid[row][col] = bitPtr < streamBits.length ? Boolean(streamBits[bitPtr++]) : false;
+            }
+          }
+        }
+        dir = -dir;
+      }
+
+      function applyFormatAndMask(targetGrid, maskIdx) {
+        for (var r = 0; r < N; r++) {
+          for (var c = 0; c < N; c++) {
+            if (!isFunc[r][c] && qrMaskPredicate(maskIdx, r, c)) {
+              targetGrid[r][c] = !targetGrid[r][c];
+            }
+          }
+        }
+        var fmt = qrComputeFormatBits(maskIdx);
+        var b14_0 = function (idx) { return Boolean((fmt >>> idx) & 1); };
+        var topRowCols = [0, 1, 2, 3, 4, 5, 7, 8];
+        for (var p = 0; p < 8; p++) targetGrid[8][topRowCols[p]] = b14_0(14 - p);
+        var leftColRows = [7, 5, 4, 3, 2, 1, 0];
+        for (var q = 0; q < 7; q++) targetGrid[leftColRows[q]][8] = b14_0(6 - q);
+        for (var v = 0; v < 7; v++) targetGrid[N - 1 - v][8] = b14_0(14 - v);
+        for (var h = 0; h < 8; h++) targetGrid[8][N - 8 + h] = b14_0(7 - h);
+      }
+
+      var bestMask = 0;
+      var bestPenalty = Infinity;
+      for (var m = 0; m < 8; m++) {
+        var copy = grid.map(function (rowArr) { return rowArr.slice(); });
+        applyFormatAndMask(copy, m);
+        var score = qrPenaltyScore(copy, N);
+        if (score < bestPenalty) {
+          bestPenalty = score;
+          bestMask = m;
+        }
+      }
+
+      applyFormatAndMask(grid, bestMask);
+      return grid;
+    }
+
+    function generateQrSvgDataUrl(text) {
+      var matrix = encodeQrMatrix(text);
+      if (!matrix) return null;
+      var size = matrix.length;
+      var quiet = 4;
+      var vb = size + quiet * 2;
+      var pathParts = [];
+      for (var r = 0; r < size; r++) {
+        for (var c = 0; c < size; c++) {
+          if (matrix[r][c]) {
+            pathParts.push('M' + (c + quiet) + ' ' + (r + quiet) + 'h1v1h-1z');
+          }
+        }
+      }
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + vb + ' ' + vb + '" shape-rendering="crispEdges">' +
+        '<rect width="' + vb + '" height="' + vb + '" fill="#FFFFFF"/>' +
+        '<path fill="#0B0D0E" d="' + pathParts.join('') + '"/>' +
+        '</svg>';
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+
     function openQrModal() {
-      const modal = document.getElementById('qr-modal');
-      const qrImg = document.getElementById('qr-code-img');
-      const urlInput = document.getElementById('qr-target-url');
-      const portalLink = document.getElementById('qr-open-portal-link');
+      var modal = document.getElementById('qr-modal');
+      var qrImg = document.getElementById('qr-code-img');
+      var urlInput = document.getElementById('qr-target-url');
+      var portalLink = document.getElementById('qr-open-portal-link');
 
-      // Toma dinámicamente la IP o dominio de la EC2 actual
-      const targetUrl = window.location.origin + '/';
+      var targetUrl = window.location.origin + '/';
       urlInput.value = targetUrl;
       portalLink.href = targetUrl;
-
-      // Generar código QR de alta resolución (260x260)
-      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(targetUrl)}`;
-      qrImg.src = qrApiUrl;
-
+      var localDataUrl = generateQrSvgDataUrl(targetUrl);
+      if (localDataUrl) {
+        qrImg.onerror = null;
+        qrImg.src = localDataUrl;
+      } else {
+        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=' + encodeURIComponent(targetUrl);
+      }
       modal.classList.remove('is-hidden');
     }
 
     function closeQrModal() {
-      const modal = document.getElementById('qr-modal');
-      modal.classList.add('is-hidden');
+      var modal = document.getElementById('qr-modal');
+      if (modal) modal.classList.add('is-hidden');
     }
 
     function handleQrBackdropClick(e) {
-      if (e.target.id === 'qr-modal') {
-        closeQrModal();
-      }
+      if (e.target && e.target.id === 'qr-modal') closeQrModal();
     }
 
-    window.addEventListener('keydown', (e) => {
+    window.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeQrModal();
     });
 
     async function copyFanPortalUrl() {
-      const input = document.getElementById('qr-target-url');
-      const btn = document.getElementById('btn-copy-url');
+      var input = document.getElementById('qr-target-url');
+      var btn = document.getElementById('btn-copy-url');
       try {
         await navigator.clipboard.writeText(input.value);
-        const originalText = btn.textContent;
-        btn.textContent = '¡Copiado! ✓';
-        btn.classList.add('bg-emerald-500/30', 'text-emerald-300', 'border-emerald-500/50');
-        setTimeout(() => {
-          btn.textContent = originalText;
-          btn.classList.remove('bg-emerald-500/30', 'text-emerald-300', 'border-emerald-500/50');
-        }, 2000);
       } catch (err) {
         input.select();
         document.execCommand('copy');
-        btn.textContent = '¡Copiado! ✓';
-        setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
       }
+      var originalText = btn.textContent;
+      btn.textContent = 'Copiado ✓';
+      btn.classList.add('btn-hw--volt');
+      setTimeout(function () {
+        btn.textContent = originalText;
+        btn.classList.remove('btn-hw--volt');
+      }, 2000);
     }
+
+    window.addEventListener('DOMContentLoaded', function () {
+      checkJournalistAuthStatus();
+      syncStudioStatus();
+      setInterval(function () {
+        checkJournalistAuthStatus();
+        syncStudioStatus();
+      }, 2500);
+    });
   </script>
-
-  <!-- MODAL DE CÓDIGO QR PARA CONECTAR AFICIONADOS -->
-  <div id="qr-modal" class="qr-modal-backdrop is-hidden" onclick="handleQrBackdropClick(event)">
-    <div class="qr-modal-card" onclick="event.stopPropagation()">
-      <!-- Close Button -->
-      <button type="button" onclick="closeQrModal()" class="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition cursor-pointer" title="Cerrar ventana">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-
-      <!-- Header -->
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xl shrink-0">
-          📲
-        </div>
-        <div>
-          <h3 class="text-base font-bold text-white leading-snug">Conectar Aficionados</h3>
-          <p class="text-[11px] text-zinc-400">Escanea desde tu celular para unirte en vivo</p>
-        </div>
-      </div>
-
-      <!-- QR Card Box -->
-      <div class="flex flex-col items-center justify-center p-3.5 bg-white rounded-2xl shadow-xl mb-4">
-        <img id="qr-code-img" src="" alt="Código QR Portal Aficionados"
-             class="w-56 h-56 object-contain rounded-lg"
-             onerror="this.src='https://chart.googleapis.com/chart?chs=260x260&cht=qr&chl=' + encodeURIComponent(window.location.origin + '/')" />
-        <span class="text-[10px] text-zinc-700 font-bold mt-1.5 uppercase tracking-wider">UNAL Sports Live Portal</span>
-      </div>
-
-      <!-- Current URL Display Box -->
-      <div class="space-y-1.5 mb-4">
-        <div class="flex items-center justify-between">
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Dirección IPv4 Detectada</label>
-          <span class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            En Vivo
-          </span>
-        </div>
-        <div class="flex items-center gap-2 p-2 rounded-xl bg-black/50 border border-white/15">
-          <input type="text" id="qr-target-url" readonly
-                 class="bg-transparent text-xs text-cyan-300 font-mono flex-1 outline-none truncate" />
-          <button type="button" id="btn-copy-url" onclick="copyFanPortalUrl()"
-                  class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-white/10 hover:bg-white/20 text-white transition border border-white/15 cursor-pointer">
-            Copiar
-          </button>
-        </div>
-      </div>
-
-      <!-- Footer Buttons -->
-      <div class="flex gap-2">
-        <button type="button" onclick="closeQrModal()"
-                class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold text-zinc-300 bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition cursor-pointer">
-          Cerrar
-        </button>
-        <a id="qr-open-portal-link" href="/" target="_blank"
-           class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold text-center text-white bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 transition">
-          Abrir Portal ↗
-        </a>
-      </div>
-    </div>
-  </div>
-  </div>
 </body>
 </html>
